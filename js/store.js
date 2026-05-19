@@ -7,6 +7,7 @@ import { showToast } from './toast.js';
 let _eventsIndex = [];       // raw index entries
 let _eventMetas  = {};       // slug → meta.json content
 let _plans       = {};       // slug → { v: parsedPlan }
+let _planRaw     = {};       // slug → { v: raw .md text }
 let _state       = { version: 2, events: {} };
 let _stateSha    = null;
 let _syncTimer   = null;
@@ -54,6 +55,8 @@ export async function ensurePlanLoaded(slug, version) {
   const parsed = parsePlan(file.content);
   if (!_plans[slug]) _plans[slug] = {};
   _plans[slug][version] = parsed;
+  if (!_planRaw[slug]) _planRaw[slug] = {};
+  _planRaw[slug][version] = file.content;
   return parsed;
 }
 
@@ -61,6 +64,12 @@ export function getActivePlan(slug) {
   const meta = getEventMeta(slug);
   if (!meta?.activeVersion) return null;
   return _plans[slug]?.[meta.activeVersion] || null;
+}
+
+export function getActivePlanRaw(slug) {
+  const meta = getEventMeta(slug);
+  if (!meta?.activeVersion) return null;
+  return _planRaw[slug]?.[meta.activeVersion] || null;
 }
 
 // ── Sessions / State ──────────────────────────────────────────────
@@ -79,7 +88,21 @@ export async function toggleSession(slug, sessionId, completed) {
   _state.events[slug][sessionId] = {
     ...prev,
     completed,
+    skipped: completed ? false : prev.skipped,
     ...(completed ? { completedAt: new Date().toISOString() } : { completedAt: null })
+  };
+  scheduleSyncState();
+}
+
+export async function skipSession(slug, sessionId, skipped) {
+  if (!_state.events[slug]) _state.events[slug] = {};
+  const prev = _state.events[slug][sessionId] || {};
+  _state.events[slug][sessionId] = {
+    ...prev,
+    skipped,
+    completed: skipped ? false : prev.completed,
+    ...(skipped ? { skippedAt: new Date().toISOString() } : { skippedAt: null }),
+    ...(skipped ? { completedAt: null } : {})
   };
   scheduleSyncState();
 }

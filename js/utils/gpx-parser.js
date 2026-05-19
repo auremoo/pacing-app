@@ -10,8 +10,8 @@ export function parseGpx(gpxText) {
 
   if (points.length < 2) return null;
 
-  // Smooth elevation to remove GPS noise before computing D+ (matches gpx.studio / Strava behavior)
-  const smoothed = smoothElevation(points, 7);
+  // Light smoothing (window=3) removes single-point GPS spikes without flattening real climbs
+  const smoothed = smoothElevation(points, 3);
 
   let totalDist = 0;
   let elevGain = 0;
