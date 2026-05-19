@@ -357,28 +357,24 @@ function renderPdfSection(hasPdf, pdfFilename) {
 function mountPdfViewer(slot, b64content, filename) {
   if (!slot) return;
   try {
-    const binary = atob(b64content.replace(/\n/g, ''));
-    const bytes  = new Uint8Array(binary.length);
+    const binary = atob(b64content);
+    const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const blob = new Blob([bytes], { type: 'application/pdf' });
-    const url  = URL.createObjectURL(blob);
-
+    const url = URL.createObjectURL(blob);
     slot.innerHTML = `
       <div class="card-group">
-        <a class="list-row" href="${url}" target="_blank" style="text-decoration:none">
+        <a class="list-row" href="${url}" target="_blank" rel="noopener" style="text-decoration:none">
           <div class="list-row__content">
-            <div class="list-row__title">Ouvrir le PDF</div>
+            <div class="list-row__title" style="color:var(--ios-blue)">Ouvrir le PDF</div>
             <div class="list-row__subtitle">${filename}</div>
           </div>
           <svg style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
         </a>
       </div>
-      <div style="margin-top:var(--space-3);border-radius:12px;overflow:hidden">
-        <iframe src="${url}" style="width:100%;height:500px;border:none;display:block"></iframe>
-      </div>
     `;
   } catch {
-    slot.innerHTML = `<div style="padding:var(--space-4);color:var(--text-secondary);text-align:center">Impossible d'afficher le PDF dans ce navigateur.</div>`;
+    slot.innerHTML = `<div style="padding:var(--space-4);color:var(--text-secondary);text-align:center;font-size:14px">Erreur de lecture du PDF.</div>`;
   }
 }
 

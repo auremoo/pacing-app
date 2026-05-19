@@ -24,7 +24,7 @@ function apiUrl(path) {
   return `${BASE}/repos/${owner}/${repo}/contents/${path}`;
 }
 
-export async function getFile(path) {
+export async function getFile(path, { rawBase64 = false } = {}) {
   const { branch } = getConfig();
   const url = `${apiUrl(path)}?ref=${branch}&_t=${Date.now()}`;
   const res = await fetch(url, { headers: headers() });
@@ -34,7 +34,7 @@ export async function getFile(path) {
   }
   const data = await res.json();
   return {
-    content: decodeBase64(data.content),
+    content: rawBase64 ? data.content.replace(/\n/g, '') : decodeBase64(data.content),
     sha: data.sha
   };
 }

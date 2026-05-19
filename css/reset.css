@@ -51,28 +51,33 @@ table {
 }
 
 /* ── Desktop layout ────────────────────────────────────────────── */
-@media (min-width: 600px) {
-  body {
-    background: var(--bg-grouped);
+@media (min-width: 768px) {
+  #shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100dvh;
+  }
+
+  #sidebar {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    background: var(--bg-primary);
+    border-right: 1px solid var(--separator);
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow-y: auto;
   }
 
   #app {
-    width: 100%;
-    max-width: 430px;
-    min-height: 100dvh;
-    background: var(--bg-primary);
-    box-shadow: 0 0 0 1px var(--separator), 0 8px 40px rgba(0,0,0,0.10);
-    position: relative;
+    height: 100dvh;
+    overflow-y: auto;
+    min-height: unset;
   }
 
   #toast-container {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
+    left: calc(260px + 50%);
     transform: translateX(-50%);
-    width: 400px;
+    width: 360px;
   }
 }

@@ -1355,3 +1355,165 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* ─── Desktop layout overrides ────────────────────────────────── */
+
+@media (min-width: 768px) {
+  /* Nav-bar becomes unnecessary — sidebar handles back navigation */
+  .nav-bar { display: none; }
+
+  /* Tab-bar: static horizontal strip at top of content */
+  .tab-bar {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    height: auto;
+    padding: 0 var(--space-4);
+    padding-bottom: 0;
+    border-top: none;
+    border-bottom: 0.5px solid var(--separator);
+    z-index: 100;
+  }
+
+  .tab-item {
+    flex-direction: row;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    padding: var(--space-3) var(--space-2);
+    min-height: 48px;
+  }
+
+  .tab-item svg { width: 18px; height: 18px; }
+
+  /* Remove bottom padding added for tab-bar */
+  #tab-content { padding-bottom: var(--space-8) !important; }
+
+  /* Lock screen centered on desktop */
+  .lock-screen {
+    min-height: 100dvh;
+    justify-content: center;
+  }
+
+  /* Dashboard: larger today card */
+  .today-card { margin: var(--space-6) var(--space-6) var(--space-4); }
+
+  /* Settings form max-width */
+  .settings-form { max-width: 480px; }
+}
+
+/* ─── Sidebar ──────────────────────────────────────────────────── */
+
+#sidebar { display: none; } /* hidden on mobile, shown via desktop media query */
+
+.sb-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  border-bottom: 0.5px solid var(--separator);
+}
+
+.sb-logo { font-size: 24px; }
+
+.sb-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.sb-settings-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.sb-settings-btn:hover { background: var(--fill-secondary); }
+.sb-settings-btn svg { width: 18px; height: 18px; }
+
+.sb-today {
+  margin: var(--space-3) var(--space-3);
+  padding: var(--space-3);
+  background: var(--ios-blue);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+}
+.sb-today:hover { opacity: 0.88; }
+.sb-today__label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.75); text-transform: uppercase; letter-spacing: 0.5px; }
+.sb-today__title { font-size: 14px; font-weight: 600; color: #fff; margin-top: 2px; }
+.sb-today__event { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 1px; }
+
+.sb-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.sb-nav { flex: 1; padding: 0 var(--space-2); }
+
+.sb-event-item {
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius);
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: background var(--duration-fast);
+}
+.sb-event-item:hover { background: var(--fill-secondary); }
+.sb-event-item--active { background: var(--fill-primary); }
+.sb-event-item--past { opacity: 0.6; }
+
+.sb-event-item__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.sb-event-item__meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.sb-event-item__bar {
+  height: 3px;
+  background: var(--fill-primary);
+  border-radius: 2px;
+  margin-top: var(--space-2);
+  overflow: hidden;
+}
+.sb-event-item__bar-fill {
+  height: 100%;
+  background: var(--ios-blue);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.sb-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.sb-nav-item:hover { background: var(--fill-secondary); color: var(--text-primary); }
+
+.sb-footer {
+  padding: var(--space-3) var(--space-2) var(--space-4);
+  border-top: 0.5px solid var(--separator);
+  margin-top: auto;
+}

@@ -184,7 +184,7 @@ export async function getCourseFile(slug, type) {
   if (meta?.course?.filename && !type) return getFile(`events/${slug}/course/${meta.course.filename}`);
   const entry = meta?.course?.[type];
   if (!entry?.filename) return null;
-  return getFile(`events/${slug}/course/${entry.filename}`);
+  return getFile(`events/${slug}/course/${entry.filename}`, { rawBase64: type === 'pdf' });
 }
 
 export async function updateEventMeta(slug, updates) {

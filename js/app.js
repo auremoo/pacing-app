@@ -6,6 +6,7 @@ import { mount as mountSettings }             from './views/settings.js';
 import { initStore }                           from './store.js';
 import { configure }                           from './github-api.js';
 import { showToast as _showToast }             from './toast.js';
+import { mountSidebar }                        from './views/sidebar.js';
 
 const app = document.getElementById('app');
 const PAT_KEY = 'pacing_pat';
@@ -32,6 +33,11 @@ const ROUTES = [
 
 async function route() {
   const path = decodeURIComponent(location.hash.slice(1)) || '/';
+  let activeSlug = null;
+  const slugMatch = path.match(/^\/event\/([\w-]+)/);
+  if (slugMatch) activeSlug = slugMatch[1];
+  mountSidebar(document.getElementById('sidebar'), activeSlug);
+
   for (const { re, fn } of ROUTES) {
     const m = path.match(re);
     if (m) { await fn(m); return; }
@@ -60,6 +66,7 @@ async function boot() {
 
   try {
     await initStore();
+    mountSidebar(document.getElementById('sidebar'));
   } catch (err) {
     app.innerHTML = `
       <div class="loading-state" style="min-height:100dvh;flex-direction:column;gap:16px">
