@@ -10,21 +10,20 @@ export function parseGpx(gpxText) {
 
   if (points.length < 2) return null;
 
-  // Light smoothing (window=3) removes single-point GPS spikes without flattening real climbs
+  // Window=3 removes isolated GPS spikes; profile uses these smoothed values
   const smoothed = smoothElevation(points, 3);
 
   let totalDist = 0;
-  let elevGain = 0;
-  let elevLoss = 0;
   const profile = [{ dist: 0, ele: smoothed[0].ele }];
-
   for (let i = 1; i < points.length; i++) {
     totalDist += haversine(points[i - 1], points[i]);
-    const dEle = smoothed[i].ele - smoothed[i - 1].ele;
-    if (dEle > 0) elevGain += dEle;
-    else elevLoss += Math.abs(dEle);
     profile.push({ dist: totalDist, ele: smoothed[i].ele });
   }
+
+  // Threshold hysteresis for D+/D-: only commit a change once it exceeds
+  // the threshold from the last reference point. Filters GPS oscillation noise
+  // without flattening real climbs — same principle as gpx.studio.
+  const { gain: elevGain, loss: elevLoss } = calcElevationThreshold(smoothed, 5);
 
   const minEle = Math.min(...profile.map(p => p.ele));
   const maxEle = Math.max(...profile.map(p => p.ele));
@@ -37,6 +36,22 @@ export function parseGpx(gpxText) {
     maxElevationM: Math.round(maxEle),
     profile
   };
+}
+
+function calcElevationThreshold(points, threshold = 5) {
+  let gain = 0, loss = 0;
+  let ref = points[0].ele;
+  for (let i = 1; i < points.length; i++) {
+    const diff = points[i].ele - ref;
+    if (diff >= threshold) {
+      gain += diff;
+      ref = points[i].ele;
+    } else if (diff <= -threshold) {
+      loss += Math.abs(diff);
+      ref = points[i].ele;
+    }
+  }
+  return { gain, loss };
 }
 
 function smoothElevation(points, windowSize = 7) {
