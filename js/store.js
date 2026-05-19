@@ -201,6 +201,32 @@ export async function importCourseFile(slug, filename, content, type, { alreadyB
   _eventMetas[slug] = newMeta;
 }
 
+export async function addPhoto(slug, filename, base64Content) {
+  const path = `events/${slug}/course/${filename}`;
+  const existing = await getFile(path).catch(() => null);
+  await putFile(path, base64Content, existing?.sha || null, { alreadyBase64: true });
+  const meta = getEventMeta(slug);
+  const photos = [...(meta.photos || [])];
+  if (!photos.includes(filename)) photos.push(filename);
+  const metaFile = await getFile(`events/${slug}/meta.json`);
+  const newMeta = { ...meta, photos };
+  await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
+  _eventMetas[slug] = newMeta;
+}
+
+export async function removePhoto(slug, filename) {
+  const meta = getEventMeta(slug);
+  const photos = (meta.photos || []).filter(f => f !== filename);
+  const metaFile = await getFile(`events/${slug}/meta.json`);
+  const newMeta = { ...meta, photos };
+  await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
+  _eventMetas[slug] = newMeta;
+}
+
+export async function getPhoto(slug, filename) {
+  return getFile(`events/${slug}/course/${filename}`, { rawBase64: true });
+}
+
 export async function getCourseFile(slug, type) {
   const meta = getEventMeta(slug);
   // backward compat: old format had course.filename directly

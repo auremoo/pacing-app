@@ -1563,6 +1563,67 @@
   margin-top: auto;
 }
 
+/* ─── Photos grid ─────────────────────────────────────────────── */
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.photo-card {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  background: var(--fill-secondary);
+}
+
+.photo-card__img {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-card__delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.photo-add-btn {
+  aspect-ratio: 4/3;
+  border-radius: var(--radius);
+  border: 2px dashed var(--separator);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.photo-add-btn:hover { background: var(--fill-secondary); }
+
 /* ─── Export prompt modal ──────────────────────────────────────── */
 
 .export-modal {

@@ -1,4 +1,4 @@
-import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta } from '../store.js';
+import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta, addPhoto, removePhoto, getPhoto } from '../store.js';
 import { showToast } from '../app.js';
 import { parseGpx, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
 
@@ -7,17 +7,20 @@ export async function mount(container, slug) {
 
   const meta   = getEventMeta(slug);
   const course = meta?.course || { gpx: null, pdf: null };
+  const photos = meta?.photos || [];
 
-  const [gpxFile, pdfFile] = await Promise.all([
+  const [gpxFile, pdfFile, ...photoFiles] = await Promise.all([
     course.gpx?.filename ? getCourseFile(slug, 'gpx').catch(() => null) : Promise.resolve(null),
     course.pdf?.filename ? getCourseFile(slug, 'pdf').catch(() => null) : Promise.resolve(null),
+    ...photos.map(f => getPhoto(slug, f).catch(() => null)),
   ]);
 
-  renderAll(container, slug, meta, gpxFile, pdfFile);
+  renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles);
 }
 
-function renderAll(container, slug, meta, gpxFile, pdfFile) {
+function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
   const course = meta?.course || { gpx: null, pdf: null };
+  const photos = meta?.photos || [];
 
   let gpxData = null;
   if (gpxFile) {
@@ -31,6 +34,7 @@ function renderAll(container, slug, meta, gpxFile, pdfFile) {
     ${renderResult(meta)}
     ${renderGpxSection(gpxData, hasGpx)}
     ${renderPdfSection(!!course.pdf, course.pdf?.filename)}
+    ${renderPhotosSection(photos, photoFiles)}
     <div style="height:var(--space-8)"></div>
   `;
 
@@ -38,6 +42,7 @@ function renderAll(container, slug, meta, gpxFile, pdfFile) {
   wireResultEdit(container, slug);
   wireGpxUpload(container, slug);
   wirePdfUpload(container, slug);
+  wirePhotoUpload(container, slug, photos);
 
   if (pdfFile && course.pdf?.filename) {
     mountPdfViewer(container.querySelector('#pdf-viewer-slot'), pdfFile.content, course.pdf.filename);
@@ -47,6 +52,16 @@ function renderAll(container, slug, meta, gpxFile, pdfFile) {
     const chartEl = container.querySelector('.elevation-chart-container');
     if (chartEl) attachElevationCursor(chartEl, gpxData);
   }
+
+  // Render loaded photos
+  photos.forEach((filename, i) => {
+    const slot = container.querySelector(`[data-photo-slot="${i}"]`);
+    if (slot && photoFiles[i]?.content) {
+      const ext  = filename.split('.').pop().toLowerCase();
+      const mime = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' }[ext] || 'image/jpeg';
+      slot.innerHTML = `<img src="data:${mime};base64,${photoFiles[i].content}" alt="${filename}" loading="lazy">`;
+    }
+  });
 }
 
 // ── Course info (editable) ────────────────────────────────────────
@@ -406,4 +421,80 @@ function stat(label, value) {
     <div class="course-stat__label">${label}</div>
     <div class="course-stat__value">${value}</div>
   </div>`;
+}
+
+// ── Photos section ────────────────────────────────────────────────
+
+function renderPhotosSection(photos, photoFiles) {
+  const MAX_PHOTOS = 2;
+  const canAdd = photos.length < MAX_PHOTOS;
+
+  return `
+    <div style="padding:var(--space-4) var(--space-4) 0">
+      <p class="section-header" style="margin:0 0 var(--space-2)">Photos</p>
+      <div class="photos-grid" id="photos-grid">
+        ${photos.map((filename, i) => `
+          <div class="photo-card" data-photo-index="${i}">
+            <div class="photo-card__img" data-photo-slot="${i}">
+              <div class="spinner" style="width:24px;height:24px"></div>
+            </div>
+            <button class="photo-card__delete" data-photo-delete="${filename}" aria-label="Supprimer">✕</button>
+          </div>
+        `).join('')}
+        ${canAdd ? `
+          <label class="photo-add-btn" id="photo-add-label" title="Ajouter une photo">
+            <span style="font-size:28px;line-height:1">＋</span>
+            <span style="font-size:12px;color:var(--text-secondary)">Photo</span>
+            <input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp,image/heic" style="display:none">
+          </label>
+        ` : ''}
+      </div>
+      ${photos.length === MAX_PHOTOS ? `<p style="font-size:12px;color:var(--text-secondary);margin-top:var(--space-2)">Maximum ${MAX_PHOTOS} photos atteint.</p>` : ''}
+    </div>
+  `;
+}
+
+function wirePhotoUpload(container, slug, currentPhotos) {
+  const input = container.querySelector('#photo-input');
+  input?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Photo trop lourde — max 5 Mo', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    showToast('Upload photo…');
+    try {
+      const buffer = await file.arrayBuffer();
+      const bytes  = new Uint8Array(buffer);
+      let binary   = '';
+      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      const base64  = btoa(binary);
+      const ext      = file.name.split('.').pop().toLowerCase();
+      const filename = `photo-${Date.now()}.${ext}`;
+      await addPhoto(slug, filename, base64);
+      showToast('Photo ajoutée !', 'success');
+      await mount(container, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+    }
+    e.target.value = '';
+  });
+
+  container.querySelectorAll('[data-photo-delete]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const filename = btn.dataset.photoDelete;
+      try {
+        await removePhoto(slug, filename);
+        showToast('Photo supprimée', 'success');
+        await mount(container, slug);
+      } catch (err) {
+        showToast('Erreur : ' + err.message, 'error');
+      }
+    });
+  });
 }
