@@ -10,17 +10,20 @@ export function parseGpx(gpxText) {
 
   if (points.length < 2) return null;
 
+  // Smooth elevation to remove GPS noise before computing D+ (matches gpx.studio / Strava behavior)
+  const smoothed = smoothElevation(points, 7);
+
   let totalDist = 0;
   let elevGain = 0;
   let elevLoss = 0;
-  const profile = [{ dist: 0, ele: points[0].ele }];
+  const profile = [{ dist: 0, ele: smoothed[0].ele }];
 
   for (let i = 1; i < points.length; i++) {
     totalDist += haversine(points[i - 1], points[i]);
-    const dEle = points[i].ele - points[i - 1].ele;
+    const dEle = smoothed[i].ele - smoothed[i - 1].ele;
     if (dEle > 0) elevGain += dEle;
     else elevLoss += Math.abs(dEle);
-    profile.push({ dist: totalDist, ele: points[i].ele });
+    profile.push({ dist: totalDist, ele: smoothed[i].ele });
   }
 
   const minEle = Math.min(...profile.map(p => p.ele));
@@ -34,6 +37,17 @@ export function parseGpx(gpxText) {
     maxElevationM: Math.round(maxEle),
     profile
   };
+}
+
+function smoothElevation(points, windowSize = 7) {
+  const half = Math.floor(windowSize / 2);
+  return points.map((pt, i) => {
+    const start = Math.max(0, i - half);
+    const end   = Math.min(points.length, i + half + 1);
+    let sum = 0;
+    for (let j = start; j < end; j++) sum += points[j].ele;
+    return { ...pt, ele: sum / (end - start) };
+  });
 }
 
 function haversine(a, b) {
