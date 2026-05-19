@@ -17,5 +17,10 @@
   "course": {
     "gpx": null,
     "pdf": null
+  },
+  "result": {
+    "time": "2h05'22\"",
+    "pacePerKm": "6'02\"/km",
+    "activityUrl": null
   }
 }

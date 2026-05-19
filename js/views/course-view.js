@@ -26,12 +26,14 @@ function renderAll(container, slug, meta, gpxFile, pdfFile) {
 
   container.innerHTML = `
     ${renderCourseInfo(meta)}
+    ${renderResult(meta)}
     ${renderGpxSection(gpxData, !!course.gpx)}
     ${renderPdfSection(!!course.pdf, course.pdf?.filename)}
     <div style="height:var(--space-8)"></div>
   `;
 
   wireCourseInfoEdit(container, slug);
+  wireResultEdit(container, slug);
   wireGpxUpload(container, slug);
   wirePdfUpload(container, slug);
 
@@ -125,6 +127,105 @@ function wireCourseInfoEdit(container, slug) {
       saveBtn.textContent = 'Enregistrer';
     }
   });
+}
+
+// ── Race result ───────────────────────────────────────────────────
+
+function renderResult(meta) {
+  const r = meta?.result;
+  return `
+    <div style="padding:var(--space-3) var(--space-4) 0">
+      <div class="card-group" id="result-card">
+        <div id="result-view">
+          ${r?.time ? `
+            ${infoRow('Temps officiel', r.time)}
+            ${r.pacePerKm ? infoRow('Allure moyenne', r.pacePerKm) : ''}
+            ${r.activityUrl ? `
+              <a class="list-row" href="${escHtml(r.activityUrl)}" target="_blank" style="text-decoration:none">
+                <div class="list-row__content">
+                  <div class="list-row__subtitle">Activité</div>
+                  <div class="list-row__title" style="color:var(--ios-blue)">Voir sur Strava / Garmin</div>
+                </div>
+                <svg style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+              </a>` : ''}
+          ` : `
+            <div class="list-row" style="cursor:default">
+              <div class="list-row__content">
+                <div class="list-row__title" style="color:var(--text-secondary)">Résultat non renseigné</div>
+              </div>
+            </div>
+          `}
+          <div class="list-row" id="edit-result-btn" style="cursor:pointer">
+            <div class="list-row__content">
+              <div class="list-row__title" style="color:var(--ios-blue)">${r?.time ? 'Modifier le résultat' : 'Saisir le résultat'}</div>
+            </div>
+            <svg style="width:16px;height:16px;color:var(--text-tertiary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+        <div id="result-edit" style="display:none;padding:var(--space-3) var(--space-4)">
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Temps final</label>
+            <input class="input-field" id="edit-time" type="text" placeholder="ex : 1h52'34" value="${r?.time || ''}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Allure moyenne</label>
+            <input class="input-field" id="edit-pace" type="text" placeholder='ex : 5&apos;20"/km' value="${r?.pacePerKm || ''}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Lien activité (Strava, Garmin…)</label>
+            <input class="input-field" id="edit-url" type="url" placeholder="https://www.strava.com/activities/…" value="${r?.activityUrl || ''}">
+          </div>
+          <div style="display:flex;gap:var(--space-2)">
+            <button class="btn btn--primary" id="save-result-btn" style="flex:1">Enregistrer</button>
+            <button class="btn btn--secondary" id="cancel-result-btn" style="flex:1">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function wireResultEdit(container, slug) {
+  const view      = container.querySelector('#result-view');
+  const editPane  = container.querySelector('#result-edit');
+  const editBtn   = container.querySelector('#edit-result-btn');
+  const saveBtn   = container.querySelector('#save-result-btn');
+  const cancelBtn = container.querySelector('#cancel-result-btn');
+
+  editBtn?.addEventListener('click', () => {
+    view.style.display = 'none';
+    editPane.style.display = 'block';
+  });
+  cancelBtn?.addEventListener('click', () => {
+    view.style.display = 'block';
+    editPane.style.display = 'none';
+  });
+  saveBtn?.addEventListener('click', async () => {
+    const time  = container.querySelector('#edit-time').value.trim();
+    const pace  = container.querySelector('#edit-pace').value.trim();
+    const url   = container.querySelector('#edit-url').value.trim();
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Enregistrement…';
+    try {
+      await updateEventMeta(slug, {
+        result: {
+          time:        time || null,
+          pacePerKm:   pace || null,
+          activityUrl: url  || null,
+        }
+      });
+      showToast('Résultat enregistré', 'success');
+      await mount(container, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Enregistrer';
+    }
+  });
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ── GPX section ───────────────────────────────────────────────────
