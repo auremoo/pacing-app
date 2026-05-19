@@ -15,7 +15,10 @@
   "activeVersion": null,
   "versions": [],
   "course": {
-    "gpx": null,
+    "gpx": {
+      "filename": "marathon-des-alpes-20251756282712213.gpx",
+      "importedAt": "2026-05-19T09:57:53.426Z"
+    },
     "pdf": null
   },
   "result": {
