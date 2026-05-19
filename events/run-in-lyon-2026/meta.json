@@ -1,0 +1,25 @@
+{
+  "slug": "run-in-lyon-2026",
+  "name": "Run in Lyon 2026",
+  "subtitle": "Semi-marathon",
+  "raceDate": "2026-10-04",
+  "location": "Lyon, France",
+  "distanceKm": 21.0975,
+  "distanceLabel": "Semi-marathon",
+  "elevationGainM": 184,
+  "courseDescription": "Vallonné léger — montée notable km 14-17 vers la Croix-Rousse",
+  "objective": "1h50",
+  "objectiveRealistic": "1h51-1h53",
+  "planStart": "2026-05-18",
+  "planWeeks": 20,
+  "activeVersion": 1,
+  "versions": [
+    {
+      "v": 1,
+      "file": "v1.md",
+      "importedAt": "2026-05-18T00:00:00Z",
+      "label": "Plan initial — 20 semaines"
+    }
+  ],
+  "course": null
+}

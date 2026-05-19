@@ -1,0 +1,22 @@
+{
+  "events": [
+    {
+      "slug": "run-in-lyon-2026",
+      "name": "Run in Lyon 2026",
+      "subtitle": "Semi-marathon",
+      "raceDate": "2026-10-04",
+      "distanceLabel": "Semi-marathon",
+      "distanceKm": 21.0975,
+      "activeVersion": 1
+    },
+    {
+      "slug": "marathon-alpes-bsm",
+      "name": "Marathon des Alpes",
+      "subtitle": "Bourg-Saint-Maurice",
+      "raceDate": "2026-05-17",
+      "distanceLabel": "Marathon",
+      "distanceKm": 42.195,
+      "activeVersion": null
+    }
+  ]
+}
