@@ -21,5 +21,8 @@
       "label": "Plan initial — 20 semaines"
     }
   ],
-  "course": null
+  "course": {
+    "filename": "ril25-parcours-semi.pdf",
+    "importedAt": "2026-05-19T09:32:56.756Z"
+  }
 }
