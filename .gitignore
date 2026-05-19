@@ -17,8 +17,11 @@ Thumbs.db
 
 # Never commit tokens or secrets
 *secret*
-*token*
 *credentials*
+*.token
+*.tokens
+*_token.json
+*_secret.json
 
 # Node (if ever needed for tooling)
 node_modules/
