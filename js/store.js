@@ -1,4 +1,4 @@
-import { getFile, putFile, isConfigured } from './github-api.js';
+import { getFile, putFile } from './github-api.js';
 import { parsePlan } from './parser.js';
 import { showToast } from './toast.js';
 
