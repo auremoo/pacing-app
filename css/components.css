@@ -1404,7 +1404,7 @@
 
 /* ─── Sidebar ──────────────────────────────────────────────────── */
 
-#sidebar { display: none; } /* hidden on mobile, shown via desktop media query */
+/* Sidebar hidden on mobile — shown via desktop media query in reset.css */
 
 .sb-header {
   display: flex;

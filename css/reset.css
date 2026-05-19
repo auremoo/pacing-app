@@ -50,6 +50,8 @@ table {
   width: 100%;
 }
 
+#sidebar { display: none; }
+
 /* ── Desktop layout ────────────────────────────────────────────── */
 @media (min-width: 768px) {
   #shell {
