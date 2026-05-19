@@ -10,6 +10,8 @@ export function parsePlan(markdown) {
     paces:   parsePaces(sections['ALLURES'] || ''),
     weeks:   parseWeeks(sections['SEMAINES'] || ''),
     info: {
+      overview:     (sections['SYNTHESE'] || '').trim(),
+      principles:   (sections['PRINCIPES'] || '').trim(),
       ppg:          (sections['PPG'] || '').trim(),
       vigilance:    (sections['VIGILANCE'] || '').trim(),
       raceStrategy: (sections['STRATEGIE_COURSE'] || '').trim(),

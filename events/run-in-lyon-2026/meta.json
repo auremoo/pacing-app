@@ -7,7 +7,7 @@
   "distanceKm": 21.0975,
   "distanceLabel": "Semi-marathon",
   "elevationGainM": 184,
-  "courseDescription": "Vallonné léger — montée notable km 14-17 vers la Croix-Rousse",
+  "courseDescription": "Vallonné léger — montée notable km 14-17 vers la Croix-Rousse (Terreaux)",
   "objective": "1h50",
   "objectiveRealistic": "1h51-1h53",
   "planStart": "2026-05-18",
@@ -22,7 +22,10 @@
     }
   ],
   "course": {
-    "filename": "ril25-parcours-semi.pdf",
-    "importedAt": "2026-05-19T09:32:56.756Z"
+    "gpx": null,
+    "pdf": {
+      "filename": "ril25-parcours-semi.pdf",
+      "importedAt": "2026-05-19T09:32:56.756Z"
+    }
   }
 }

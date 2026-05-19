@@ -1,12 +1,12 @@
 {
   "slug": "marathon-alpes-bsm",
-  "name": "Marathon des Alpes",
+  "name": "Semi des Alpes BSM",
   "subtitle": "Bourg-Saint-Maurice",
   "raceDate": "2026-05-17",
   "location": "Bourg-Saint-Maurice, France",
-  "distanceKm": 42.195,
-  "distanceLabel": "Marathon",
-  "elevationGainM": null,
+  "distanceKm": 20.8,
+  "distanceLabel": "Semi-marathon",
+  "elevationGainM": 250,
   "courseDescription": null,
   "objective": null,
   "objectiveRealistic": null,
@@ -14,5 +14,8 @@
   "planWeeks": null,
   "activeVersion": null,
   "versions": [],
-  "course": null
+  "course": {
+    "gpx": null,
+    "pdf": null
+  }
 }

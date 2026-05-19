@@ -165,17 +165,32 @@ export async function setActiveVersion(slug, v) {
 
 // ── Import course file ────────────────────────────────────────────
 
-export async function importCourseFile(slug, filename, content, { alreadyBase64 = false } = {}) {
+export async function importCourseFile(slug, filename, content, type, { alreadyBase64 = false } = {}) {
   await putFile(`events/${slug}/course/${filename}`, content, null, { alreadyBase64 });
   const meta = getEventMeta(slug);
   const metaFile = await getFile(`events/${slug}/meta.json`);
-  const newMeta = { ...meta, course: { filename, importedAt: new Date().toISOString() } };
+  const currentCourse = (meta.course && !meta.course.filename) ? meta.course : { gpx: null, pdf: null };
+  const newCourse = { ...currentCourse, [type]: { filename, importedAt: new Date().toISOString() } };
+  const newMeta = { ...meta, course: newCourse };
   await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
   _eventMetas[slug] = newMeta;
 }
 
-export async function getCourseFile(slug) {
+export async function getCourseFile(slug, type) {
   const meta = getEventMeta(slug);
-  if (!meta?.course?.filename) return null;
-  return getFile(`events/${slug}/course/${meta.course.filename}`);
+  // backward compat: old format had course.filename directly
+  if (meta?.course?.filename && !type) return getFile(`events/${slug}/course/${meta.course.filename}`);
+  const entry = meta?.course?.[type];
+  if (!entry?.filename) return null;
+  return getFile(`events/${slug}/course/${entry.filename}`);
+}
+
+export async function updateEventMeta(slug, updates) {
+  const meta = getEventMeta(slug);
+  const metaFile = await getFile(`events/${slug}/meta.json`);
+  const newMeta = { ...meta, ...updates };
+  await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
+  _eventMetas[slug] = newMeta;
+  const idx = _eventsIndex.find(e => e.slug === slug);
+  if (idx) Object.assign(idx, updates);
 }

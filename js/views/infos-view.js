@@ -2,7 +2,9 @@ import { getActivePlan } from '../store.js';
 import { renderMarkdown } from '../utils/markdown.js';
 
 const TABS = [
+  { id: 'synthese',  label: 'Synthèse' },
   { id: 'allures',   label: 'Allures' },
+  { id: 'principes', label: 'Principes' },
   { id: 'ppg',       label: 'PPG' },
   { id: 'vigilance', label: 'Vigilance' },
   { id: 'strategie', label: 'Stratégie' },
@@ -16,14 +18,17 @@ export function mount(container, slug) {
     return;
   }
 
+  // Only show tabs that have content
+  const visibleTabs = TABS.filter(t => hasContent(t.id, plan));
+
   container.innerHTML = `
     <div class="infos-tabs" id="infos-tabs">
-      ${TABS.map((t, i) => `
+      ${visibleTabs.map((t, i) => `
         <button class="infos-tab ${i === 0 ? 'infos-tab--active' : ''}" data-tab="${t.id}">${t.label}</button>
       `).join('')}
     </div>
     <div class="infos-content" id="infos-content">
-      ${renderTab('allures', plan)}
+      ${visibleTabs.length ? renderTab(visibleTabs[0].id, plan) : '<p>Aucune information dans ce plan.</p>'}
     </div>
   `;
 
@@ -36,13 +41,28 @@ export function mount(container, slug) {
   });
 }
 
+function hasContent(tabId, plan) {
+  switch (tabId) {
+    case 'synthese':  return !!plan.info.overview;
+    case 'allures':   return plan.paces.current.length > 0 || plan.paces.target.length > 0;
+    case 'principes': return !!plan.info.principles;
+    case 'ppg':       return !!plan.info.ppg;
+    case 'vigilance': return !!plan.info.vigilance;
+    case 'strategie': return !!plan.info.raceStrategy;
+    case 'nutrition': return !!plan.info.nutrition;
+    default:          return false;
+  }
+}
+
 function renderTab(tabId, plan) {
   switch (tabId) {
+    case 'synthese':  return `<div class="markdown-body" style="padding:var(--space-4)">${renderMarkdown(plan.info.overview)}</div>`;
     case 'allures':   return renderAllures(plan.paces);
-    case 'ppg':       return renderMarkdown(plan.info.ppg) || '<p>Aucune information PPG dans ce plan.</p>';
-    case 'vigilance': return renderMarkdown(plan.info.vigilance) || '<p>Aucune information de vigilance.</p>';
-    case 'strategie': return renderMarkdown(plan.info.raceStrategy) || '<p>Aucune stratégie de course.</p>';
-    case 'nutrition': return renderMarkdown(plan.info.nutrition) || '<p>Aucune information nutrition.</p>';
+    case 'principes': return `<div class="markdown-body" style="padding:var(--space-4)">${renderMarkdown(plan.info.principles)}</div>`;
+    case 'ppg':       return `<div class="markdown-body" style="padding:var(--space-4)">${renderMarkdown(plan.info.ppg)}</div>`;
+    case 'vigilance': return `<div class="markdown-body" style="padding:var(--space-4)">${renderMarkdown(plan.info.vigilance)}</div>`;
+    case 'strategie': return `<div class="markdown-body" style="padding:var(--space-4)">${renderMarkdown(plan.info.raceStrategy)}</div>`;
+    case 'nutrition': return `<div class="markdown-body" style="padding:var(--space-4)">${renderMarkdown(plan.info.nutrition)}</div>`;
     default:          return '';
   }
 }

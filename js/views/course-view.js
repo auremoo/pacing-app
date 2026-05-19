@@ -1,123 +1,193 @@
-import { getEventMeta, importCourseFile, getCourseFile } from '../store.js';
+import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta } from '../store.js';
 import { showToast } from '../app.js';
 import { parseGpx, renderElevationChart } from '../utils/gpx-parser.js';
 
 export async function mount(container, slug) {
-  const meta = getEventMeta(slug);
-
   container.innerHTML = `<div class="loading-state"><div class="spinner"></div><span>Chargement…</span></div>`;
 
-  if (meta?.course?.filename) {
-    try {
-      const file = await getCourseFile(slug);
-      if (file) {
-        renderCourse(container, slug, meta.course.filename, file.content);
-        return;
-      }
-    } catch { /* fall through to upload UI */ }
-  }
+  const meta   = getEventMeta(slug);
+  const course = meta?.course || { gpx: null, pdf: null };
 
-  renderUploadUI(container, slug, meta);
+  const [gpxFile, pdfFile] = await Promise.all([
+    course.gpx?.filename ? getCourseFile(slug, 'gpx').catch(() => null) : Promise.resolve(null),
+    course.pdf?.filename ? getCourseFile(slug, 'pdf').catch(() => null) : Promise.resolve(null),
+  ]);
+
+  renderAll(container, slug, meta, gpxFile, pdfFile);
 }
 
-function renderCourse(container, slug, filename, content) {
-  const ext = filename.split('.').pop().toLowerCase();
+function renderAll(container, slug, meta, gpxFile, pdfFile) {
+  const course = meta?.course || { gpx: null, pdf: null };
 
-  let chartHtml = '';
-  let statsHtml = '';
-
-  if (ext === 'gpx') {
-    try {
-      const data = parseGpx(content);
-      if (data) {
-        chartHtml = `
-          <div class="elevation-chart-container">
-            ${renderElevationChart(data.profile)}
-          </div>`;
-        statsHtml = `
-          <div class="course-stats">
-            ${stat('Distance', `${data.distanceKm} km`)}
-            ${stat('D+', `${data.elevationGainM} m`)}
-            ${stat('D-', `${data.elevationLossM} m`)}
-            ${stat('Alt. max', `${data.maxElevationM} m`)}
-          </div>`;
-      }
-    } catch { /* ignore parse errors */ }
+  let gpxData = null;
+  if (gpxFile) {
+    try { gpxData = parseGpx(gpxFile.content); } catch { /* ignore */ }
   }
 
   container.innerHTML = `
-    ${chartHtml}
-    ${statsHtml}
-    <p class="section-header">Fichier parcours</p>
-    <div class="card-group" style="margin:0 var(--space-4)">
-      <div class="list-row" style="cursor:default">
-        <div class="list-row__content">
-          <div class="list-row__title">${filename}</div>
-          <div class="list-row__subtitle">${ext.toUpperCase()} · Importé dans GitHub</div>
-        </div>
-      </div>
-      ${ext === 'pdf' ? `
-        <a class="list-row" href="data:application/pdf;base64,${content.replace(/\n/g,'')}" download="${filename}">
-          <div class="list-row__content"><div class="list-row__title">Télécharger le PDF</div></div>
-          <span class="list-row__chevron">↓</span>
-        </a>` : ''}
-    </div>
-    <div style="padding:var(--space-4)">
-      <button class="btn btn--ghost" id="replace-btn">Remplacer le fichier</button>
-      <input type="file" id="course-input" accept=".gpx,.pdf,.json,application/pdf,application/json" style="display:none">
-    </div>
+    ${renderCourseInfo(meta)}
+    ${renderGpxSection(gpxData, !!course.gpx)}
+    ${renderPdfSection(!!course.pdf, course.pdf?.filename)}
+    <div style="height:var(--space-8)"></div>
   `;
 
-  attachUploadListener(container, slug);
+  wireCourseInfoEdit(container, slug);
+  wireGpxUpload(container, slug);
+  wirePdfUpload(container, slug);
+
+  if (pdfFile && course.pdf?.filename) {
+    mountPdfViewer(container.querySelector('#pdf-viewer-slot'), pdfFile.content, course.pdf.filename);
+  }
 }
 
-function renderUploadUI(container, slug, meta) {
-  container.innerHTML = `
-    <div style="padding:var(--space-4)">
-      ${meta?.courseDescription ? `
-        <div class="card-group" style="margin:0 0 var(--space-4)">
+// ── Course info (editable) ────────────────────────────────────────
+
+function renderCourseInfo(meta) {
+  return `
+    <div style="padding:var(--space-4) var(--space-4) 0">
+      <div class="card-group" id="course-info-card">
+        <div id="course-info-view">
+          ${infoRow('Distance', meta?.distanceKm ? `${meta.distanceKm} km` : '—')}
+          ${infoRow('Dénivelé +', meta?.elevationGainM != null ? `${meta.elevationGainM} m D+` : '—')}
+          ${meta?.courseDescription ? infoRow('Parcours', meta.courseDescription) : ''}
+          <div class="list-row" id="edit-info-btn" style="cursor:pointer">
+            <div class="list-row__content">
+              <div class="list-row__title" style="color:var(--ios-blue)">Modifier ces infos</div>
+            </div>
+            <svg style="width:16px;height:16px;color:var(--text-tertiary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+        <div id="course-info-edit" style="display:none;padding:var(--space-3) var(--space-4)">
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Distance (km)</label>
+            <input class="input-field" id="edit-distance" type="number" step="0.01" value="${meta?.distanceKm || ''}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Dénivelé + (m)</label>
+            <input class="input-field" id="edit-dplus" type="number" step="1" value="${meta?.elevationGainM ?? ''}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Description du parcours</label>
+            <input class="input-field" id="edit-desc" type="text" value="${meta?.courseDescription || ''}">
+          </div>
+          <div style="display:flex;gap:var(--space-2)">
+            <button class="btn btn--primary" id="save-info-btn" style="flex:1">Enregistrer</button>
+            <button class="btn btn--secondary" id="cancel-info-btn" style="flex:1">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function infoRow(label, value) {
+  return `<div class="list-row" style="cursor:default">
+    <div class="list-row__content">
+      <div class="list-row__subtitle">${label}</div>
+      <div class="list-row__title">${value}</div>
+    </div>
+  </div>`;
+}
+
+function wireCourseInfoEdit(container, slug) {
+  const view      = container.querySelector('#course-info-view');
+  const editPane  = container.querySelector('#course-info-edit');
+  const editBtn   = container.querySelector('#edit-info-btn');
+  const saveBtn   = container.querySelector('#save-info-btn');
+  const cancelBtn = container.querySelector('#cancel-info-btn');
+
+  editBtn?.addEventListener('click', () => {
+    view.style.display = 'none';
+    editPane.style.display = 'block';
+  });
+  cancelBtn?.addEventListener('click', () => {
+    view.style.display = 'block';
+    editPane.style.display = 'none';
+  });
+  saveBtn?.addEventListener('click', async () => {
+    const distVal  = parseFloat(container.querySelector('#edit-distance').value);
+    const dplusVal = parseInt(container.querySelector('#edit-dplus').value, 10);
+    const descVal  = container.querySelector('#edit-desc').value.trim();
+    const meta     = getEventMeta(slug);
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Enregistrement…';
+    try {
+      await updateEventMeta(slug, {
+        distanceKm:       isNaN(distVal)  ? meta?.distanceKm      : distVal,
+        elevationGainM:   isNaN(dplusVal) ? meta?.elevationGainM  : dplusVal,
+        courseDescription: descVal || null,
+      });
+      showToast('Infos mises à jour', 'success');
+      await mount(container, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Enregistrer';
+    }
+  });
+}
+
+// ── GPX section ───────────────────────────────────────────────────
+
+function renderGpxSection(gpxData, hasGpx) {
+  if (hasGpx && gpxData) {
+    return `
+      <div class="elevation-chart-container" style="margin-top:var(--space-4)">
+        ${renderElevationChart(gpxData.profile)}
+      </div>
+      <div class="course-stats">
+        ${stat('Distance', `${gpxData.distanceKm} km`)}
+        ${stat('D+', `${gpxData.elevationGainM} m`)}
+        ${stat('D-', `${gpxData.elevationLossM} m`)}
+        ${stat('Alt. max', `${gpxData.maxElevationM} m`)}
+      </div>
+      <div style="padding:0 var(--space-4)">
+        <button class="btn btn--ghost btn--full" id="replace-gpx-btn">Remplacer le GPX</button>
+        <input type="file" id="gpx-input" accept=".gpx" style="display:none">
+      </div>
+    `;
+  }
+  if (hasGpx) {
+    return `
+      <div style="padding:var(--space-4) var(--space-4) 0">
+        <div class="card-group">
           <div class="list-row" style="cursor:default">
             <div class="list-row__content">
-              <div class="list-row__title">Description</div>
-              <div class="list-row__subtitle">${meta.courseDescription}</div>
+              <div class="list-row__title">GPX importé</div>
+              <div class="list-row__subtitle">Erreur de lecture du fichier</div>
             </div>
           </div>
-          ${meta.elevationGainM ? `<div class="list-row" style="cursor:default">
-            <div class="list-row__content">
-              <div class="list-row__title">Dénivelé positif</div>
-              <div class="list-row__subtitle">${meta.elevationGainM} m D+</div>
-            </div>
-          </div>` : ''}
         </div>
-      ` : ''}
-      <div class="course-import-area" id="drop-zone">
-        <div style="font-size:40px;margin-bottom:var(--space-3)">🗺️</div>
-        <div style="font-size:17px;font-weight:600;margin-bottom:var(--space-2)">Importer le parcours</div>
-        <div style="font-size:14px;color:var(--text-secondary)">GPX, PDF ou JSON<br>Depuis Strava, Garmin, Komoot…</div>
-        <button class="btn btn--secondary" style="margin-top:var(--space-4)" id="upload-btn">Choisir un fichier</button>
+        <button class="btn btn--ghost btn--full" id="replace-gpx-btn" style="margin-top:var(--space-2)">Remplacer le GPX</button>
+        <input type="file" id="gpx-input" accept=".gpx" style="display:none">
       </div>
-      <input type="file" id="course-input" accept=".gpx,.pdf,.json,application/pdf,application/json" style="display:none">
+    `;
+  }
+  return `
+    <div style="padding:var(--space-4) var(--space-4) 0">
+      <p class="section-header" style="margin:0 0 var(--space-2)">Profil altimétrique</p>
+      <div class="course-import-area">
+        <div style="font-size:32px;margin-bottom:var(--space-2)">🗺️</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:4px">Importer un GPX</div>
+        <div style="font-size:13px;color:var(--text-secondary)">Strava, Garmin, Komoot…</div>
+        <button class="btn btn--secondary" style="margin-top:var(--space-3)" id="replace-gpx-btn">Choisir un fichier GPX</button>
+        <input type="file" id="gpx-input" accept=".gpx" style="display:none">
+      </div>
     </div>
   `;
-
-  attachUploadListener(container, slug);
 }
 
-function attachUploadListener(container, slug) {
-  const input   = container.querySelector('#course-input');
-  const trigger = container.querySelector('#upload-btn, #replace-btn');
-
-  trigger?.addEventListener('click', () => input?.click());
-
+function wireGpxUpload(container, slug) {
+  const btn   = container.querySelector('#replace-gpx-btn');
+  const input = container.querySelector('#gpx-input');
+  btn?.addEventListener('click', () => input?.click());
   input?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    showToast('Upload en cours…');
+    showToast('Upload GPX…');
     try {
-      const { content, alreadyBase64 } = await readFile(file);
-      await importCourseFile(slug, file.name, content, { alreadyBase64 });
-      showToast('Parcours importé !', 'success');
+      await importCourseFile(slug, file.name, await file.text(), 'gpx', { alreadyBase64: false });
+      showToast('GPX importé !', 'success');
       await mount(container, slug);
     } catch (err) {
       showToast('Erreur : ' + err.message, 'error');
@@ -126,17 +196,82 @@ function attachUploadListener(container, slug) {
   });
 }
 
-async function readFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (ext === 'pdf') {
-    // Read as ArrayBuffer → base64 (safe for binary)
-    const buffer = await file.arrayBuffer();
-    const bytes  = new Uint8Array(buffer);
-    let binary   = '';
-    bytes.forEach(b => { binary += String.fromCharCode(b); });
-    return { content: btoa(binary), alreadyBase64: true };
+// ── PDF section ───────────────────────────────────────────────────
+
+function renderPdfSection(hasPdf, pdfFilename) {
+  if (hasPdf) {
+    return `
+      <p class="section-header" style="margin-top:var(--space-4)">Document PDF</p>
+      <div id="pdf-viewer-slot" style="margin:0 var(--space-4)"></div>
+      <div style="padding:var(--space-2) var(--space-4) 0">
+        <button class="btn btn--ghost btn--full" id="replace-pdf-btn">Remplacer le PDF</button>
+        <input type="file" id="pdf-input" accept=".pdf,application/pdf" style="display:none">
+      </div>
+    `;
   }
-  return { content: await file.text(), alreadyBase64: false };
+  return `
+    <div style="padding:var(--space-4) var(--space-4) 0">
+      <p class="section-header" style="margin:0 0 var(--space-2)">Document parcours (PDF)</p>
+      <div class="course-import-area">
+        <div style="font-size:32px;margin-bottom:var(--space-2)">📄</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:4px">Importer un PDF</div>
+        <div style="font-size:13px;color:var(--text-secondary)">Roadbook, carte du parcours…</div>
+        <button class="btn btn--secondary" style="margin-top:var(--space-3)" id="replace-pdf-btn">Choisir un fichier PDF</button>
+        <input type="file" id="pdf-input" accept=".pdf,application/pdf" style="display:none">
+      </div>
+    </div>
+  `;
+}
+
+function mountPdfViewer(slot, b64content, filename) {
+  if (!slot) return;
+  try {
+    const binary = atob(b64content.replace(/\n/g, ''));
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url  = URL.createObjectURL(blob);
+
+    slot.innerHTML = `
+      <div class="card-group">
+        <a class="list-row" href="${url}" target="_blank" style="text-decoration:none">
+          <div class="list-row__content">
+            <div class="list-row__title">Ouvrir le PDF</div>
+            <div class="list-row__subtitle">${filename}</div>
+          </div>
+          <svg style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+        </a>
+      </div>
+      <div style="margin-top:var(--space-3);border-radius:12px;overflow:hidden">
+        <iframe src="${url}" style="width:100%;height:500px;border:none;display:block"></iframe>
+      </div>
+    `;
+  } catch {
+    slot.innerHTML = `<div style="padding:var(--space-4);color:var(--text-secondary);text-align:center">Impossible d'afficher le PDF dans ce navigateur.</div>`;
+  }
+}
+
+function wirePdfUpload(container, slug) {
+  const btn   = container.querySelector('#replace-pdf-btn');
+  const input = container.querySelector('#pdf-input');
+  btn?.addEventListener('click', () => input?.click());
+  input?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    showToast('Upload PDF…');
+    try {
+      const buffer = await file.arrayBuffer();
+      const bytes  = new Uint8Array(buffer);
+      let binary   = '';
+      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      await importCourseFile(slug, file.name, btoa(binary), 'pdf', { alreadyBase64: true });
+      showToast('PDF importé !', 'success');
+      await mount(container, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+    }
+    e.target.value = '';
+  });
 }
 
 function stat(label, value) {

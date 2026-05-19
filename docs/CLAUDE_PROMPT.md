@@ -110,6 +110,14 @@ Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
 
 {Répéter pour toutes les semaines du plan}
 
+## SYNTHESE
+
+{Mise en perspective honnête : point de départ de l'athlète (chrono actuel, volume, expérience), analyse du gap à combler pour atteindre l'objectif, conditions de réussite, cible réaliste révisée si nécessaire, recommandations préalables (kiné, podologue, matériel)}
+
+## PRINCIPES
+
+{Structure type d'une semaine, répartition des séances, rôle du cross-training, règle de la semaine de décharge, spécificités liées au profil du parcours et au terrain local d'entraînement}
+
 ## PPG
 
 {Contenu markdown détaillé du programme de renforcement musculaire, adapté au profil de l'athlète et aux pathologies}
