@@ -1,6 +1,6 @@
 import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta } from '../store.js';
 import { showToast } from '../app.js';
-import { parseGpx, renderElevationChart } from '../utils/gpx-parser.js';
+import { parseGpx, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
 
 export async function mount(container, slug) {
   container.innerHTML = `<div class="loading-state"><div class="spinner"></div><span>Chargement…</span></div>`;
@@ -24,10 +24,12 @@ function renderAll(container, slug, meta, gpxFile, pdfFile) {
     try { gpxData = parseGpx(gpxFile.content); } catch { /* ignore */ }
   }
 
+  const hasGpx = !!course.gpx;
+
   container.innerHTML = `
-    ${renderCourseInfo(meta)}
+    ${renderCourseInfo(meta, hasGpx)}
     ${renderResult(meta)}
-    ${renderGpxSection(gpxData, !!course.gpx)}
+    ${renderGpxSection(gpxData, hasGpx)}
     ${renderPdfSection(!!course.pdf, course.pdf?.filename)}
     <div style="height:var(--space-8)"></div>
   `;
@@ -40,17 +42,39 @@ function renderAll(container, slug, meta, gpxFile, pdfFile) {
   if (pdfFile && course.pdf?.filename) {
     mountPdfViewer(container.querySelector('#pdf-viewer-slot'), pdfFile.content, course.pdf.filename);
   }
+
+  if (gpxData) {
+    const chartEl = container.querySelector('.elevation-chart-container');
+    if (chartEl) attachElevationCursor(chartEl, gpxData);
+  }
 }
 
 // ── Course info (editable) ────────────────────────────────────────
 
-function renderCourseInfo(meta) {
+function renderCourseInfo(meta, hasGpx) {
+  const distVal = hasGpx
+    ? `${meta?.distanceKm ?? '—'} km <span style="font-size:11px;color:var(--text-tertiary)">(GPX)</span>`
+    : (meta?.distanceKm ? `${meta.distanceKm} km` : '—');
+  const dplusVal = hasGpx
+    ? `${meta?.elevationGainM ?? '—'} m D+ <span style="font-size:11px;color:var(--text-tertiary)">(GPX)</span>`
+    : (meta?.elevationGainM != null ? `${meta.elevationGainM} m D+` : '—');
+
   return `
     <div style="padding:var(--space-4) var(--space-4) 0">
       <div class="card-group" id="course-info-card">
         <div id="course-info-view">
-          ${infoRow('Distance', meta?.distanceKm ? `${meta.distanceKm} km` : '—')}
-          ${infoRow('Dénivelé +', meta?.elevationGainM != null ? `${meta.elevationGainM} m D+` : '—')}
+          <div class="list-row" style="cursor:default">
+            <div class="list-row__content">
+              <div class="list-row__subtitle">Distance</div>
+              <div class="list-row__title">${distVal}</div>
+            </div>
+          </div>
+          <div class="list-row" style="cursor:default">
+            <div class="list-row__content">
+              <div class="list-row__subtitle">Dénivelé +</div>
+              <div class="list-row__title">${dplusVal}</div>
+            </div>
+          </div>
           ${meta?.courseDescription ? infoRow('Parcours', meta.courseDescription) : ''}
           <div class="list-row" id="edit-info-btn" style="cursor:pointer">
             <div class="list-row__content">
@@ -60,6 +84,7 @@ function renderCourseInfo(meta) {
           </div>
         </div>
         <div id="course-info-edit" style="display:none;padding:var(--space-3) var(--space-4)">
+          ${!hasGpx ? `
           <div class="form-group" style="margin-bottom:var(--space-3)">
             <label class="form-label">Distance (km)</label>
             <input class="input-field" id="edit-distance" type="number" step="0.01" value="${meta?.distanceKm || ''}">
@@ -68,6 +93,11 @@ function renderCourseInfo(meta) {
             <label class="form-label">Dénivelé + (m)</label>
             <input class="input-field" id="edit-dplus" type="number" step="1" value="${meta?.elevationGainM ?? ''}">
           </div>
+          ` : `
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-3);padding:var(--space-2) 0">
+            Distance et D+ calculés depuis le GPX — supprime le GPX pour les modifier manuellement.
+          </div>
+          `}
           <div class="form-group" style="margin-bottom:var(--space-3)">
             <label class="form-label">Description du parcours</label>
             <input class="input-field" id="edit-desc" type="text" value="${meta?.courseDescription || ''}">

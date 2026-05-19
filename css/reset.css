@@ -49,3 +49,30 @@ table {
   border-collapse: collapse;
   width: 100%;
 }
+
+/* ── Desktop layout ────────────────────────────────────────────── */
+@media (min-width: 600px) {
+  body {
+    background: var(--bg-grouped);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100dvh;
+    background: var(--bg-primary);
+    box-shadow: 0 0 0 1px var(--separator), 0 8px 40px rgba(0,0,0,0.10);
+    position: relative;
+  }
+
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+  }
+}

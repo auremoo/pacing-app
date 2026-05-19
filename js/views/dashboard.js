@@ -22,6 +22,7 @@ export function mount(container) {
       ${renderTodayCard(todaySession)}
       <p class="section-header">Événements</p>
       ${events.map(e => renderEventCard(e)).join('')}
+      <div style="height:var(--space-8)"></div>
     </div>
   `;
 

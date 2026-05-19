@@ -166,7 +166,9 @@ export async function setActiveVersion(slug, v) {
 // ── Import course file ────────────────────────────────────────────
 
 export async function importCourseFile(slug, filename, content, type, { alreadyBase64 = false } = {}) {
-  await putFile(`events/${slug}/course/${filename}`, content, null, { alreadyBase64 });
+  const path = `events/${slug}/course/${filename}`;
+  const existing = await getFile(path).catch(() => null);
+  await putFile(path, content, existing?.sha || null, { alreadyBase64 });
   const meta = getEventMeta(slug);
   const metaFile = await getFile(`events/${slug}/meta.json`);
   const currentCourse = (meta.course && !meta.course.filename) ? meta.course : { gpx: null, pdf: null };

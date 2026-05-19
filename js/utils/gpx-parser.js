@@ -47,6 +47,79 @@ function haversine(a, b) {
 
 function rad(deg) { return deg * Math.PI / 180; }
 
+export function attachElevationCursor(container, data, width = 800, height = 200) {
+  if (!data?.profile?.length) return;
+  const svg = container.querySelector('svg');
+  if (!svg) return;
+
+  const pad = { top: 16, right: 16, bottom: 32, left: 40 };
+  const W = width - pad.left - pad.right;
+  const H = height - pad.top - pad.bottom;
+  const { profile } = data;
+  const maxDist = profile[profile.length - 1].dist;
+  const minEle  = Math.min(...profile.map(p => p.ele));
+  const maxEle  = Math.max(...profile.map(p => p.ele));
+  const eleRange = maxEle - minEle || 1;
+  const ns = 'http://www.w3.org/2000/svg';
+
+  const vLine = document.createElementNS(ns, 'line');
+  vLine.setAttribute('y1', pad.top); vLine.setAttribute('y2', pad.top + H);
+  vLine.setAttribute('stroke', 'var(--text-primary)'); vLine.setAttribute('stroke-width', '1');
+  vLine.setAttribute('stroke-dasharray', '4,3'); vLine.style.opacity = '0';
+  svg.appendChild(vLine);
+
+  const dot = document.createElementNS(ns, 'circle');
+  dot.setAttribute('r', '4'); dot.setAttribute('fill', 'var(--ios-blue)');
+  dot.setAttribute('stroke', 'white'); dot.setAttribute('stroke-width', '2');
+  dot.style.opacity = '0';
+  svg.appendChild(dot);
+
+  const overlay = document.createElementNS(ns, 'rect');
+  overlay.setAttribute('x', pad.left); overlay.setAttribute('y', pad.top);
+  overlay.setAttribute('width', W); overlay.setAttribute('height', H);
+  overlay.setAttribute('fill', 'transparent'); overlay.style.cursor = 'crosshair';
+  svg.appendChild(overlay);
+
+  const tip = document.createElement('div');
+  tip.style.cssText = 'position:absolute;background:var(--bg-primary);border:1px solid var(--separator);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:600;pointer-events:none;opacity:0;transition:opacity 0.1s;white-space:nowrap;color:var(--text-primary);z-index:10;top:4px;';
+  container.style.position = 'relative';
+  container.appendChild(tip);
+
+  function move(clientX) {
+    const rect = svg.getBoundingClientRect();
+    const svgX = (clientX - rect.left) / rect.width * width;
+    if (svgX < pad.left || svgX > pad.left + W) { hide(); return; }
+
+    const targetDist = ((svgX - pad.left) / W) * maxDist;
+    let closest = profile[0];
+    let minD = Infinity;
+    for (const p of profile) {
+      const d = Math.abs(p.dist - targetDist);
+      if (d < minD) { minD = d; closest = p; }
+    }
+
+    const px = pad.left + (closest.dist / maxDist) * W;
+    const py = pad.top + H - ((closest.ele - minEle) / eleRange) * H;
+    vLine.setAttribute('x1', px); vLine.setAttribute('x2', px); vLine.style.opacity = '0.5';
+    dot.setAttribute('cx', px); dot.setAttribute('cy', py); dot.style.opacity = '1';
+
+    tip.textContent = `${(closest.dist / 1000).toFixed(1)} km · ${Math.round(closest.ele)} m`;
+    const tipW = tip.offsetWidth || 90;
+    const pxScreen = (px / width) * rect.width;
+    tip.style.left = `${Math.max(4, Math.min(pxScreen - tipW / 2, rect.width - tipW - 4))}px`;
+    tip.style.opacity = '1';
+  }
+
+  function hide() {
+    vLine.style.opacity = '0'; dot.style.opacity = '0'; tip.style.opacity = '0';
+  }
+
+  overlay.addEventListener('pointermove', e => move(e.clientX));
+  overlay.addEventListener('pointerleave', hide);
+  overlay.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX); }, { passive: false });
+  overlay.addEventListener('touchend', hide);
+}
+
 export function renderElevationChart(profile, width = 800, height = 200) {
   if (!profile || profile.length < 2) return '';
 
