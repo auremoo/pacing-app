@@ -6,26 +6,7 @@ export function configure({ token, owner, repo, branch = 'main' }) {
   _config = { token, owner, repo, branch };
 }
 
-export function isConfigured() {
-  const c = loadConfig();
-  return !!(c?.token && c?.owner && c?.repo);
-}
-
-export function loadConfig() {
-  try {
-    const raw = localStorage.getItem('pacing_github');
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-export function saveConfig(cfg) {
-  localStorage.setItem('pacing_github', JSON.stringify(cfg));
-  _config = cfg;
-}
-
 function getConfig() {
-  if (_config) return _config;
-  _config = loadConfig();
   return _config;
 }
 
