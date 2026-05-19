@@ -1,4 +1,4 @@
-const CACHE   = 'pacing-v1';
+const CACHE   = 'pacing-v2';
 const STATIC  = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const STATIC  = [
   './js/store.js',
   './js/github-api.js',
   './js/parser.js',
+  './js/toast.js',
   './js/views/lock.js',
   './js/views/dashboard.js',
   './js/views/event.js',
@@ -21,6 +22,8 @@ const STATIC  = [
   './js/utils/dates.js',
   './js/utils/markdown.js',
   './js/utils/gpx-parser.js',
+  './js/utils/crypto.js',
+  './config.json',
   './manifest.webmanifest',
 ];
 
