@@ -22,7 +22,10 @@
     }
   ],
   "course": {
-    "gpx": null,
+    "gpx": {
+      "filename": "Semi Run in Lyon.gpx",
+      "importedAt": "2026-05-19T10:13:36.706Z"
+    },
     "pdf": {
       "filename": "ril25-parcours-semi.pdf",
       "importedAt": "2026-05-19T10:08:38.310Z"
