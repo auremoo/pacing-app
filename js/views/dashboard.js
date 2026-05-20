@@ -19,13 +19,15 @@ export function mount(container) {
       </button>
     </div>
     <div class="scroll-view">
-      ${renderTodayCard(todaySession)}
-      <p class="section-header">Événements</p>
-      ${events.map(e => renderEventCard(e)).join('')}
-      <div style="padding:0 var(--space-4) var(--space-2)">
-        <button class="btn btn--secondary btn--full" id="new-event-btn">+ Créer un événement</button>
+      <div class="dashboard-body">
+        ${renderTodayCard(todaySession)}
+        <p class="section-header">Événements</p>
+        ${events.map(e => renderEventCard(e)).join('')}
+        <div class="dashboard-add-row">
+          <button class="btn btn--ghost" id="new-event-btn">+ Créer un événement</button>
+        </div>
+        <div style="height:var(--space-8)"></div>
       </div>
-      <div style="height:var(--space-8)"></div>
     </div>
   `;
 

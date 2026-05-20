@@ -1409,17 +1409,28 @@ select.form-input {
   font-family: "SF Mono", Menlo, monospace;
 }
 
+/* ─── Dashboard ───────────────────────────────────────────────── */
+
+.dashboard-add-row {
+  padding: 0 var(--space-4) var(--space-2);
+}
+
 /* ─── Responsive ──────────────────────────────────────────────── */
 
 @media (min-width: 640px) {
+  /* Dashboard: colonne centrée unique — tout s'aligne ensemble */
+  .dashboard-body {
+    max-width: 620px;
+    margin: 0 auto;
+  }
+
+  /* Centrage individuel pour les vues hors-dashboard */
   .card-group,
   .week-card,
-  .event-card,
   .event-header,
   .elevation-chart-container,
   .course-import-area,
-  .version-card,
-  .today-card {
+  .version-card {
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
@@ -1477,8 +1488,12 @@ select.form-input {
     justify-content: center;
   }
 
-  /* Dashboard: larger today card */
-  .today-card { margin: var(--space-6) var(--space-6) var(--space-4); }
+  /* Bouton "Créer un événement" discret sur desktop */
+  .dashboard-add-row {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-2) 0;
+  }
 
   /* Settings form max-width */
   .settings-form { max-width: 480px; }
