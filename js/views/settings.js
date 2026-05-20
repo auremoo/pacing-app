@@ -18,6 +18,7 @@ function render(container) {
       <button class="nav-btn" id="save-btn">Enregistrer</button>
     </div>
     <div class="scroll-view">
+    <div class="form-page-body">
 
       <p class="section-header">Niveau & Expérience</p>
       <div class="card-group" style="margin:0 var(--space-4) var(--space-4)">
@@ -89,6 +90,8 @@ function render(container) {
       </div>
 
       <div style="height:var(--space-8)"></div>
+
+    </div>
     </div>
   `;
 

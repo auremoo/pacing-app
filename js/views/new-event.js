@@ -14,6 +14,7 @@ export function mount(container) {
       <button class="nav-btn" id="create-btn">Créer</button>
     </div>
     <div class="scroll-view">
+    <div class="form-page-body">
 
       <p class="section-header">Course</p>
       <div class="card-group" style="margin:0 var(--space-4) var(--space-4)">
@@ -99,6 +100,8 @@ export function mount(container) {
         <button class="btn btn--primary btn--full" id="create-btn-bottom">Créer l'événement</button>
       </div>
       <div style="height:var(--space-8)"></div>
+
+    </div>
     </div>
   `;
 

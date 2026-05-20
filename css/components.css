@@ -1415,11 +1415,16 @@ select.form-input {
   padding: 0 var(--space-4) var(--space-2);
 }
 
+/* ─── Form pages (settings, new-event) ───────────────────────── */
+
+/* wrapper transparent sur mobile, colonne centrée sur ≥640px */
+
 /* ─── Responsive ──────────────────────────────────────────────── */
 
 @media (min-width: 640px) {
-  /* Dashboard: colonne centrée unique — tout s'aligne ensemble */
-  .dashboard-body {
+  /* Dashboard & form pages: colonne centrée unique */
+  .dashboard-body,
+  .form-page-body {
     max-width: 620px;
     margin: 0 auto;
   }
