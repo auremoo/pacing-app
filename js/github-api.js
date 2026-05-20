@@ -33,8 +33,23 @@ export async function getFile(path, { rawBase64 = false } = {}) {
     throw new Error(`GitHub GET ${path}: ${res.status}`);
   }
   const data = await res.json();
+
+  // Files > 1MB: GitHub returns empty content + download_url for raw access
+  if (rawBase64) {
+    let b64 = (data.content || '').replace(/\n/g, '');
+    if (!b64 && data.download_url) {
+      const raw = await fetch(data.download_url);
+      const buf = await raw.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      b64 = btoa(binary);
+    }
+    return { content: b64, sha: data.sha };
+  }
+
   return {
-    content: rawBase64 ? data.content.replace(/\n/g, '') : decodeBase64(data.content),
+    content: decodeBase64(data.content),
     sha: data.sha
   };
 }
