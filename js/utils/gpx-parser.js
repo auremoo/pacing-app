@@ -23,7 +23,7 @@ export function parseGpx(gpxText) {
   // Threshold hysteresis: only commit a change once it exceeds threshold from
   // last ref point. window=3 pre-smoothing removes spikes, threshold=2 removes
   // remaining micro-oscillations without cutting real climbs.
-  const { gain: elevGain, loss: elevLoss } = calcElevationThreshold(smoothed, 1);
+  const { gain: elevGain, loss: elevLoss } = calcElevationThreshold(smoothed, 1.5);
 
   const minEle = Math.min(...profile.map(p => p.ele));
   const maxEle = Math.max(...profile.map(p => p.ele));
