@@ -30,6 +30,10 @@ export function mountSidebar(container, activeSlug = null) {
     </nav>
 
     <div class="sb-footer">
+      <button class="sb-nav-item" id="sb-new-event">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Nouvel événement
+      </button>
       <button class="sb-nav-item" id="sb-dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Tableau de bord
@@ -39,6 +43,7 @@ export function mountSidebar(container, activeSlug = null) {
 
   container.querySelector('#sb-settings')?.addEventListener('click', () => navigate('/settings'));
   container.querySelector('#sb-dashboard')?.addEventListener('click', () => navigate('/'));
+  container.querySelector('#sb-new-event')?.addEventListener('click', () => navigate('/new-event'));
   container.querySelector('#sb-today')?.addEventListener('click', () => {
     navigate(`/event/${todaySession.slug}/session/${todaySession.session.id}`);
   });

@@ -22,11 +22,15 @@ export function mount(container) {
       ${renderTodayCard(todaySession)}
       <p class="section-header">Événements</p>
       ${events.map(e => renderEventCard(e)).join('')}
+      <div style="padding:0 var(--space-4) var(--space-2)">
+        <button class="btn btn--secondary btn--full" id="new-event-btn">+ Créer un événement</button>
+      </div>
       <div style="height:var(--space-8)"></div>
     </div>
   `;
 
   container.querySelector('#settings-btn').addEventListener('click', () => navigate('/settings'));
+  container.querySelector('#new-event-btn').addEventListener('click', () => navigate('/new-event'));
 
   container.querySelectorAll('[data-event-slug]').forEach(el => {
     el.addEventListener('click', () => navigate(`/event/${el.dataset.eventSlug}`));

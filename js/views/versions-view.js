@@ -1,4 +1,4 @@
-import { getEventMeta, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw } from '../store.js';
+import { getEventMeta, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw, getAthleteProfile } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
@@ -34,7 +34,12 @@ function render(container, slug) {
       <div class="empty-state">
         <div class="empty-state__icon">📄</div>
         <div class="empty-state__title">Aucune version importée</div>
-        <div class="empty-state__body">Génère un plan avec Claude (voir docs/CLAUDE_PROMPT.md) puis importe le fichier .md.</div>
+        <div class="empty-state__body">Génère un plan avec Claude en copiant le prompt ci-dessous, puis importe le fichier .md.</div>
+      </div>
+      <div style="padding:0 var(--space-4) var(--space-3)">
+        <button class="btn btn--ghost btn--full" id="gen-initial-btn">
+          ✦ Générer le prompt de plan initial
+        </button>
       </div>
     ` : `
       <p class="section-header">Versions du plan</p>
@@ -57,6 +62,10 @@ function render(container, slug) {
 
   container.querySelector('#export-prompt-btn')?.addEventListener('click', () => {
     showExportModal(container, slug);
+  });
+
+  container.querySelector('#gen-initial-btn')?.addEventListener('click', () => {
+    showInitialPromptModal(container, slug);
   });
 
   container.querySelectorAll('[data-set-active]').forEach(btn => {
@@ -102,6 +111,133 @@ async function handleImport(container, slug, file) {
   }
 }
 
+// ── Prompt de plan initial ────────────────────────────────────────
+
+function showInitialPromptModal(container, slug) {
+  const meta    = getEventMeta(slug);
+  const athlete = getAthleteProfile();
+
+  const prompt = buildInitialPrompt(meta, athlete);
+  openPromptModal('Prompt de plan initial', prompt);
+}
+
+function buildInitialPrompt(meta, athlete) {
+  const todayStr = today();
+  const a = athlete || {};
+
+  return `Tu es un coach expert en running, trail et préparation physique. Génère un plan d'entraînement complet et personnalisé pour la préparation d'un événement sportif.
+
+### Profil athlète
+
+- Niveau et expérience : ${a.level || '[à compléter]'}
+- Meilleures performances récentes : ${a.perfs || '[à compléter]'}
+- Volume d'entraînement actuel : ${a.volume || '[à compléter]'}
+- Jours disponibles par semaine : ${a.days || '[à compléter]'}
+- Accès équipements : ${a.equipment || '[à compléter]'}
+- Terrain local : ${a.terrain || '[à compléter]'}
+- Pathologies / points de vigilance : ${a.pathologies || 'Aucun'}
+- Objectifs secondaires : ${a.goals || 'Aucun'}
+
+### Événement cible
+
+- Nom complet : ${meta.name}
+- Date de la course : ${meta.raceDate}
+- Lieu : ${meta.location || '[à compléter]'}
+- Type de discipline : ${meta.distanceLabel || '[à compléter]'}
+- Distance exacte : ${meta.distanceKm} km
+- Dénivelé positif total : ${meta.elevationGainM || 0} m D+
+- Description du parcours : ${meta.courseDescription || '[à compléter]'}
+- Objectif temps : ${meta.objective || '[à compléter]'}
+- Objectif réaliste : ${meta.objectiveRealistic || '[à compléter]'}
+- Date de début du plan : ${meta.planStart || '[à compléter — toujours un lundi]'}
+- Durée souhaitée du plan : ${meta.planWeeks ? meta.planWeeks + ' semaines' : '[à compléter]'}
+
+### Contexte supplémentaire
+
+[Ajoute ici les événements intermédiaires, contraintes calendaires, préférences d'entraînement, matériel GPS, etc.]
+
+---
+
+**FORMAT DE SORTIE OBLIGATOIRE**
+
+Génère le plan en suivant **EXACTEMENT** ce format template, sans aucune déviation, pour qu'il soit importable dans mon application de suivi. Ne commence pas par une introduction, commence directement par \`# PLAN_v1 — ${meta.name}\`.
+
+\`\`\`
+# PLAN_v1 — ${meta.name}
+
+## META
+event: ${meta.name}
+slug: ${meta.slug}
+date: ${meta.raceDate}
+location: ${meta.location || ''}
+distance_km: ${meta.distanceKm}
+distance_label: ${meta.distanceLabel || ''}
+elevation_gain_m: ${meta.elevationGainM || 0}
+course_description: [description courte du parcours]
+objective_time: ${meta.objective || ''}
+objective_realistic: [fourchette réaliste ex: 1h51-1h53]
+plan_start: ${meta.planStart || '[YYYY-MM-DD — toujours un lundi]'}
+plan_weeks: ${meta.planWeeks || '[nombre]'}
+version: 1
+generated: ${todayStr}
+
+## PHASES
+| ID | Nom | Semaines | Couleur |
+|---|---|---|---|
+| phase-1 | {Nom phase 1} | 1-{fin} | gray |
+| phase-2 | {Nom phase 2} | {début}-{fin} | blue |
+
+Couleurs disponibles : gray, blue, indigo, orange, red, green, teal, purple
+
+## ALLURES
+
+### Actuelles
+| Zone | Allure | Usage |
+|---|---|---|
+
+### Cibles
+| Zone | Allure | Usage |
+|---|---|---|
+
+## SEMAINES
+
+### S{NN} | {date début}-{date fin} {mois} {année} | {phase-id} | {volume}km | {note courte}
+| Jour | Date | Type | Titre | Description |
+|---|---|---|---|---|
+| {Lundi/Mardi/…} | {YYYY-MM-DD} | {type} | {Titre court} | {Description détaillée} |
+
+Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
+
+{Répéter pour toutes les semaines}
+
+## SYNTHESE
+[mise en perspective honnête : point de départ, gap à combler, conditions de réussite]
+
+## PRINCIPES
+[structure semaine type, rôle cross-training, semaines de décharge]
+
+## PPG
+[programme de renforcement adapté au profil]
+
+## VIGILANCE
+[points de vigilance spécifiques à l'athlète]
+
+## STRATEGIE_COURSE
+[pacing par section, scénarios, ravitaillement, mental]
+
+## NUTRITION
+[nutrition à l'entraînement, semaine de course, jour J, pendant la course]
+\`\`\`
+
+**Règles importantes :**
+- Calcule les dates exactes à partir de \`plan_start\` (toujours un lundi)
+- Semaines de décharge (-20-25% volume) toutes les 3-4 semaines — indique \`DÉCHARGE\` dans la note
+- Chaque séance a une description détaillée avec allures précises, répétitions, durées
+- N'inclus que les jours avec séances (pas les jours vides)
+- Pour PPG : type = \`strength\`, pour cross-training : type = \`cross\`
+`;
+}
+
 // ── Export prompt de révision ────────────────────────────────────
 
 function showExportModal(container, slug) {
@@ -109,25 +245,29 @@ function showExportModal(container, slug) {
   const plan    = getActivePlan(slug);
   const planRaw = getActivePlanRaw(slug);
   const states  = getAllSessionStates(slug);
+  const athlete = getAthleteProfile();
 
   if (!plan || !planRaw) {
     showToast('Plan non chargé', 'error');
     return;
   }
 
-  const prompt = buildRevisionPrompt(meta, plan, planRaw, states);
+  const prompt = buildRevisionPrompt(meta, plan, planRaw, states, athlete);
+  openPromptModal('Prompt de révision', prompt);
+}
 
+function openPromptModal(title, prompt) {
   const modal = document.createElement('div');
   modal.className = 'export-modal';
   modal.innerHTML = `
     <div class="export-modal__overlay"></div>
     <div class="export-modal__panel">
       <div class="export-modal__header">
-        <span class="export-modal__title">Prompt de révision</span>
+        <span class="export-modal__title">${title}</span>
         <button class="export-modal__close" id="modal-close">✕</button>
       </div>
       <div class="export-modal__hint">
-        Copie ce texte et envoie-le à Claude pour obtenir une version révisée du plan.
+        Copie ce texte et envoie-le à Claude pour obtenir le plan au format .md à importer.
       </div>
       <textarea class="export-modal__textarea" id="prompt-text" readonly>${escHtml(prompt)}</textarea>
       <div class="export-modal__footer">
@@ -156,9 +296,10 @@ function showExportModal(container, slug) {
   });
 }
 
-function buildRevisionPrompt(meta, plan, planRaw, states) {
+function buildRevisionPrompt(meta, plan, planRaw, states, athlete) {
   const todayStr    = today();
   const nextVersion = (meta.activeVersion || 1) + 1;
+  const a           = athlete || {};
 
   // Stats
   const allSessions = plan.weeks.flatMap(w => w.sessions).filter(s => s.type !== 'rest');
@@ -201,6 +342,19 @@ function buildRevisionPrompt(meta, plan, planRaw, states) {
 2. Adapte la charge, la progression et les objectifs en conséquence
 3. Réorganise les ${weeksLeft} semaines restantes de façon cohérente et progressive
 4. Maintient (ou révise si nécessaire) l'objectif final
+
+---
+
+## Profil athlète
+
+- Niveau et expérience : ${a.level || 'Non renseigné'}
+- Meilleures performances récentes : ${a.perfs || 'Non renseigné'}
+- Volume hebdomadaire habituel : ${a.volume || 'Non renseigné'}
+- Jours disponibles : ${a.days || 'Non renseigné'}
+- Équipements : ${a.equipment || 'Non renseigné'}
+- Terrain local : ${a.terrain || 'Non renseigné'}
+- Pathologies : ${a.pathologies || 'Aucune'}
+- Objectifs secondaires : ${a.goals || 'Aucun'}
 
 ---
 

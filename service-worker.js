@@ -1,5 +1,5 @@
 // SW version — bump this to force cache clear on all clients
-const SW_VERSION = '3';
+const SW_VERSION = '4';
 
 self.addEventListener('install', () => self.skipWaiting());
 

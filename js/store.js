@@ -12,6 +12,8 @@ let _state       = { version: 2, events: {} };
 let _stateSha    = null;
 let _syncTimer   = null;
 let _syncing     = false;
+let _athlete     = {};       // athlete profile
+let _athleteSha  = null;
 
 // ── Init ──────────────────────────────────────────────────────────
 
@@ -23,9 +25,15 @@ export async function initStore() {
 
   const stateFile = await getFile('state.json');
   if (stateFile) {
-    _stateSha = stateFile.sha;       // we'll re-fetch sha before each write
+    _stateSha = stateFile.sha;
     _state = JSON.parse(stateFile.content);
     if (!_state.events) _state.events = {};
+  }
+
+  const athleteFile = await getFile('athlete.json');
+  if (athleteFile) {
+    _athleteSha = athleteFile.sha;
+    _athlete = JSON.parse(athleteFile.content);
   }
 
   // Pre-load all event metas
@@ -184,6 +192,53 @@ export async function setActiveVersion(slug, v) {
   const idx = _eventsIndex.find(e => e.slug === slug);
   if (idx) idx.activeVersion = v;
   await ensurePlanLoaded(slug, v);
+}
+
+// ── Athlete profile ───────────────────────────────────────────────
+
+export function getAthleteProfile() { return _athlete; }
+
+export async function saveAthleteProfile(profile) {
+  const newSha = await putFile('athlete.json', JSON.stringify(profile, null, 2), _athleteSha || null);
+  _athleteSha = newSha;
+  _athlete = profile;
+}
+
+// ── Create event ──────────────────────────────────────────────────
+
+export async function createEvent(data) {
+  const { slug } = data;
+  const meta = {
+    slug,
+    name: data.name,
+    distanceKm: parseFloat(data.distanceKm),
+    distanceLabel: data.distanceLabel,
+    raceDate: data.raceDate,
+    elevationGainM: parseInt(data.elevationGainM) || 0,
+    objective: data.objective || '',
+    objectiveRealistic: data.objectiveRealistic || '',
+    courseDescription: data.courseDescription || '',
+    location: data.location || '',
+    planStart: data.planStart || '',
+    planWeeks: parseInt(data.planWeeks) || 0,
+    activeVersion: null,
+    versions: [],
+    course: { gpx: null, pdf: null },
+    photos: []
+  };
+
+  await putFile(`events/${slug}/meta.json`, JSON.stringify(meta, null, 2), null);
+
+  const indexFile = await getFile('events/index.json');
+  const index = JSON.parse(indexFile.content);
+  const entry = { slug, name: data.name, raceDate: data.raceDate, distanceLabel: data.distanceLabel, subtitle: data.location || '' };
+  index.events.push(entry);
+  await putFile('events/index.json', JSON.stringify(index, null, 2), indexFile.sha);
+
+  _eventsIndex.push(entry);
+  _eventMetas[slug] = meta;
+
+  return slug;
 }
 
 // ── Import course file ────────────────────────────────────────────
