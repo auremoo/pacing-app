@@ -1575,13 +1575,12 @@
   position: relative;
   border-radius: var(--radius);
   overflow: hidden;
-  aspect-ratio: 4/3;
   background: var(--fill-secondary);
 }
 
 .photo-card__img {
   width: 100%;
-  height: 100%;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1589,8 +1588,8 @@
 
 .photo-card__img img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
 }
 
 .photo-card__delete {
@@ -1611,7 +1610,7 @@
 }
 
 .photo-add-btn {
-  aspect-ratio: 4/3;
+  min-height: 80px;
   border-radius: var(--radius);
   border: 2px dashed var(--separator);
   display: flex;
