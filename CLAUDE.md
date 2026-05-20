@@ -19,7 +19,7 @@ pacing-app/
 ├── setup.html                      # Page standalone de génération du config.json
 ├── config.json                     # { owner, repo, branch, encryptedToken }
 ├── manifest.webmanifest
-├── service-worker.js               # Passthrough — pas de cache (évite JS périmé)
+├── service-worker.js               # Force no-store JS/CSS/HTML (évite cache périmé sur iOS PWA)
 ├── css/
 │   ├── tokens.css                  # Variables CSS (couleurs, spacing, typo)
 │   ├── reset.css                   # Reset + base + layout desktop (grid sidebar)
@@ -27,16 +27,16 @@ pacing-app/
 ├── js/
 │   ├── app.js                      # Router hash-based + boot + montage sidebar
 │   ├── store.js                    # State management + GitHub sync
-│   ├── github-api.js               # Wrapper API GitHub (GET/PUT, option rawBase64)
+│   ├── github-api.js               # Wrapper API GitHub (GET/PUT, rawBase64, fallback download_url >1MB)
 │   ├── parser.js                   # Parse le template .md → objet structuré
 │   ├── views/
 │   │   ├── lock.js                 # Écran password + déchiffrement PAT
 │   │   ├── dashboard.js            # Liste des événements
 │   │   ├── sidebar.js              # Sidebar desktop (événements, séance du jour)
 │   │   ├── event.js                # Container événement (onglets)
-│   │   ├── plan-view.js            # Plan semaines/séances + checkboxes
-│   │   ├── course-view.js          # Parcours (GPX+PDF, résultat, stats)
-│   │   ├── versions-view.js        # Gestion versions du plan
+│   │   ├── plan-view.js            # Plan semaines/séances + checkboxes + état manquée (skipped)
+│   │   ├── course-view.js          # Parcours (GPX+PDF+photos, résultat, stats)
+│   │   ├── versions-view.js        # Gestion versions du plan + export prompt révision
 │   │   ├── infos-view.js           # Synthèse, Allures, Principes, PPG, Vigilance, Stratégie, Nutrition
 │   │   ├── session-view.js         # Détail d'une séance + note
 │   │   └── settings.js             # Informations de connexion (lecture seule)
@@ -92,7 +92,8 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
 **Types de séance valides :** `rest`, `easy`, `long`, `intervals`, `tempo`, `hills`, `race`, `strength`, `cross`
 
 **IDs de session :** générés par le parser → `s{NN}-{daycode}` (ex: `s01-mon`, `s03-thu`)  
-**State.json** structure : `{ events: { "slug": { "s01-mon": { completed, completedAt, note } } } }`
+**State.json** structure : `{ events: { "slug": { "s01-mon": { completed, completedAt, skipped, skippedAt, note } } } }`  
+`skipped: true` = séance manquée (orange, barré). Exclusif avec `completed`.
 
 ## Ajouter un événement
 
@@ -126,16 +127,26 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
     "gpx": { "filename": "…gpx", "importedAt": "…" },
     "pdf": { "filename": "…pdf", "importedAt": "…" }
   },
+  "photos": ["photo-1234567890.jpg"],
   "result": { "time": "1h52'34\"", "pacePerKm": "5'20\"/km", "activityUrl": null }
 }
 ```
 
-`course.gpx` et `course.pdf` sont `null` si pas encore importés. Quand un GPX est présent, la distance et le D+ sont calculés depuis le GPX (lissage 7 points) et sont en lecture seule dans l'interface.
+`course.gpx` et `course.pdf` sont `null` si pas encore importés. `photos` est un tableau de noms de fichiers (max 2, 5 Mo/photo, stockés dans `events/{slug}/course/`).  
+**GPX** : quand un GPX est présent, distance et D+ sont calculés automatiquement (window=3 + threshold=1.5m). Ces champs sont en **lecture seule avant la date de course**, puis **éditables après** (pour saisir les valeurs officielles).  
+**Fichiers > 1MB** : `getFile` détecte un `content` vide et passe par `download_url` pour récupérer le fichier brut.
 
 ## Layout responsive
 
 - **Mobile** : navigation par onglets en bas, nav-bar en haut, sidebar cachée
 - **Desktop (≥768px)** : CSS Grid `260px sidebar + 1fr contenu`. La sidebar liste les événements + séance du jour. La nav-bar est masquée (la sidebar prend ce rôle).
+
+## Fonctionnalités clés
+
+- **Séances manquées** : `skipSession(slug, id, true)` — état `skipped` dans state.json, exclusif avec `completed`
+- **Export prompt révision** : versions-view → "Générer un prompt de révision" — bilan semaine par semaine + plan brut + template format pour Claude
+- **Photos** : 2 max par événement, 5 Mo max, stockées en base64 dans `events/{slug}/course/`, MIME auto-détecté
+- **GPX parser** : `smoothElevation(points, 3)` + `calcElevationThreshold(smoothed, 1.5)` pour D+/D- précis
 
 ## Conventions de code
 
@@ -143,7 +154,7 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
 - Les vues exportent `mount(container, ...params)` qui écrit dans `container.innerHTML`
 - Délégation d'événements sur le container plutôt qu'éléments individuels quand c'est dynamique
 - GitHub sync : refetch du SHA avant chaque PUT pour éviter les 409 (conflit)
-- Fichiers binaires (PDF) : `getFile(path, { rawBase64: true })` retourne le base64 brut sans décoder en UTF-8
+- Fichiers binaires (PDF, photos) : `getFile(path, { rawBase64: true })` retourne le base64 brut sans décoder en UTF-8. Si > 1MB, fallback automatique via `download_url`
 - Pas de TypeScript, pas de linter — garder simple
 
 ## Déploiement GitHub Pages
