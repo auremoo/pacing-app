@@ -1,6 +1,7 @@
 import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta, addPhoto, removePhoto, getPhoto } from '../store.js';
 import { showToast } from '../app.js';
 import { parseGpx, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
+import { isPast } from '../utils/dates.js';
 
 export async function mount(container, slug) {
   container.innerHTML = `<div class="loading-state"><div class="spinner"></div><span>Chargement…</span></div>`;
@@ -27,10 +28,11 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
     try { gpxData = parseGpx(gpxFile.content); } catch { /* ignore */ }
   }
 
-  const hasGpx = !!course.gpx;
+  const hasGpx    = !!course.gpx;
+  const racePast  = isPast(meta?.raceDate);
 
   container.innerHTML = `
-    ${renderCourseInfo(meta, hasGpx)}
+    ${renderCourseInfo(meta, hasGpx, racePast)}
     ${renderResult(meta)}
     ${renderGpxSection(gpxData, hasGpx)}
     ${renderPdfSection(!!course.pdf, course.pdf?.filename)}
@@ -66,13 +68,15 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
 
 // ── Course info (editable) ────────────────────────────────────────
 
-function renderCourseInfo(meta, hasGpx) {
-  const distVal = hasGpx
-    ? `${meta?.distanceKm ?? '—'} km <span style="font-size:11px;color:var(--text-tertiary)">(GPX)</span>`
-    : (meta?.distanceKm ? `${meta.distanceKm} km` : '—');
-  const dplusVal = hasGpx
-    ? `${meta?.elevationGainM ?? '—'} m D+ <span style="font-size:11px;color:var(--text-tertiary)">(GPX)</span>`
-    : (meta?.elevationGainM != null ? `${meta.elevationGainM} m D+` : '—');
+function renderCourseInfo(meta, hasGpx, racePast) {
+  const gpxLocked = hasGpx && !racePast;
+  const gpxTag    = `<span style="font-size:11px;color:var(--text-tertiary)">(GPX)</span>`;
+  const distVal   = meta?.distanceKm
+    ? `${meta.distanceKm} km ${hasGpx ? gpxTag : ''}`
+    : '—';
+  const dplusVal  = meta?.elevationGainM != null
+    ? `${meta.elevationGainM} m D+ ${hasGpx ? gpxTag : ''}`
+    : '—';
 
   return `
     <div style="padding:var(--space-4) var(--space-4) 0">
@@ -99,18 +103,18 @@ function renderCourseInfo(meta, hasGpx) {
           </div>
         </div>
         <div id="course-info-edit" style="display:none;padding:var(--space-3) var(--space-4)">
-          ${!hasGpx ? `
+          ${gpxLocked ? `
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-3);padding:var(--space-2) 0">
+            Distance et D+ calculés depuis le GPX. Modifiables après la date de la course.
+          </div>
+          ` : `
           <div class="form-group" style="margin-bottom:var(--space-3)">
-            <label class="form-label">Distance (km)</label>
+            <label class="form-label">Distance (km)${hasGpx ? ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">(valeur officielle)</span>' : ''}</label>
             <input class="input-field" id="edit-distance" type="number" step="0.01" value="${meta?.distanceKm || ''}">
           </div>
           <div class="form-group" style="margin-bottom:var(--space-3)">
-            <label class="form-label">Dénivelé + (m)</label>
+            <label class="form-label">Dénivelé + (m)${hasGpx ? ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">(valeur officielle)</span>' : ''}</label>
             <input class="input-field" id="edit-dplus" type="number" step="1" value="${meta?.elevationGainM ?? ''}">
-          </div>
-          ` : `
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:var(--space-3);padding:var(--space-2) 0">
-            Distance et D+ calculés depuis le GPX — supprime le GPX pour les modifier manuellement.
           </div>
           `}
           <div class="form-group" style="margin-bottom:var(--space-3)">
