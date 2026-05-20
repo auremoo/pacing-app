@@ -20,10 +20,10 @@ export function parseGpx(gpxText) {
     profile.push({ dist: totalDist, ele: smoothed[i].ele });
   }
 
-  // Threshold hysteresis for D+/D-: only commit a change once it exceeds
-  // the threshold from the last reference point. Filters GPS oscillation noise
-  // without flattening real climbs — same principle as gpx.studio.
-  const { gain: elevGain, loss: elevLoss } = calcElevationThreshold(smoothed, 5);
+  // Threshold hysteresis: only commit a change once it exceeds threshold from
+  // last ref point. window=3 pre-smoothing removes spikes, threshold=2 removes
+  // remaining micro-oscillations without cutting real climbs.
+  const { gain: elevGain, loss: elevLoss } = calcElevationThreshold(smoothed, 2);
 
   const minEle = Math.min(...profile.map(p => p.ele));
   const maxEle = Math.max(...profile.map(p => p.ele));
