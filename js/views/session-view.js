@@ -49,7 +49,10 @@ export function mount(container, slug, sessionId) {
         <div style="padding:0 var(--space-4)">
           <textarea class="textarea-field" id="note-input" rows="4"
                     placeholder="Sensations, commentaires, temps…">${state.note || ''}</textarea>
-          <div class="session-detail__sync-status" id="sync-status"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--space-2)">
+            <div class="session-detail__sync-status" id="sync-status"></div>
+            <button class="btn btn--secondary btn--sm" id="save-note-btn">Sauvegarder</button>
+          </div>
         </div>
       </div>
     </div>
@@ -78,19 +81,21 @@ export function mount(container, slug, sessionId) {
     }
   });
 
-  let noteTimer = null;
-  noteInput.addEventListener('input', () => {
-    syncStatus.textContent = 'Sync…';
-    if (noteTimer) clearTimeout(noteTimer);
-    noteTimer = setTimeout(async () => {
-      try {
-        await saveSessionNote(slug, sessionId, noteInput.value);
-        syncStatus.textContent = 'Sauvegardé ✓';
-        setTimeout(() => { syncStatus.textContent = ''; }, 2000);
-      } catch {
-        syncStatus.textContent = 'Erreur';
-      }
-    }, 800);
+  const saveNoteBtn = container.querySelector('#save-note-btn');
+
+  saveNoteBtn.addEventListener('click', async () => {
+    saveNoteBtn.disabled = true;
+    syncStatus.textContent = 'Sauvegarde…';
+    try {
+      await saveSessionNote(slug, sessionId, noteInput.value);
+      syncStatus.textContent = 'Sauvegardé ✓';
+      setTimeout(() => { syncStatus.textContent = ''; }, 2000);
+    } catch {
+      syncStatus.textContent = 'Erreur';
+      showToast('Erreur de synchronisation', 'error');
+    } finally {
+      saveNoteBtn.disabled = false;
+    }
   });
 }
 
