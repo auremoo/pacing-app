@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-05-21T13:19:34.912Z",
+  "lastUpdated": "2026-05-21T13:19:39.854Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -18,7 +18,7 @@
         "completed": false,
         "skipped": false,
         "completedAt": null,
-        "note": "Séance faite le "
+        "note": "Séance faite le Jeudi 21 mai 2026"
       }
     },
     "marathon-alpes-bsm": {}
