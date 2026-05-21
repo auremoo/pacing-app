@@ -722,6 +722,17 @@
 .phase-pill--red .phase-pill__dot { background: var(--phase-red); }
 .phase-pill--green .phase-pill__dot { background: var(--phase-green); }
 
+.phase-pill--active {
+  font-weight: 700;
+  border-width: 2.5px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* Estomper les pills non actifs quand un filtre est sélectionné */
+#phase-pills[data-filter-active] .phase-pill:not(.phase-pill--active) {
+  opacity: 0.35;
+}
+
 /* ─── Week Cards ──────────────────────────────────────────────── */
 
 .week-card {

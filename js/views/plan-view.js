@@ -58,15 +58,37 @@ export function mount(container, slug) {
     </div>
   `;
 
-  // Phase pill scroll-to
+  // Phase pill filter
+  let activePhaseId = null;
+  const pillsContainer = container.querySelector('#phase-pills');
+
   container.querySelectorAll('[data-phase]').forEach(btn => {
     btn.addEventListener('click', () => {
       const phaseId = btn.dataset.phase;
-      const phase   = plan.phases.find(p => p.id === phaseId);
-      if (!phase) return;
-      const firstWeek = Math.min(...phase.weeks);
-      const el = container.querySelector(`[data-week="${firstWeek}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      if (activePhaseId === phaseId) {
+        // Désactiver → restore état initial
+        activePhaseId = null;
+        delete pillsContainer.dataset.filterActive;
+        container.querySelectorAll('[data-phase]').forEach(p => p.classList.remove('phase-pill--active'));
+        container.querySelectorAll('.week-card').forEach(card => {
+          card.classList.toggle('week-card--open', parseInt(card.dataset.week) === currentWeekNum);
+        });
+      } else {
+        // Activer ce filtre
+        container.querySelectorAll('[data-phase]').forEach(p => p.classList.remove('phase-pill--active'));
+        btn.classList.add('phase-pill--active');
+        pillsContainer.dataset.filterActive = '1';
+        activePhaseId = phaseId;
+
+        container.querySelectorAll('.week-card').forEach(card => {
+          card.classList.toggle('week-card--open', card.dataset.phaseId === phaseId);
+        });
+
+        // Scroll vers la première semaine du filtre
+        const first = container.querySelector(`.week-card[data-phase-id="${phaseId}"]`);
+        if (first) setTimeout(() => first.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      }
     });
   });
 
@@ -206,7 +228,7 @@ function renderWeekCard(week, currentWeekNum, states, plan) {
   if (skipped > 0) completionText += ` ·${skipped}✗`;
 
   return `
-    <div class="week-card ${isCurrent ? 'week-card--current' : ''}" data-week="${week.number}">
+    <div class="week-card ${isCurrent ? 'week-card--current' : ''}" data-week="${week.number}" data-phase-id="${week.phaseId}">
       <div class="week-card__header" data-week-header>
         <span class="week-card__phase-dot" style="background:var(--phase-${phaseColor})"></span>
         <div class="week-card__info">
