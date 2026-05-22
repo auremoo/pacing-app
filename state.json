@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-05-22T08:21:51.142Z",
+  "lastUpdated": "2026-05-22T08:22:00.204Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -15,9 +15,9 @@
         "completedAt": "2026-05-19T11:44:13.869Z"
       },
       "s01-wed": {
-        "completed": false,
+        "completed": true,
         "skipped": false,
-        "completedAt": null,
+        "completedAt": "2026-05-22T08:21:58.658Z",
         "note": "Séance faite le Jeudi 21 mai 2026 - 5,16km - 6.36min/km"
       },
       "s01-thu": {
