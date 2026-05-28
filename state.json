@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-05-27T06:18:58.783Z",
+  "lastUpdated": "2026-05-28T08:52:17.216Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -52,6 +52,9 @@
         "completed": false,
         "skippedAt": "2026-05-27T06:18:57.947Z",
         "completedAt": null
+      },
+      "s02-tue": {
+        "note": "Rien fait le mardi mais fait le jeudi finalement. 5.52km - 32min - 5:48min/km"
       }
     },
     "marathon-alpes-bsm": {}
