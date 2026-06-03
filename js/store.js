@@ -102,16 +102,37 @@ export async function toggleSession(slug, sessionId, completed) {
   scheduleSyncState();
 }
 
-export async function skipSession(slug, sessionId, skipped) {
+export async function skipSession(slug, sessionId, skipped, reason = null) {
   if (!_state.events[slug]) _state.events[slug] = {};
   const prev = _state.events[slug][sessionId] || {};
   _state.events[slug][sessionId] = {
     ...prev,
     skipped,
     completed: skipped ? false : prev.completed,
-    ...(skipped ? { skippedAt: new Date().toISOString() } : { skippedAt: null }),
+    ...(skipped
+      ? { skippedAt: new Date().toISOString(), skipReason: reason }
+      : { skippedAt: null, skipReason: null }),
     ...(skipped ? { completedAt: null } : {})
   };
+  scheduleSyncState();
+}
+
+export function getDateOverrides(slug) {
+  return _state.events?.[slug]?._dateOverrides || {};
+}
+
+export async function moveSession(slug, sessionId, newDate) {
+  if (!_state.events[slug]) _state.events[slug] = {};
+  if (!_state.events[slug]._dateOverrides) _state.events[slug]._dateOverrides = {};
+  _state.events[slug]._dateOverrides[sessionId] = newDate;
+  scheduleSyncState();
+}
+
+export async function swapSessionDates(slug, id1, newDate1, id2, newDate2) {
+  if (!_state.events[slug]) _state.events[slug] = {};
+  if (!_state.events[slug]._dateOverrides) _state.events[slug]._dateOverrides = {};
+  _state.events[slug]._dateOverrides[id1] = newDate1;
+  _state.events[slug]._dateOverrides[id2] = newDate2;
   scheduleSyncState();
 }
 

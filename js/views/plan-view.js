@@ -1,7 +1,16 @@
-import { getActivePlan, getAllSessionStates, toggleSession, skipSession } from '../store.js';
+import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
+         getDateOverrides, moveSession, swapSessionDates } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
+
+const REASON_LABELS = {
+  vacances:      'Vacances',
+  professionnel: 'Empêchement pro.',
+  maladie:       'Maladie',
+  blessure:      'Blessure',
+  autre:         'Autre',
+};
 
 export function mount(container, slug) {
   const plan = getActivePlan(slug);
@@ -16,16 +25,19 @@ export function mount(container, slug) {
     return;
   }
 
-  const todayStr = today();
-  const states   = getAllSessionStates(slug);
+  const todayStr  = today();
+  const states    = getAllSessionStates(slug);
+  const overrides = getDateOverrides(slug);
+  const effPlan   = applyDateOverrides(plan, overrides);
+  const dateIndex = buildDateIndex(effPlan);
 
-  // Find current week index
-  let currentWeekNum = plan.weeks[0]?.number || 1;
-  for (const w of plan.weeks) {
+  // Semaine en cours
+  let currentWeekNum = effPlan.weeks[0]?.number || 1;
+  for (const w of effPlan.weeks) {
     if (w.sessions.some(s => s.date <= todayStr)) currentWeekNum = w.number;
   }
 
-  const allSessions = plan.weeks.flatMap(w => w.sessions).filter(s => s.type !== 'rest');
+  const allSessions = effPlan.weeks.flatMap(w => w.sessions).filter(s => s.type !== 'rest');
   const totSessions = allSessions.length;
   const totDone     = allSessions.filter(s => states[s.id]?.completed).length;
   const totSkipped  = allSessions.filter(s => states[s.id]?.skipped).length;
@@ -37,37 +49,32 @@ export function mount(container, slug) {
 
   container.innerHTML = `
     <div style="padding-top:var(--space-4)">
-      <!-- Global progress -->
       <div style="padding:0 var(--space-4) var(--space-2)">
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="progress-label"><span>${totDone} réalisée${totDone > 1 ? 's' : ''}${skippedLabel}</span><span>${pct}%</span></div>
       </div>
 
-      <!-- Phase pills -->
       <div class="phase-pills-scroll" id="phase-pills">
-        ${plan.phases.map(p => `
+        ${effPlan.phases.map(p => `
           <button class="phase-pill phase-pill--${p.color}" data-phase="${p.id}">
             <span class="phase-pill__dot"></span>${p.name}
           </button>`).join('')}
       </div>
 
-      <!-- Weeks -->
       <div id="weeks-list">
-        ${plan.weeks.map(w => renderWeekCard(w, currentWeekNum, states, plan)).join('')}
+        ${effPlan.weeks.map(w => renderWeekCard(w, currentWeekNum, states, effPlan, overrides)).join('')}
       </div>
     </div>
   `;
 
-  // Phase pill filter
+  // ── Filtre phase pill ─────────────────────────────────────────
   let activePhaseId = null;
   const pillsContainer = container.querySelector('#phase-pills');
 
   container.querySelectorAll('[data-phase]').forEach(btn => {
     btn.addEventListener('click', () => {
       const phaseId = btn.dataset.phase;
-
       if (activePhaseId === phaseId) {
-        // Désactiver → restore état initial
         activePhaseId = null;
         delete pillsContainer.dataset.filterActive;
         container.querySelectorAll('[data-phase]').forEach(p => p.classList.remove('phase-pill--active'));
@@ -75,66 +82,245 @@ export function mount(container, slug) {
           card.classList.toggle('week-card--open', parseInt(card.dataset.week) === currentWeekNum);
         });
       } else {
-        // Activer ce filtre
         container.querySelectorAll('[data-phase]').forEach(p => p.classList.remove('phase-pill--active'));
         btn.classList.add('phase-pill--active');
         pillsContainer.dataset.filterActive = '1';
         activePhaseId = phaseId;
-
         container.querySelectorAll('.week-card').forEach(card => {
           card.classList.toggle('week-card--open', card.dataset.phaseId === phaseId);
         });
-
-        // Scroll vers la première semaine du filtre
         const first = container.querySelector(`.week-card[data-phase-id="${phaseId}"]`);
         if (first) setTimeout(() => first.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
       }
     });
   });
 
-  // Week expand/collapse
+  // ── Expand/collapse semaine ───────────────────────────────────
   container.querySelectorAll('[data-week-header]').forEach(hdr => {
-    hdr.addEventListener('click', () => {
-      const card = hdr.closest('.week-card');
-      card.classList.toggle('week-card--open');
-    });
+    hdr.addEventListener('click', () => hdr.closest('.week-card').classList.toggle('week-card--open'));
   });
 
-  // Session tap → detail
+  // ── Navigation vers détail séance ────────────────────────────
   container.querySelectorAll('[data-session-nav]').forEach(el => {
     el.addEventListener('click', (e) => {
-      if (e.target.closest('[data-session-check]') || e.target.closest('[data-session-skip]')) return;
+      if (e.target.closest('[data-session-check]') ||
+          e.target.closest('[data-session-skip]') ||
+          e.target.closest('[data-session-move]')) return;
       navigate(`/event/${slug}/session/${el.dataset.sessionNav}`);
     });
   });
 
-  // Checkbox toggle (done)
+  // ── Checkbox (réalisée) ───────────────────────────────────────
   container.querySelectorAll('[data-session-check]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const sessionId = btn.dataset.sessionCheck;
       const completed = btn.dataset.completed !== 'true';
-      await handleToggle(btn, sessionId, completed, slug, plan, container);
+      await handleToggle(btn, sessionId, completed, slug, effPlan, container);
     });
   });
 
-  // Skip toggle (manquée)
+  // ── Skipbox (manquée) → modale raison ────────────────────────
   container.querySelectorAll('[data-session-skip]').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const sessionId = btn.dataset.sessionSkip;
-      const skipped = btn.dataset.skipped !== 'true';
-      await handleSkip(btn, sessionId, skipped, slug, plan, container);
+      const skipping  = btn.dataset.skipped !== 'true';
+      if (skipping) {
+        showSkipReasonModal(btn, sessionId, slug, effPlan, container);
+      } else {
+        handleSkip(btn, sessionId, false, null, slug, effPlan, container);
+      }
     });
   });
 
-  // Auto-open current week
+  // ── Bouton déplacer ───────────────────────────────────────────
+  container.querySelectorAll('[data-session-move]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sessionId = btn.dataset.sessionMove;
+      const session   = effPlan.weeks.flatMap(w => w.sessions).find(s => s.id === sessionId);
+      if (session) showMoveModal(session, effPlan, dateIndex, slug, container);
+    });
+  });
+
+  // ── Auto-ouvrir semaine courante ──────────────────────────────
   const currentCard = container.querySelector(`[data-week="${currentWeekNum}"]`);
   if (currentCard) {
     currentCard.classList.add('week-card--open');
     setTimeout(() => currentCard.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   }
 }
+
+// ── Date overrides ────────────────────────────────────────────────
+
+function applyDateOverrides(plan, overrides) {
+  if (!Object.keys(overrides).length) return plan;
+
+  const allSessions = plan.weeks.flatMap(w =>
+    w.sessions.map(s => ({
+      ...s,
+      date:     overrides[s.id] || s.date,
+      dayLabel: overrides[s.id] ? getDayLabel(overrides[s.id]) : s.dayLabel,
+    }))
+  );
+
+  // Monday de chaque semaine du plan (basé sur les dates originales)
+  const weekMondayMap = {};
+  plan.weeks.forEach(w => {
+    const sorted = w.sessions.map(s => s.date).sort();
+    if (sorted.length) weekMondayMap[w.number] = getWeekMonday(sorted[0]);
+  });
+
+  // Re-grouper les séances par semaine selon leur date effective
+  const weekSessions = {};
+  plan.weeks.forEach(w => { weekSessions[w.number] = []; });
+
+  allSessions.forEach(s => {
+    const mon   = getWeekMonday(s.date);
+    const entry = Object.entries(weekMondayMap).find(([, m]) => m === mon);
+    if (entry) weekSessions[parseInt(entry[0])].push(s);
+  });
+
+  Object.values(weekSessions).forEach(arr => arr.sort((a, b) => a.date.localeCompare(b.date)));
+
+  return { ...plan, weeks: plan.weeks.map(w => ({ ...w, sessions: weekSessions[w.number] || [] })) };
+}
+
+function buildDateIndex(effectivePlan) {
+  const index = {};
+  effectivePlan.weeks.forEach(w => w.sessions.forEach(s => { index[s.date] = s.id; }));
+  return index;
+}
+
+function getWeekMonday(dateStr) {
+  const d   = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - (day - 1));
+  return d.toISOString().slice(0, 10);
+}
+
+function getDayLabel(dateStr) {
+  const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  return days[new Date(dateStr + 'T12:00:00').getDay()];
+}
+
+// ── Modale déplacer ───────────────────────────────────────────────
+
+function showMoveModal(session, effectivePlan, dateIndex, slug, parentContainer) {
+  const currentDate = session.date;
+  const allDates    = effectivePlan.weeks.flatMap(w => w.sessions.map(s => s.date)).sort();
+  const minDate     = allDates[0] || '';
+  const maxDate     = allDates[allDates.length - 1] || '';
+
+  const modal = document.createElement('div');
+  modal.className = 'compact-modal';
+  modal.innerHTML = `
+    <div class="compact-modal__overlay"></div>
+    <div class="compact-modal__panel">
+      <div class="compact-modal__title">Déplacer la séance</div>
+      <div class="compact-modal__subtitle">${session.title}</div>
+      <div style="margin-top:var(--space-3)">
+        <label class="form-label">Nouvelle date</label>
+        <input class="form-input" type="date" id="move-date"
+               value="${currentDate}" min="${minDate}" max="${maxDate}"
+               style="padding-top:var(--space-1);font-size:16px">
+      </div>
+      <div class="compact-modal__hint" id="move-hint"></div>
+      <div class="compact-modal__footer">
+        <button class="btn btn--secondary" style="flex:1" id="move-cancel">Annuler</button>
+        <button class="btn btn--primary"   style="flex:1" id="move-confirm">Déplacer</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const dateInput  = modal.querySelector('#move-date');
+  const hint       = modal.querySelector('#move-hint');
+  const confirmBtn = modal.querySelector('#move-confirm');
+
+  const updateHint = () => {
+    const target = dateInput.value;
+    if (!target || target === currentDate) { hint.textContent = ''; return; }
+    const conflictId = dateIndex[target];
+    if (conflictId && conflictId !== session.id) {
+      const cs = effectivePlan.weeks.flatMap(w => w.sessions).find(s => s.id === conflictId);
+      hint.textContent  = `↔ Échange avec : ${cs?.title || conflictId}`;
+      hint.style.color  = 'var(--ios-orange)';
+    } else {
+      hint.textContent = '';
+    }
+  };
+  dateInput.addEventListener('change', updateHint);
+
+  const close = () => document.body.removeChild(modal);
+  modal.querySelector('#move-cancel').addEventListener('click', close);
+  modal.querySelector('.compact-modal__overlay').addEventListener('click', close);
+
+  confirmBtn.addEventListener('click', async () => {
+    const targetDate = dateInput.value;
+    if (!targetDate || targetDate === currentDate) { close(); return; }
+    confirmBtn.disabled = true;
+    try {
+      const conflictId = dateIndex[targetDate];
+      if (conflictId && conflictId !== session.id) {
+        await swapSessionDates(slug, session.id, targetDate, conflictId, currentDate);
+      } else {
+        await moveSession(slug, session.id, targetDate);
+      }
+      close();
+      mount(parentContainer, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+      confirmBtn.disabled = false;
+    }
+  });
+}
+
+// ── Modale raison absence ─────────────────────────────────────────
+
+function showSkipReasonModal(btn, sessionId, slug, effPlan, container) {
+  const REASONS = [
+    { value: 'vacances',      label: 'Vacances' },
+    { value: 'professionnel', label: 'Empêchement professionnel' },
+    { value: 'maladie',       label: 'Maladie' },
+    { value: 'blessure',      label: 'Blessure' },
+    { value: 'autre',         label: 'Autre' },
+  ];
+
+  const modal = document.createElement('div');
+  modal.className = 'compact-modal';
+  modal.innerHTML = `
+    <div class="compact-modal__overlay"></div>
+    <div class="compact-modal__panel">
+      <div class="compact-modal__title">Raison de l'absence</div>
+      <div class="compact-modal__options">
+        ${REASONS.map((r, i) => `
+          <label class="compact-modal__option">
+            <input type="radio" name="skip-reason" value="${r.value}" ${i === 0 ? 'checked' : ''}>
+            <span>${r.label}</span>
+          </label>`).join('')}
+      </div>
+      <div class="compact-modal__footer">
+        <button class="btn btn--secondary" style="flex:1" id="reason-cancel">Annuler</button>
+        <button class="btn btn--primary"   style="flex:1" id="reason-confirm">Confirmer</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const close = () => document.body.removeChild(modal);
+  modal.querySelector('#reason-cancel').addEventListener('click', close);
+  modal.querySelector('.compact-modal__overlay').addEventListener('click', close);
+
+  modal.querySelector('#reason-confirm').addEventListener('click', async () => {
+    const reason = modal.querySelector('input[name="skip-reason"]:checked')?.value || 'autre';
+    close();
+    await handleSkip(btn, sessionId, true, reason, slug, effPlan, container);
+  });
+}
+
+// ── Handlers ──────────────────────────────────────────────────────
 
 async function handleToggle(btn, sessionId, completed, slug, plan, container) {
   const item = btn.closest('.session-item');
@@ -153,7 +339,7 @@ async function handleToggle(btn, sessionId, completed, slug, plan, container) {
   try {
     await toggleSession(slug, sessionId, completed);
     if (completed) navigator.vibrate?.(10);
-  } catch (err) {
+  } catch {
     btn.dataset.completed = String(!completed);
     btn.classList.toggle('checkbox--checked', !completed);
     if (item) item.classList.toggle('session-item--completed', !completed);
@@ -161,7 +347,7 @@ async function handleToggle(btn, sessionId, completed, slug, plan, container) {
   }
 }
 
-async function handleSkip(btn, sessionId, skipped, slug, plan, container) {
+async function handleSkip(btn, sessionId, skipped, reason, slug, plan, container) {
   const item = btn.closest('.session-item');
   btn.dataset.skipped = String(skipped);
   btn.classList.toggle('skipbox--skipped', skipped);
@@ -171,13 +357,19 @@ async function handleSkip(btn, sessionId, skipped, slug, plan, container) {
       item.classList.remove('session-item--completed');
       const checkBtn = item.querySelector('[data-session-check]');
       if (checkBtn) { checkBtn.dataset.completed = 'false'; checkBtn.classList.remove('checkbox--checked'); }
+      if (reason) {
+        const meta = item.querySelector('.session-item__meta');
+        if (meta && !meta.textContent.includes('·')) {
+          meta.textContent += ` · ${REASON_LABELS[reason] || reason}`;
+        }
+      }
     }
   }
   refreshWeekCompletion(container, sessionId, false, skipped, plan, slug);
 
   try {
-    await skipSession(slug, sessionId, skipped);
-  } catch (err) {
+    await skipSession(slug, sessionId, skipped, reason);
+  } catch {
     btn.dataset.skipped = String(!skipped);
     btn.classList.toggle('skipbox--skipped', !skipped);
     if (item) item.classList.toggle('session-item--skipped', !skipped);
@@ -190,25 +382,26 @@ function refreshWeekCompletion(container, sessionId, newCompleted, newSkipped, p
   const week    = plan.weeks.find(w => w.number === weekNum);
   if (!week) return;
 
-  const states = getAllSessionStates(slug);
+  const states    = getAllSessionStates(slug);
   const simStates = { ...states, [sessionId]: { completed: newCompleted, skipped: newSkipped } };
-
-  const sessions = week.sessions.filter(s => s.type !== 'rest');
-  const done     = sessions.filter(s => simStates[s.id]?.completed).length;
-  const skipped  = sessions.filter(s => simStates[s.id]?.skipped).length;
-  const total    = sessions.length;
-  const all      = total > 0 && done === total;
+  const sessions  = week.sessions.filter(s => s.type !== 'rest');
+  const done      = sessions.filter(s => simStates[s.id]?.completed).length;
+  const skipped   = sessions.filter(s => simStates[s.id]?.skipped).length;
+  const total     = sessions.length;
+  const all       = total > 0 && done === total;
 
   const badge = container.querySelector(`[data-week-completion="${weekNum}"]`);
   if (badge) {
     let text = total ? `${done}/${total}` : '';
     if (skipped > 0) text += ` ·${skipped}✗`;
-    badge.textContent    = text;
-    badge.className = `week-card__completion${all ? ' week-card__completion--done' : ''}`;
+    badge.textContent = text;
+    badge.className   = `week-card__completion${all ? ' week-card__completion--done' : ''}`;
   }
 }
 
-function renderWeekCard(week, currentWeekNum, states, plan) {
+// ── Rendu ─────────────────────────────────────────────────────────
+
+function renderWeekCard(week, currentWeekNum, states, plan, overrides) {
   const isCurrent  = week.number === currentWeekNum;
   const phase      = plan.phases.find(p => p.id === week.phaseId);
   const phaseColor = phase?.color || 'gray';
@@ -220,43 +413,43 @@ function renderWeekCard(week, currentWeekNum, states, plan) {
   const isRaceWeek = week.sessions.some(s => s.type === 'race');
 
   let badge = '';
-  if (isCurrent)       badge = `<span class="week-card__badge week-card__badge--current">EN COURS</span>`;
+  if (isCurrent)          badge = `<span class="week-card__badge week-card__badge--current">EN COURS</span>`;
   else if (week.isDecharge) badge = `<span class="week-card__badge week-card__badge--decharge">DÉCHARGE</span>`;
-  else if (isRaceWeek) badge = `<span class="week-card__badge week-card__badge--race">COURSE</span>`;
+  else if (isRaceWeek)    badge = `<span class="week-card__badge week-card__badge--race">COURSE</span>`;
 
   let completionText = total ? `${done}/${total}` : '';
   if (skipped > 0) completionText += ` ·${skipped}✗`;
 
   return `
-    <div class="week-card ${isCurrent ? 'week-card--current' : ''}" data-week="${week.number}" data-phase-id="${week.phaseId}">
+    <div class="week-card ${isCurrent ? 'week-card--current' : ''}"
+         data-week="${week.number}" data-phase-id="${week.phaseId}">
       <div class="week-card__header" data-week-header>
         <span class="week-card__phase-dot" style="background:var(--phase-${phaseColor})"></span>
         <div class="week-card__info">
-          <div class="week-card__title">
-            S${String(week.number).padStart(2, '0')} ${badge}
-          </div>
+          <div class="week-card__title">S${String(week.number).padStart(2, '0')} ${badge}</div>
           <div class="week-card__dates">${week.dateRange} · ${week.targetVolumeKm} km</div>
         </div>
         <div class="week-card__right">
           <span class="week-card__completion ${allDone ? 'week-card__completion--done' : ''}"
-                data-week-completion="${week.number}">
-            ${completionText}
-          </span>
+                data-week-completion="${week.number}">${completionText}</span>
           <span class="week-card__chevron">›</span>
         </div>
       </div>
       <div class="week-card__sessions">
-        ${week.sessions.map(s => renderSessionItem(s, states[s.id] || {})).join('')}
+        ${week.sessions.map(s => renderSessionItem(s, states[s.id] || {}, !!overrides[s.id])).join('')}
       </div>
     </div>
   `;
 }
 
-function renderSessionItem(session, state) {
-  const completed = state.completed || false;
-  const skipped   = state.skipped   || false;
-  const label     = SESSION_LABELS[session.type] || session.type.slice(0, 4).toUpperCase();
-  const dateStr   = formatDateShort(session.date);
+function renderSessionItem(session, state, isMoved) {
+  const completed    = state.completed || false;
+  const skipped      = state.skipped   || false;
+  const reason       = state.skipReason || null;
+  const label        = SESSION_LABELS[session.type] || session.type.slice(0, 4).toUpperCase();
+  const dateStr      = formatDateShort(session.date);
+  const reasonSuffix = skipped && reason ? ` · ${REASON_LABELS[reason] || reason}` : '';
+  const movedMark    = isMoved ? ' · ↕' : '';
 
   return `
     <div class="session-item ${completed ? 'session-item--completed' : ''} ${skipped ? 'session-item--skipped' : ''}"
@@ -264,9 +457,16 @@ function renderSessionItem(session, state) {
       <span class="session-item__type-badge type-${session.type}">${label}</span>
       <div class="session-item__content">
         <div class="session-item__title">${session.title}</div>
-        <div class="session-item__meta">${session.dayLabel} ${dateStr}</div>
+        <div class="session-item__meta">${session.dayLabel} ${dateStr}${reasonSuffix}${movedMark}</div>
       </div>
       <div class="session-item__actions">
+        <button class="movebtn" data-session-move="${session.id}" aria-label="Déplacer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+               style="width:13px;height:13px;pointer-events:none">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18"/>
+          </svg>
+        </button>
         <button class="skipbox ${skipped ? 'skipbox--skipped' : ''}"
                 data-session-skip="${session.id}"
                 data-skipped="${skipped}"

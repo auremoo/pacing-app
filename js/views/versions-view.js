@@ -327,7 +327,9 @@ function buildRevisionPrompt(meta, plan, planRaw, states, athlete) {
 
     const rows = nonRest.map(s => {
       const st = states[s.id];
-      const status = st?.completed ? '✓ Faite' : st?.skipped ? '✗ Manquée' : (s.date < todayStr ? '— Non cochée' : '· À venir');
+      const reasonMap = { vacances: 'Vacances', professionnel: 'Empêch. pro.', maladie: 'Maladie', blessure: 'Blessure', autre: 'Autre' };
+      const skipStr   = st?.skipReason ? ` (${reasonMap[st.skipReason] || st.skipReason})` : '';
+      const status    = st?.completed ? '✓ Faite' : st?.skipped ? `✗ Manquée${skipStr}` : (s.date < todayStr ? '— Non cochée' : '· À venir');
       const note   = st?.note ? ` [Note: ${st.note.replace(/\n/g, ' ')}]` : '';
       return `  | ${s.date} | ${s.type.padEnd(10)} | ${s.title.substring(0, 35).padEnd(35)} | ${status}${note} |`;
     }).join('\n');
