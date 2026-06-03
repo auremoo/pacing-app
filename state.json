@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-06-03T14:57:15.135Z",
+  "lastUpdated": "2026-06-03T14:59:11.012Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -118,6 +118,14 @@
         "skippedAt": null,
         "skipReason": null,
         "completedAt": null
+      },
+      "s04-thu": {
+        "skipped": true,
+        "completed": false,
+        "skippedAt": "2026-06-03T14:59:09.943Z",
+        "skipReason": "professionnel",
+        "completedAt": null,
+        "note": "Empêchement pro."
       }
     },
     "marathon-alpes-bsm": {}
