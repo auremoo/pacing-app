@@ -155,7 +155,7 @@ async function syncState() {
     const current = await getFile('state.json');
     const sha = current?.sha || _stateSha;
     _state.lastUpdated = new Date().toISOString();
-    const newSha = await putFile('state.json', JSON.stringify(_state, null, 2), sha);
+    const newSha = await putFile('state.json', JSON.stringify(_state, null, 2), sha, { commitMessage: 'pacing-app: update state.json [skip ci]' });
     _stateSha = newSha;
   } catch (err) {
     console.error('Sync state failed', err);

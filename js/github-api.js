@@ -54,10 +54,10 @@ export async function getFile(path, { rawBase64 = false } = {}) {
   };
 }
 
-export async function putFile(path, content, sha, { alreadyBase64 = false } = {}) {
+export async function putFile(path, content, sha, { alreadyBase64 = false, commitMessage = null } = {}) {
   const { branch } = getConfig();
   const body = {
-    message: `pacing-app: update ${path}`,
+    message: commitMessage || `pacing-app: update ${path}`,
     content: alreadyBase64 ? content : encodeBase64(content),
     branch
   };
