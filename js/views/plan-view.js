@@ -1,5 +1,5 @@
 import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
-         getDateOverrides, moveSession, swapSessionDates } from '../store.js';
+         saveSessionNote, getDateOverrides, moveSession, swapSessionDates } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
@@ -369,6 +369,13 @@ async function handleSkip(btn, sessionId, skipped, reason, slug, plan, container
 
   try {
     await skipSession(slug, sessionId, skipped, reason);
+    if (skipped && reason) {
+      const currentNote = getAllSessionStates(slug)[sessionId]?.note || '';
+      const reasonText  = REASON_LABELS[reason] || reason;
+      if (!currentNote.includes(reasonText)) {
+        await saveSessionNote(slug, sessionId, currentNote ? `${reasonText}\n${currentNote}` : reasonText);
+      }
+    }
   } catch {
     btn.dataset.skipped = String(!skipped);
     btn.classList.toggle('skipbox--skipped', !skipped);
