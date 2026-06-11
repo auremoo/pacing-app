@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-06-11T11:49:12.560Z",
+  "lastUpdated": "2026-06-11T11:49:48.564Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -123,7 +123,8 @@
         "completed": false,
         "skippedAt": null,
         "skipReason": null,
-        "completedAt": null
+        "completedAt": null,
+        "note": "Semaine notre comme « décharge » mais c’était la semaine précédente que j’ai finalement comptée comme semaine de décharge"
       },
       "s04-thu": {
         "skipped": true,
