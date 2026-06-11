@@ -1882,3 +1882,23 @@ select.form-input {
   transition: color var(--duration-fast);
 }
 .movebtn:active { opacity: 0.5; }
+
+/* ─── Bouton échanger semaine (dans week-card__right) ────────── */
+
+.week-swapbtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color var(--duration-fast);
+  margin-right: 2px;
+}
+.week-swapbtn:active { opacity: 0.5; }

@@ -136,6 +136,25 @@ export async function swapSessionDates(slug, id1, newDate1, id2, newDate2) {
   scheduleSyncState();
 }
 
+export async function swapWeeks(slug, sessionsA, mondayA, sessionsB, mondayB) {
+  if (!_state.events[slug]) _state.events[slug] = {};
+  if (!_state.events[slug]._dateOverrides) _state.events[slug]._dateOverrides = {};
+
+  const diffDays = Math.round(
+    (new Date(mondayB + 'T12:00:00') - new Date(mondayA + 'T12:00:00')) / 86400000
+  );
+  const shiftDate = (dateStr, n) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  for (const s of sessionsA) _state.events[slug]._dateOverrides[s.id] = shiftDate(s.date,  diffDays);
+  for (const s of sessionsB) _state.events[slug]._dateOverrides[s.id] = shiftDate(s.date, -diffDays);
+
+  scheduleSyncState();
+}
+
 export async function saveSessionNote(slug, sessionId, note) {
   if (!_state.events[slug]) _state.events[slug] = {};
   _state.events[slug][sessionId] = { ...(_state.events[slug][sessionId] || {}), note };

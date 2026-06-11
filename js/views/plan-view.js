@@ -1,5 +1,5 @@
 import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
-         saveSessionNote, getDateOverrides, moveSession, swapSessionDates } from '../store.js';
+         saveSessionNote, getDateOverrides, moveSession, swapSessionDates, swapWeeks } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
@@ -144,6 +144,15 @@ export function mount(container, slug) {
     });
   });
 
+  // ── Bouton échanger semaine ───────────────────────────────────
+  container.querySelectorAll('[data-week-swap]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const weekNum = parseInt(btn.dataset.weekSwap);
+      showSwapWeekModal(weekNum, effPlan, slug, container);
+    });
+  });
+
   // ── Auto-ouvrir semaine courante ──────────────────────────────
   const currentCard = container.querySelector(`[data-week="${currentWeekNum}"]`);
   if (currentCard) {
@@ -270,6 +279,69 @@ function showMoveModal(session, effectivePlan, dateIndex, slug, parentContainer)
       }
       close();
       mount(parentContainer, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+      confirmBtn.disabled = false;
+    }
+  });
+}
+
+// ── Modale échanger semaines ──────────────────────────────────────
+
+function showSwapWeekModal(weekNum, effPlan, slug, container) {
+  const weekA  = effPlan.weeks.find(w => w.number === weekNum);
+  const phaseA = effPlan.phases.find(p => p.id === weekA.phaseId);
+
+  const otherWeeks = effPlan.weeks.filter(w => w.number !== weekNum && w.sessions.length > 0);
+
+  const weekLabel = w => {
+    const ph   = effPlan.phases.find(p => p.id === w.phaseId);
+    const tags = [ph?.name, w.isDecharge ? 'Décharge' : null, `${w.targetVolumeKm}km`]
+      .filter(Boolean).join(' · ');
+    return `S${String(w.number).padStart(2, '0')} — ${w.dateRange} · ${tags}`;
+  };
+
+  const modal = document.createElement('div');
+  modal.className = 'compact-modal';
+  modal.innerHTML = `
+    <div class="compact-modal__overlay"></div>
+    <div class="compact-modal__panel">
+      <div class="compact-modal__title">Échanger S${String(weekNum).padStart(2, '0')}</div>
+      <div class="compact-modal__subtitle">${weekA.dateRange} · ${phaseA?.name || ''}${weekA.isDecharge ? ' · Décharge' : ''}</div>
+      <div style="margin-top:var(--space-3)">
+        <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:var(--space-1)">Semaine cible</label>
+        <select class="form-input" id="swap-week-select" style="font-size:15px">
+          <option value="">Choisir une semaine…</option>
+          ${otherWeeks.map(w => `<option value="${w.number}">${weekLabel(w)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="compact-modal__footer">
+        <button class="btn btn--secondary" style="flex:1" id="swap-week-cancel">Annuler</button>
+        <button class="btn btn--primary"   style="flex:1" id="swap-week-confirm">Échanger</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const close = () => document.body.removeChild(modal);
+  modal.querySelector('#swap-week-cancel').addEventListener('click', close);
+  modal.querySelector('.compact-modal__overlay').addEventListener('click', close);
+
+  modal.querySelector('#swap-week-confirm').addEventListener('click', async () => {
+    const targetNum = parseInt(modal.querySelector('#swap-week-select').value);
+    if (!targetNum) { showToast('Sélectionne une semaine cible', 'error'); return; }
+
+    const weekB = effPlan.weeks.find(w => w.number === targetNum);
+
+    const mondayA = getWeekMonday(weekA.sessions[0].date);
+    const mondayB = getWeekMonday(weekB.sessions[0].date);
+
+    const confirmBtn = modal.querySelector('#swap-week-confirm');
+    confirmBtn.disabled = true;
+    try {
+      await swapWeeks(slug, weekA.sessions, mondayA, weekB.sessions, mondayB);
+      close();
+      mount(container, slug);
     } catch (err) {
       showToast('Erreur : ' + err.message, 'error');
       confirmBtn.disabled = false;
@@ -437,6 +509,14 @@ function renderWeekCard(week, currentWeekNum, states, plan, overrides) {
           <div class="week-card__dates">${week.dateRange} · ${week.targetVolumeKm} km</div>
         </div>
         <div class="week-card__right">
+          <button class="week-swapbtn" data-week-swap="${week.number}" title="Échanger avec une autre semaine">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 style="width:14px;height:14px;pointer-events:none">
+              <path d="M6 3v14M3 6l3-3 3 3"/>
+              <path d="M14 17V3M11 14l3 3 3-3"/>
+            </svg>
+          </button>
           <span class="week-card__completion ${allDone ? 'week-card__completion--done' : ''}"
                 data-week-completion="${week.number}">${completionText}</span>
           <span class="week-card__chevron">›</span>
