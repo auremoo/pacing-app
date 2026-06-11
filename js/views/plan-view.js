@@ -1,5 +1,6 @@
 import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
-         saveSessionNote, getDateOverrides, moveSession, swapSessionDates, swapWeeks } from '../store.js';
+         saveSessionNote, getDateOverrides, getWeekMetaOverrides,
+         moveSession, swapSessionDates, swapWeeks } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
@@ -27,9 +28,10 @@ export function mount(container, slug) {
 
   const todayStr  = today();
   const states    = getAllSessionStates(slug);
-  const overrides = getDateOverrides(slug);
-  const effPlan   = applyDateOverrides(plan, overrides);
-  const dateIndex = buildDateIndex(effPlan);
+  const overrides     = getDateOverrides(slug);
+  const metaOverrides = getWeekMetaOverrides(slug);
+  const effPlan       = applyWeekMetaOverrides(applyDateOverrides(plan, overrides), metaOverrides);
+  const dateIndex     = buildDateIndex(effPlan);
 
   // Semaine en cours
   let currentWeekNum = effPlan.weeks[0]?.number || 1;
@@ -196,6 +198,17 @@ function applyDateOverrides(plan, overrides) {
   return { ...plan, weeks: plan.weeks.map(w => ({ ...w, sessions: weekSessions[w.number] || [] })) };
 }
 
+function applyWeekMetaOverrides(plan, metaOverrides) {
+  if (!Object.keys(metaOverrides).length) return plan;
+  return {
+    ...plan,
+    weeks: plan.weeks.map(w => {
+      const ov = metaOverrides[w.number];
+      return ov ? { ...w, ...ov } : w;
+    }),
+  };
+}
+
 function buildDateIndex(effectivePlan) {
   const index = {};
   effectivePlan.weeks.forEach(w => w.sessions.forEach(s => { index[s.date] = s.id; }));
@@ -339,7 +352,7 @@ function showSwapWeekModal(weekNum, effPlan, slug, container) {
     const confirmBtn = modal.querySelector('#swap-week-confirm');
     confirmBtn.disabled = true;
     try {
-      await swapWeeks(slug, weekA.sessions, mondayA, weekB.sessions, mondayB);
+      await swapWeeks(slug, weekA.sessions, mondayA, weekB.sessions, mondayB, weekA, weekB);
       close();
       mount(container, slug);
     } catch (err) {

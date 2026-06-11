@@ -136,9 +136,14 @@ export async function swapSessionDates(slug, id1, newDate1, id2, newDate2) {
   scheduleSyncState();
 }
 
-export async function swapWeeks(slug, sessionsA, mondayA, sessionsB, mondayB) {
+export function getWeekMetaOverrides(slug) {
+  return _state.events?.[slug]?._weekMetaOverrides || {};
+}
+
+export async function swapWeeks(slug, sessionsA, mondayA, sessionsB, mondayB, metaA, metaB) {
   if (!_state.events[slug]) _state.events[slug] = {};
-  if (!_state.events[slug]._dateOverrides) _state.events[slug]._dateOverrides = {};
+  if (!_state.events[slug]._dateOverrides)     _state.events[slug]._dateOverrides     = {};
+  if (!_state.events[slug]._weekMetaOverrides) _state.events[slug]._weekMetaOverrides = {};
 
   const diffDays = Math.round(
     (new Date(mondayB + 'T12:00:00') - new Date(mondayA + 'T12:00:00')) / 86400000
@@ -151,6 +156,16 @@ export async function swapWeeks(slug, sessionsA, mondayA, sessionsB, mondayB) {
 
   for (const s of sessionsA) _state.events[slug]._dateOverrides[s.id] = shiftDate(s.date,  diffDays);
   for (const s of sessionsB) _state.events[slug]._dateOverrides[s.id] = shiftDate(s.date, -diffDays);
+
+  // Swap week-level metadata (badge décharge, phase, volume, note)
+  const pickMeta = w => ({
+    isDecharge:      w.isDecharge      ?? false,
+    phaseId:         w.phaseId         ?? null,
+    targetVolumeKm:  w.targetVolumeKm  ?? 0,
+    note:            w.note            ?? '',
+  });
+  _state.events[slug]._weekMetaOverrides[metaA.number] = pickMeta(metaB);
+  _state.events[slug]._weekMetaOverrides[metaB.number] = pickMeta(metaA);
 
   scheduleSyncState();
 }
