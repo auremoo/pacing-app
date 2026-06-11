@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-06-11T11:49:02.692Z",
+  "lastUpdated": "2026-06-11T11:49:12.560Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -107,16 +107,16 @@
       },
       "_dateOverrides": {
         "s03-thu": "2026-06-03",
-        "s04-tue": "2026-06-09",
-        "s04-mon": "2026-06-08",
-        "s03-tue": "2026-06-11",
+        "s04-tue": "2026-06-16",
+        "s04-mon": "2026-06-15",
+        "s03-tue": "2026-06-18",
         "s04-thu": "2026-06-02",
-        "s04-sat": "2026-06-13",
-        "s04-sun": "2026-06-14",
-        "s05-tue": "2026-06-19",
-        "s05-thu": "2026-06-18",
-        "s05-sat": "2026-06-20",
-        "s05-sun": "2026-06-21"
+        "s04-sat": "2026-06-20",
+        "s04-sun": "2026-06-21",
+        "s05-tue": "2026-06-12",
+        "s05-thu": "2026-06-11",
+        "s05-sat": "2026-06-13",
+        "s05-sun": "2026-06-14"
       },
       "s04-mon": {
         "skipped": false,
@@ -149,16 +149,16 @@
       },
       "_weekMetaOverrides": {
         "4": {
-          "isDecharge": true,
-          "phaseId": "phase-2",
-          "targetVolumeKm": 17,
-          "note": "DÉCHARGE — Semaine de récupération"
-        },
-        "5": {
           "isDecharge": false,
           "phaseId": "phase-2",
           "targetVolumeKm": 29,
           "note": "Base aérobie — fartlek"
+        },
+        "5": {
+          "isDecharge": true,
+          "phaseId": "phase-2",
+          "targetVolumeKm": 17,
+          "note": "DÉCHARGE — Semaine de récupération"
         }
       }
     },
