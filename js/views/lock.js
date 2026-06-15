@@ -1,5 +1,6 @@
 import { configure } from '../github-api.js';
 import { decryptToken } from '../utils/crypto.js';
+import { renderMarkdown } from '../utils/markdown.js';
 
 const PASSWORD = '171225';
 const SESSION_KEY = 'pacing_auth';
@@ -31,13 +32,59 @@ export function mount(container, onUnlock) {
         <div class="lock-screen__error" id="lock-error"></div>
         <button type="submit" class="btn btn--primary btn--full" id="lock-btn">Entrer</button>
       </form>
+      <div class="lock-screen__footer">
+        Application mono-utilisateur — données stockées dans votre repo GitHub.<br>
+        Gestion multi-utilisateurs prévue prochainement.
+        <a href="#" class="lock-screen__readme-link" id="lock-readme-link">En savoir plus →</a>
+      </div>
+    </div>
+    <div class="readme-modal" id="readme-modal" hidden>
+      <div class="readme-modal__overlay" id="readme-overlay"></div>
+      <div class="readme-modal__panel">
+        <div class="readme-modal__header">
+          <span class="readme-modal__title">Documentation</span>
+          <button class="readme-modal__close" id="readme-close">✕</button>
+        </div>
+        <div class="readme-modal__body markdown-body" id="readme-body">Chargement…</div>
+      </div>
     </div>
   `;
 
-  const form  = container.querySelector('#lock-form');
-  const input = container.querySelector('#lock-input');
-  const error = container.querySelector('#lock-error');
-  const btn   = container.querySelector('#lock-btn');
+  const form         = container.querySelector('#lock-form');
+  const input        = container.querySelector('#lock-input');
+  const error        = container.querySelector('#lock-error');
+  const btn          = container.querySelector('#lock-btn');
+  const readmeLink   = container.querySelector('#lock-readme-link');
+  const readmeModal  = container.querySelector('#readme-modal');
+  const readmeBody   = container.querySelector('#readme-body');
+  const readmeClose  = container.querySelector('#readme-close');
+  const readmeOverlay = container.querySelector('#readme-overlay');
+
+  let readmeLoaded = false;
+
+  async function openReadme(e) {
+    e.preventDefault();
+    readmeModal.hidden = false;
+    if (!readmeLoaded) {
+      try {
+        const res = await fetch(`./README.md?_t=${Date.now()}`);
+        if (!res.ok) throw new Error('README introuvable');
+        const md = await res.text();
+        readmeBody.innerHTML = renderMarkdown(md);
+        readmeLoaded = true;
+      } catch {
+        readmeBody.textContent = 'Impossible de charger la documentation.';
+      }
+    }
+  }
+
+  function closeReadme() {
+    readmeModal.hidden = true;
+  }
+
+  readmeLink.addEventListener('click', openReadme);
+  readmeClose.addEventListener('click', closeReadme);
+  readmeOverlay.addEventListener('click', closeReadme);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

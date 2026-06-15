@@ -464,6 +464,120 @@
   min-height: 20px;
 }
 
+.lock-screen__footer {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+.lock-screen__readme-link {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--text-link);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+/* ─── README modal ─────────────────────────────────────────────── */
+
+.readme-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.readme-modal[hidden] { display: none; }
+
+.readme-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.readme-modal__panel {
+  position: relative;
+  width: 100%;
+  max-height: 88dvh;
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .readme-modal {
+    align-items: center;
+    justify-content: center;
+  }
+  .readme-modal__panel {
+    border-radius: var(--radius-lg);
+    max-width: 720px;
+    max-height: 82dvh;
+  }
+}
+
+.readme-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 0.5px solid var(--separator);
+  flex-shrink: 0;
+}
+
+.readme-modal__title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.readme-modal__close {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  background: var(--gray-5);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.readme-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-4) var(--space-5) calc(var(--space-8) + var(--safe-bottom));
+}
+
+/* ─── Markdown body (README modal) ────────────────────────────── */
+
+.markdown-body h1 { font-size: 22px; font-weight: 700; margin: var(--space-6) 0 var(--space-3); letter-spacing: -0.3px; }
+.markdown-body h2 { font-size: 17px; font-weight: 600; margin: var(--space-5) 0 var(--space-2); }
+.markdown-body h3 { font-size: 15px; font-weight: 600; margin: var(--space-4) 0 var(--space-1); }
+.markdown-body p  { font-size: 15px; line-height: 1.55; margin: var(--space-2) 0; color: var(--text-primary); }
+.markdown-body ul, .markdown-body ol { padding-left: var(--space-5); margin: var(--space-2) 0; }
+.markdown-body li { font-size: 15px; line-height: 1.55; margin: 2px 0; }
+.markdown-body code { font-family: "SF Mono", Menlo, monospace; font-size: 13px; background: var(--gray-6); padding: 1px 5px; border-radius: 4px; }
+.markdown-body table { width: 100%; border-collapse: collapse; margin: var(--space-3) 0; font-size: 14px; }
+.markdown-body th { text-align: left; font-weight: 600; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--separator-opaque); }
+.markdown-body td { padding: var(--space-2) var(--space-3); border-bottom: 0.5px solid var(--separator); }
+.markdown-body strong { font-weight: 600; }
+.markdown-body em { font-style: italic; }
+.markdown-body h1:first-child { margin-top: 0; }
+.markdown-body blockquote { border-left: 3px solid var(--ios-blue); padding-left: var(--space-3); margin: var(--space-3) 0; color: var(--text-secondary); font-style: italic; }
+.markdown-body hr { border: none; border-top: 0.5px solid var(--separator-opaque); margin: var(--space-5) 0; }
+.markdown-body pre { background: var(--gray-6); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); margin: var(--space-3) 0; overflow-x: auto; }
+.markdown-body pre code { background: none; padding: 0; font-size: 12px; line-height: 1.5; }
+.markdown-body a { color: var(--text-link); text-decoration: none; }
+
 /* ─── Dashboard ───────────────────────────────────────────────── */
 
 .today-card {
