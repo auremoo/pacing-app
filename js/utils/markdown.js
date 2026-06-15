@@ -1,7 +1,20 @@
 export function renderMarkdown(md) {
   if (!md || !md.trim()) return '';
 
+  // Extract fenced code blocks before escaping (preserve content verbatim)
+  const codeBlocks = [];
+  md = md.replace(/```[\w]*\n([\s\S]*?)```/g, (_, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(code.trimEnd());
+    return `\x00CODE${idx}\x00`;
+  });
+
   let html = escapeHtml(md);
+
+  // Restore code blocks
+  html = html.replace(/\x00CODE(\d+)\x00/g, (_, i) => {
+    return `<pre><code>${escapeHtml(codeBlocks[+i])}</code></pre>`;
+  });
 
   // Tables
   html = html.replace(/(\|.+\|\n)+/g, (match) => {
@@ -39,6 +52,15 @@ export function renderMarkdown(md) {
     return '<ol>' + items.map(i => `<li>${inline(i)}</li>`).join('') + '</ol>';
   });
 
+  // Blockquotes
+  html = html.replace(/(^&gt; .+\n?)+/gm, (match) => {
+    const lines = match.trim().split('\n').map(l => l.replace(/^&gt; /, ''));
+    return '<blockquote>' + lines.map(l => `<p>${inline(l)}</p>`).join('') + '</blockquote>';
+  });
+
+  // Horizontal rules
+  html = html.replace(/^---$/gm, '<hr>');
+
   // Paragraphs
   html = html.replace(/^(?!<[ht]|<ul|<ol|<table)(.+)$/gm, (_, p) => `<p>${inline(p)}</p>`);
 
@@ -50,6 +72,7 @@ export function renderMarkdown(md) {
 
 function inline(text) {
   return text
+    .replace(/\[(.+?)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>');
