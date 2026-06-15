@@ -33,8 +33,8 @@ export function mount(container, onUnlock) {
         <button type="submit" class="btn btn--primary btn--full" id="lock-btn">Entrer</button>
       </form>
       <div class="lock-screen__footer">
-        Application mono-utilisateur — données stockées dans votre repo GitHub.<br>
-        Gestion multi-utilisateurs prévue prochainement.
+        Cette application est personnelle et n'est pas ouverte au public.<br>
+        Une version multi-utilisateurs est en cours de développement.
         <a href="#" class="lock-screen__readme-link" id="lock-readme-link">En savoir plus →</a>
       </div>
     </div>
