@@ -1,7 +1,8 @@
-import { getEventMeta, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw, getAthleteProfile } from '../store.js';
+import { getEventMeta, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
+import { applyDateOverrides, applyWeekMetaOverrides } from '../utils/plan-overrides.js';
 
 export function mount(container, slug) {
   render(container, slug);
@@ -241,18 +242,21 @@ Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
 // ── Export prompt de révision ────────────────────────────────────
 
 function showExportModal(container, slug) {
-  const meta    = getEventMeta(slug);
-  const plan    = getActivePlan(slug);
-  const planRaw = getActivePlanRaw(slug);
-  const states  = getAllSessionStates(slug);
-  const athlete = getAthleteProfile();
+  const meta         = getEventMeta(slug);
+  const plan         = getActivePlan(slug);
+  const planRaw      = getActivePlanRaw(slug);
+  const states       = getAllSessionStates(slug);
+  const athlete      = getAthleteProfile();
+  const dateOverrides = getDateOverrides(slug);
+  const weekMetaOverrides = getWeekMetaOverrides(slug);
 
   if (!plan || !planRaw) {
     showToast('Plan non chargé', 'error');
     return;
   }
 
-  const prompt = buildRevisionPrompt(meta, plan, planRaw, states, athlete);
+  const effPlan = applyWeekMetaOverrides(applyDateOverrides(plan, dateOverrides), weekMetaOverrides);
+  const prompt = buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides);
   openPromptModal('Prompt de révision', prompt);
 }
 
@@ -296,27 +300,50 @@ function openPromptModal(title, prompt) {
   });
 }
 
-function buildRevisionPrompt(meta, plan, planRaw, states, athlete) {
+function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides) {
   const todayStr    = today();
   const nextVersion = (meta.activeVersion || 1) + 1;
   const a           = athlete || {};
 
-  // Stats
-  const allSessions = plan.weeks.flatMap(w => w.sessions).filter(s => s.type !== 'rest');
+  // Index des dates d'origine (avant tout déplacement manuel), pour signaler les écarts
+  const originalDateById = {};
+  plan.weeks.forEach(w => w.sessions.forEach(s => { originalDateById[s.id] = s.date; }));
+
+  // Stats (sur le planning effectif, après déplacements/échanges manuels)
+  const allSessions = effPlan.weeks.flatMap(w => w.sessions).filter(s => s.type !== 'rest');
   const done        = allSessions.filter(s => states[s.id]?.completed).length;
   const skipped     = allSessions.filter(s => states[s.id]?.skipped).length;
   const total       = allSessions.length;
   const pct         = total ? Math.round(done / total * 100) : 0;
 
   // Current week
-  let currentWeekNum = plan.weeks[0]?.number || 1;
-  for (const w of plan.weeks) {
+  let currentWeekNum = effPlan.weeks[0]?.number || 1;
+  for (const w of effPlan.weeks) {
     if (w.sessions.some(s => s.date <= todayStr)) currentWeekNum = w.number;
   }
-  const weeksLeft = plan.weeks.filter(w => w.number >= currentWeekNum).length;
+  const weeksLeft = effPlan.weeks.filter(w => w.number >= currentWeekNum).length;
+
+  // Modifications manuelles à signaler explicitement à Claude
+  const movedSessions = Object.entries(dateOverrides || {})
+    .filter(([id, newDate]) => originalDateById[id] && originalDateById[id] !== newDate)
+    .map(([id, newDate]) => {
+      const s = allSessions.find(s => s.id === id) || effPlan.weeks.flatMap(w => w.sessions).find(s => s.id === id);
+      return s ? `- ${s.title} (${s.type}) déplacée du ${originalDateById[id]} au ${newDate}` : null;
+    })
+    .filter(Boolean);
+  const swappedWeekNums = Object.keys(weekMetaOverrides || {}).map(Number).sort((a, b) => a - b);
+  const manualChangesSection = (movedSessions.length || swappedWeekNums.length) ? `
+---
+
+## ⚠️ Modifications manuelles du planning (à prendre en compte impérativement)
+
+L'athlète a réorganisé manuellement son calendrier dans l'app. Le tableau "Détail semaine par semaine" ci-dessous reflète déjà ces changements (dates effectives), mais voici le détail explicite :
+${movedSessions.length ? `\n**Séances déplacées individuellement :**\n${movedSessions.join('\n')}` : ''}
+${swappedWeekNums.length ? `\n**Semaines dont le contenu (décharge/phase/volume/note) a été échangé :** ${swappedWeekNums.map(n => `S${String(n).padStart(2, '0')}`).join(', ')}` : ''}
+` : '';
 
   // Week-by-week detail
-  const weekDetail = plan.weeks.map(w => {
+  const weekDetail = effPlan.weeks.map(w => {
     const nonRest = w.sessions.filter(s => s.type !== 'rest');
     const wDone    = nonRest.filter(s => states[s.id]?.completed).length;
     const wSkipped = nonRest.filter(s => states[s.id]?.skipped).length;
@@ -331,7 +358,8 @@ function buildRevisionPrompt(meta, plan, planRaw, states, athlete) {
       const skipStr   = st?.skipReason ? ` (${reasonMap[st.skipReason] || st.skipReason})` : '';
       const status    = st?.completed ? '✓ Faite' : st?.skipped ? `✗ Manquée${skipStr}` : (s.date < todayStr ? '— Non cochée' : '· À venir');
       const note   = st?.note ? ` [Note: ${st.note.replace(/\n/g, ' ')}]` : '';
-      return `  | ${s.date} | ${s.type.padEnd(10)} | ${s.title.substring(0, 35).padEnd(35)} | ${status}${note} |`;
+      const moved  = (dateOverrides && dateOverrides[s.id]) ? ` [déplacée, était le ${originalDateById[s.id]}]` : '';
+      return `  | ${s.date} | ${s.type.padEnd(10)} | ${s.title.substring(0, 35).padEnd(35)} | ${status}${note}${moved} |`;
     }).join('\n');
 
     return `### S${String(w.number).padStart(2, '0')} — ${w.dateRange} (${w.phaseId}) — ${wDone}/${wTotal} faites${wSkipped > 0 ? `, ${wSkipped} manquée${wSkipped > 1 ? 's' : ''}` : ''}${label}\n${rows}`;
@@ -370,7 +398,7 @@ function buildRevisionPrompt(meta, plan, planRaw, states, athlete) {
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks.length} (${weeksLeft} semaines restantes dont la semaine en cours)
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}
-
+${manualChangesSection}
 ## Détail semaine par semaine
 
 ${weekDetail}
