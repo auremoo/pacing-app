@@ -13,7 +13,7 @@ export function isAuthenticated() {
 export function mount(container, onUnlock) {
   container.innerHTML = `
     <div class="lock-screen">
-      <div class="lock-screen__logo">🏃</div>
+      <img src="./logo.png" class="lock-screen__logo" alt="Pacing App">
       <div>
         <div class="lock-screen__title">Pacing App</div>
         <div class="lock-screen__subtitle">Mes plans de préparation</div>

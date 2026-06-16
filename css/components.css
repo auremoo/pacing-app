@@ -432,8 +432,10 @@
 }
 
 .lock-screen__logo {
-  font-size: 64px;
-  line-height: 1;
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  border-radius: var(--radius-xl);
 }
 
 .lock-screen__title {
