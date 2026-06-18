@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-06-18T22:19:12.578Z",
+  "lastUpdated": "2026-06-18T22:19:16.902Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -195,7 +195,7 @@
         "completed": true,
         "skipped": false,
         "completedAt": "2026-06-18T22:18:22.616Z",
-        "note": "31 min - 5,05km - 6,08min/km - séance intense de badminton la veille + 20min de vélo"
+        "note": "31 min - 5,05km - 6,08min/km - séance intense de badminton la veille + 20min de vélo ce jour"
       }
     },
     "marathon-alpes-bsm": {}
