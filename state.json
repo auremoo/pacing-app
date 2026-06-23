@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-06-23T08:16:50.258Z",
+  "lastUpdated": "2026-06-23T08:17:02.897Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -227,6 +227,14 @@
         "skipped": true,
         "completed": false,
         "skippedAt": "2026-06-23T08:16:49.372Z",
+        "skipReason": "vacances",
+        "completedAt": null,
+        "note": "Vacances - Defqon.1"
+      },
+      "s06-sun": {
+        "skipped": true,
+        "completed": false,
+        "skippedAt": "2026-06-23T08:16:51.220Z",
         "skipReason": "vacances",
         "completedAt": null,
         "note": "Vacances"
