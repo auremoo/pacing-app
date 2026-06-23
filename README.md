@@ -1,5 +1,8 @@
 # Pacing App
 
+> Créé par Aurélien Moote - Moo - 2026. Logiciel libre (licence MIT) :
+> réutilisable à condition de conserver la mention de l'auteur.
+
 PWA mobile-first pour gérer ses plans de préparation sportive.  
 Fonctionne sans serveur : toutes les données sont stockées dans ce repo GitHub via l'API.
 
@@ -206,3 +209,11 @@ Push main → GitHub Actions → GitHub Pages
 ```
 
 Pour le premier déploiement : Settings → Pages → Source : main, root `/` → Save.
+
+---
+
+## Auteur & licence
+
+**Aurélien Moote - Moo - 2026**  
+Copyright (c) 2026 Aurélien Moote ("Moo")  
+Distribué sous [licence MIT](./LICENSE) — réutilisable à condition de conserver la mention de l'auteur.

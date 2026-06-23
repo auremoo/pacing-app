@@ -1,3 +1,4 @@
+// Pacing App — Auteur : Aurélien Moote - Moo - 2026 — Licence MIT
 import { isAuthenticated, mount as mountLock } from './views/lock.js';
 import { mount as mountDashboard }             from './views/dashboard.js';
 import { mount as mountEvent }                 from './views/event.js';
