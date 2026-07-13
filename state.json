@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-07-13T13:01:11.885Z",
+  "lastUpdated": "2026-07-13T13:01:30.750Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -320,6 +320,9 @@
         "skipReason": "autre",
         "completedAt": null,
         "note": "Autre"
+      },
+      "s08-sat": {
+        "note": "Via ferrata du p’chti niveau intermédiaire + rafting "
       }
     },
     "marathon-alpes-bsm": {}
