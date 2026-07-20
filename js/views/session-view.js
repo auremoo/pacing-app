@@ -1,13 +1,15 @@
-import { getActivePlan, getSessionState, toggleSession, saveSessionNote } from '../store.js';
+import { getActivePlan, getSessionState, toggleSession, saveSessionNote, getDateOverrides } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { formatDate } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
+import { applyDateOverrides } from '../utils/plan-overrides.js';
 
 export function mount(container, slug, sessionId) {
   const plan = getActivePlan(slug);
   if (!plan) { navigate(`/event/${slug}`); return; }
 
-  const session = plan.weeks.flatMap(w => w.sessions).find(s => s.id === sessionId);
+  const effPlan = applyDateOverrides(plan, getDateOverrides(slug));
+  const session = effPlan.weeks.flatMap(w => w.sessions).find(s => s.id === sessionId);
   if (!session) { navigate(`/event/${slug}`); return; }
 
   const state     = getSessionState(slug, sessionId);

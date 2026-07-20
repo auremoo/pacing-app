@@ -1,6 +1,7 @@
-import { getEventsIndex, getActivePlan, getAllSessionStates, getEventMeta } from '../store.js';
+import { getEventsIndex, getActivePlan, getAllSessionStates, getEventMeta, getDateOverrides } from '../store.js';
 import { navigate } from '../app.js';
 import { today, isPast } from '../utils/dates.js';
+import { applyDateOverrides } from '../utils/plan-overrides.js';
 
 export function mountSidebar(container, activeSlug = null) {
   if (!container) return;
@@ -79,7 +80,8 @@ function findTodaySession(events, todayStr) {
   for (const e of events) {
     const plan = getActivePlan(e.slug);
     if (!plan) continue;
-    for (const week of plan.weeks) {
+    const effPlan = applyDateOverrides(plan, getDateOverrides(e.slug));
+    for (const week of effPlan.weeks) {
       for (const s of week.sessions) {
         if (s.date === todayStr && s.type !== 'rest') {
           return { slug: e.slug, eventName: e.name, session: s };

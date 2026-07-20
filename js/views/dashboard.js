@@ -1,7 +1,8 @@
-import { getEventsIndex, getEventMeta, getActivePlan, getAllSessionStates } from '../store.js';
+import { getEventsIndex, getEventMeta, getActivePlan, getAllSessionStates, getDateOverrides } from '../store.js';
 import { navigate } from '../app.js';
 import { today, formatDaysUntil, isPast } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
+import { applyDateOverrides } from '../utils/plan-overrides.js';
 
 export function mount(container) {
   const events = getEventsIndex();
@@ -49,7 +50,8 @@ function findTodaySession(events, todayStr) {
   for (const e of events) {
     const plan = getActivePlan(e.slug);
     if (!plan) continue;
-    for (const week of plan.weeks) {
+    const effPlan = applyDateOverrides(plan, getDateOverrides(e.slug));
+    for (const week of effPlan.weeks) {
       for (const s of week.sessions) {
         if (s.date === todayStr && s.type !== 'rest') {
           return { slug: e.slug, eventName: e.name, session: s };
