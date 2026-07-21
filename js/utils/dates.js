@@ -5,7 +5,11 @@ const MONTHS_FR = [
 ];
 
 export function today() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export function formatDate(isoDate) {
@@ -25,8 +29,8 @@ export function daysUntil(isoDate) {
   if (!isoDate) return null;
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-  const target = new Date(isoDate);
-  target.setHours(0, 0, 0, 0);
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const target = new Date(y, m - 1, d);
   return Math.round((target - now) / 86400000);
 }
 
