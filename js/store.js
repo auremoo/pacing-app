@@ -38,6 +38,12 @@ export async function initStore() {
 
   // Pre-load all event metas
   await Promise.all(_eventsIndex.map(e => loadEventMeta(e.slug)));
+
+  // Pre-load active plans (needed for "séance du jour" on dashboard/sidebar at boot)
+  await Promise.all(_eventsIndex.map(async e => {
+    const meta = _eventMetas[e.slug];
+    if (meta?.activeVersion) await ensurePlanLoaded(e.slug, meta.activeVersion);
+  }));
 }
 
 // ── Events ────────────────────────────────────────────────────────
