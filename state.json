@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-07-25T22:51:06.437Z",
+  "lastUpdated": "2026-07-26T17:31:17.798Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -390,7 +390,7 @@
         "skippedAt": "2026-07-25T22:51:05.561Z",
         "skipReason": "autre",
         "completedAt": null,
-        "note": "Autre"
+        "note": "Remplacé par randonnée de 8km sur 2h30 - 200 D+"
       }
     },
     "marathon-alpes-bsm": {}
