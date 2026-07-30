@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-07-28T23:46:14.978Z",
+  "lastUpdated": "2026-07-30T00:04:20.158Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -316,7 +316,7 @@
         "note": "Vacances"
       },
       "s08-tue": {
-        "note": "4’27min/km sur 6 min en pleine canicule ",
+        "note": "4’27min/km sur 6 min en pleine canicule \nSoit 14,175 km/h",
         "completed": true,
         "skipped": false,
         "completedAt": "2026-07-07T15:36:03.777Z"
