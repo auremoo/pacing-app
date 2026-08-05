@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-08-05T02:29:02.735Z",
+  "lastUpdated": "2026-08-05T02:29:57.284Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -441,6 +441,12 @@
         "completed": true,
         "skipped": false,
         "completedAt": "2026-08-03T13:36:14.231Z"
+      },
+      "s13-tue": {
+        "note": "Session fractionné au final échauffement 2km + 8x45sec à 4,50min/km et 45sec marche + course 2km de récupération",
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-08-05T02:29:56.983Z"
       }
     },
     "marathon-alpes-bsm": {}
