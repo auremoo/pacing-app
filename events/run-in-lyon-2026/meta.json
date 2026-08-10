@@ -12,13 +12,19 @@
   "objectiveRealistic": "1h51-1h53",
   "planStart": "2026-05-18",
   "planWeeks": 20,
-  "activeVersion": 1,
+  "activeVersion": 2,
   "versions": [
     {
       "v": 1,
       "file": "v1.md",
       "importedAt": "2026-05-18T00:00:00Z",
       "label": "Plan initial — 20 semaines"
+    },
+    {
+      "v": 2,
+      "file": "v2.md",
+      "importedAt": "2026-08-10T07:47:36.510Z",
+      "label": "Run in Lyon 2026"
     }
   ],
   "course": {
