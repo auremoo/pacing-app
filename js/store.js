@@ -15,6 +15,21 @@ let _syncing     = false;
 let _athlete     = {};       // athlete profile
 let _athleteSha  = null;
 
+// ── Plan général (routine, hors courses) ────────────────────────────
+// Pseudo-slug interne : mêmes fonctions meta/plan/état que les événements,
+// mais stocké sous routine/ à la racine (pas dans events/, pas dans
+// events/index.json) et jamais mélangé aux courses.
+
+export const ROUTINE_SLUG = '__routine__';
+
+function metaPath(slug) {
+  return slug === ROUTINE_SLUG ? 'routine/meta.json' : `events/${slug}/meta.json`;
+}
+
+function planFilePath(slug, filename) {
+  return slug === ROUTINE_SLUG ? `routine/plans/${filename}` : `events/${slug}/plans/${filename}`;
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 
 export async function initStore() {
@@ -44,6 +59,10 @@ export async function initStore() {
     const meta = _eventMetas[e.slug];
     if (meta?.activeVersion) await ensurePlanLoaded(e.slug, meta.activeVersion);
   }));
+
+  // Pre-load plan général (routine), s'il existe déjà
+  const routineMeta = await loadEventMeta(ROUTINE_SLUG);
+  if (routineMeta?.activeVersion) await ensurePlanLoaded(ROUTINE_SLUG, routineMeta.activeVersion);
 }
 
 // ── Events ────────────────────────────────────────────────────────
@@ -52,7 +71,7 @@ export function getEventsIndex() { return _eventsIndex; }
 
 export async function loadEventMeta(slug) {
   if (_eventMetas[slug]) return _eventMetas[slug];
-  const file = await getFile(`events/${slug}/meta.json`);
+  const file = await getFile(metaPath(slug));
   if (!file) return null;
   _eventMetas[slug] = JSON.parse(file.content);
   return _eventMetas[slug];
@@ -64,7 +83,7 @@ export function getEventMeta(slug) { return _eventMetas[slug] || null; }
 
 export async function ensurePlanLoaded(slug, version) {
   if (_plans[slug]?.[version]) return _plans[slug][version];
-  const file = await getFile(`events/${slug}/plans/v${version}.md`);
+  const file = await getFile(planFilePath(slug, `v${version}.md`));
   if (!file) return null;
   const parsed = parsePlan(file.content);
   if (!_plans[slug]) _plans[slug] = {};
@@ -215,7 +234,7 @@ export async function importPlanVersion(slug, mdContent, label) {
   const filename = `v${nextV}.md`;
 
   // Upload plan file
-  await putFile(`events/${slug}/plans/${filename}`, mdContent, null);
+  await putFile(planFilePath(slug, filename), mdContent, null);
 
   // Update meta
   const newMeta = {
@@ -227,8 +246,8 @@ export async function importPlanVersion(slug, mdContent, label) {
     ]
   };
 
-  const metaFile = await getFile(`events/${slug}/meta.json`);
-  await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
+  const metaFile = await getFile(metaPath(slug));
+  await putFile(metaPath(slug), JSON.stringify(newMeta, null, 2), metaFile?.sha);
   _eventMetas[slug] = newMeta;
 
   // Parse and cache the plan
@@ -246,9 +265,9 @@ export async function importPlanVersion(slug, mdContent, label) {
 export async function setActiveVersion(slug, v) {
   const meta = getEventMeta(slug);
   if (!meta) return;
-  const metaFile = await getFile(`events/${slug}/meta.json`);
+  const metaFile = await getFile(metaPath(slug));
   const newMeta = { ...meta, activeVersion: v };
-  await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
+  await putFile(metaPath(slug), JSON.stringify(newMeta, null, 2), metaFile?.sha);
   _eventMetas[slug] = newMeta;
   const idx = _eventsIndex.find(e => e.slug === slug);
   if (idx) idx.activeVersion = v;
@@ -354,10 +373,41 @@ export async function getCourseFile(slug, type) {
 
 export async function updateEventMeta(slug, updates) {
   const meta = getEventMeta(slug);
-  const metaFile = await getFile(`events/${slug}/meta.json`);
+  const metaFile = await getFile(metaPath(slug));
   const newMeta = { ...meta, ...updates };
-  await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
+  await putFile(metaPath(slug), JSON.stringify(newMeta, null, 2), metaFile?.sha);
   _eventMetas[slug] = newMeta;
   const idx = _eventsIndex.find(e => e.slug === slug);
   if (idx) Object.assign(idx, updates);
+}
+
+// ── Plan général (routine) ──────────────────────────────────────────
+// Un seul plan général, bien séparé des courses : pas de slug dossier,
+// pas d'entrée dans events/index.json. Réutilise loadEventMeta/getEventMeta/
+// ensurePlanLoaded/getActivePlan/importPlanVersion/setActiveVersion/
+// updateEventMeta ci-dessus via ROUTINE_SLUG, ainsi que toutes les
+// fonctions d'état de séance (toggleSession, saveSessionNote, moveSession,
+// swapSessionDates, swapWeeks, getDateOverrides…) déjà génériques par slug.
+
+export function getRoutineMeta() { return getEventMeta(ROUTINE_SLUG); }
+
+export async function createRoutine(settings) {
+  const meta = {
+    context: settings.context || '',
+    goals: settings.goals || '',
+    blockWeeks: parseInt(settings.blockWeeks) || 0,
+    startDate: settings.startDate || '',
+    activeVersion: null,
+    versions: [],
+  };
+  await putFile(metaPath(ROUTINE_SLUG), JSON.stringify(meta, null, 2), null);
+  _eventMetas[ROUTINE_SLUG] = meta;
+  return meta;
+}
+
+export async function saveRoutineSettings(updates) {
+  const existing = getRoutineMeta();
+  if (!existing) return createRoutine(updates);
+  await updateEventMeta(ROUTINE_SLUG, updates);
+  return getRoutineMeta();
 }

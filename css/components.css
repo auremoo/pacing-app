@@ -918,6 +918,21 @@
   color: #fff;
 }
 
+.week-card__badge--paused {
+  background: var(--gray-3);
+  color: #fff;
+}
+
+.week-card--paused .week-card__sessions {
+  opacity: 0.5;
+}
+
+.week-card--paused .session-item__actions,
+.week-card--paused .week-swapbtn {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 .week-card__dates {
   font-size: 12px;
   color: var(--text-secondary);

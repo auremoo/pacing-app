@@ -14,7 +14,7 @@ const REASON_LABELS = {
   autre:         'Autre',
 };
 
-export function mount(container, slug) {
+export function mount(container, slug, { pausedWeeks } = {}) {
   const plan = getActivePlan(slug);
 
   if (!plan) {
@@ -65,7 +65,7 @@ export function mount(container, slug) {
       </div>
 
       <div id="weeks-list">
-        ${effPlan.weeks.map(w => renderWeekCard(w, currentWeekNum, states, effPlan, overrides)).join('')}
+        ${effPlan.weeks.map(w => renderWeekCard(w, currentWeekNum, states, effPlan, overrides, pausedWeeks?.get(w.number))).join('')}
       </div>
     </div>
   `;
@@ -438,7 +438,7 @@ function refreshWeekCompletion(container, sessionId, newCompleted, newSkipped, p
 
 // ── Rendu ─────────────────────────────────────────────────────────
 
-function renderWeekCard(week, currentWeekNum, states, plan, overrides) {
+function renderWeekCard(week, currentWeekNum, states, plan, overrides, pausedByRace) {
   const isCurrent  = week.number === currentWeekNum;
   const phase      = plan.phases.find(p => p.id === week.phaseId);
   const phaseColor = phase?.color || 'gray';
@@ -450,7 +450,8 @@ function renderWeekCard(week, currentWeekNum, states, plan, overrides) {
   const isRaceWeek = week.sessions.some(s => s.type === 'race');
 
   let badge = '';
-  if (isCurrent)          badge = `<span class="week-card__badge week-card__badge--current">EN COURS</span>`;
+  if (pausedByRace)       badge = `<span class="week-card__badge week-card__badge--paused" title="Course en cours : ${pausedByRace}">⏸ EN PAUSE</span>`;
+  else if (isCurrent)     badge = `<span class="week-card__badge week-card__badge--current">EN COURS</span>`;
   else if (week.isDecharge) badge = `<span class="week-card__badge week-card__badge--decharge">DÉCHARGE</span>`;
   else if (isRaceWeek)    badge = `<span class="week-card__badge week-card__badge--race">COURSE</span>`;
 
@@ -458,7 +459,7 @@ function renderWeekCard(week, currentWeekNum, states, plan, overrides) {
   if (skipped > 0) completionText += ` ·${skipped}✗`;
 
   return `
-    <div class="week-card ${isCurrent ? 'week-card--current' : ''}"
+    <div class="week-card ${isCurrent ? 'week-card--current' : ''} ${pausedByRace ? 'week-card--paused' : ''}"
          data-week="${week.number}" data-phase-id="${week.phaseId}">
       <div class="week-card__header" data-week-header>
         <span class="week-card__phase-dot" style="background:var(--phase-${phaseColor})"></span>

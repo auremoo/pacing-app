@@ -5,6 +5,7 @@ import { mount as mountEvent }                 from './views/event.js';
 import { mount as mountSession }               from './views/session-view.js';
 import { mount as mountSettings }             from './views/settings.js';
 import { mount as mountNewEvent }             from './views/new-event.js';
+import { mount as mountRoutine }              from './views/routine.js';
 import { initStore }                           from './store.js';
 import { configure }                           from './github-api.js';
 import { showToast as _showToast }             from './toast.js';
@@ -32,6 +33,8 @@ const ROUTES = [
   { re: /^\/event\/([\w-]+)$/, fn: (m) => mountEvent(app, m[1], 'plan') },
   { re: /^\/event\/([\w-]+)\/(plan|course|versions|infos)$/, fn: (m) => mountEvent(app, m[1], m[2]) },
   { re: /^\/event\/([\w-]+)\/session\/([\w-]+)$/, fn: (m) => mountSession(app, m[1], m[2]) },
+  { re: /^\/routine$/, fn: () => mountRoutine(app, 'plan') },
+  { re: /^\/routine\/(plan|settings|versions)$/, fn: (m) => mountRoutine(app, m[1]) },
 ];
 
 async function route() {

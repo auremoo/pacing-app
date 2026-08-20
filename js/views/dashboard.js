@@ -13,7 +13,9 @@ export function mount(container) {
 
   container.innerHTML = `
     <div class="nav-bar">
-      <span style="width:72px"></span>
+      <button class="nav-btn" id="routine-btn" aria-label="Entraînement général">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      </button>
       <span class="nav-bar__title">Mes Courses</span>
       <button class="nav-btn" id="settings-btn" aria-label="Réglages">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -22,6 +24,16 @@ export function mount(container) {
     <div class="scroll-view">
       <div class="dashboard-body">
         ${renderTodayCard(todaySession)}
+        <div class="card-group">
+          <a class="list-row" id="routine-row">
+            <span class="list-row__icon" style="background:var(--ios-indigo);color:#fff">🔁</span>
+            <div class="list-row__content">
+              <div class="list-row__title">Entraînement général</div>
+              <div class="list-row__subtitle">Plan de fond hors courses</div>
+            </div>
+            <span class="list-row__chevron">›</span>
+          </a>
+        </div>
         <p class="section-header">Événements</p>
         ${events.map(e => renderEventCard(e)).join('')}
         <div class="dashboard-add-row">
@@ -32,6 +44,8 @@ export function mount(container) {
     </div>
   `;
 
+  container.querySelector('#routine-btn').addEventListener('click', () => navigate('/routine'));
+  container.querySelector('#routine-row').addEventListener('click', () => navigate('/routine'));
   container.querySelector('#settings-btn').addEventListener('click', () => navigate('/settings'));
   container.querySelector('#new-event-btn').addEventListener('click', () => navigate('/new-event'));
 
