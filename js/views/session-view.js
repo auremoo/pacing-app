@@ -1,16 +1,18 @@
-import { getActivePlan, getSessionState, toggleSession, saveSessionNote, getDateOverrides } from '../store.js';
+import { getActivePlan, getSessionState, toggleSession, saveSessionNote, getDateOverrides, ROUTINE_SLUG } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { formatDate } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { applyDateOverrides } from '../utils/plan-overrides.js';
 
 export function mount(container, slug, sessionId) {
+  const listPath = slug === ROUTINE_SLUG ? '/routine' : `/event/${slug}`;
+
   const plan = getActivePlan(slug);
-  if (!plan) { navigate(`/event/${slug}`); return; }
+  if (!plan) { navigate(listPath); return; }
 
   const effPlan = applyDateOverrides(plan, getDateOverrides(slug));
   const session = effPlan.weeks.flatMap(w => w.sessions).find(s => s.id === sessionId);
-  if (!session) { navigate(`/event/${slug}`); return; }
+  if (!session) { navigate(listPath); return; }
 
   const state     = getSessionState(slug, sessionId);
   const completed = state.completed;
@@ -60,7 +62,7 @@ export function mount(container, slug, sessionId) {
     </div>
   `;
 
-  container.querySelector('#back-btn').addEventListener('click', () => navigate(`/event/${slug}/plan`));
+  container.querySelector('#back-btn').addEventListener('click', () => navigate(`${listPath}/plan`));
 
   const checkBtn   = container.querySelector('#check-btn');
   const noteInput  = container.querySelector('#note-input');

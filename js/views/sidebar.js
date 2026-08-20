@@ -1,13 +1,14 @@
-import { getEventsIndex, getActivePlan, getAllSessionStates, getEventMeta, getDateOverrides } from '../store.js';
+import { getEventsIndex, getActivePlan, getEventMeta } from '../store.js';
 import { navigate } from '../app.js';
 import { today, isPast } from '../utils/dates.js';
-import { applyDateOverrides } from '../utils/plan-overrides.js';
+import { findTodaySession } from '../utils/today-session.js';
+import { computeCompletion } from './courses.js';
 
 export function mountSidebar(container, activeSlug = null) {
   if (!container) return;
   const events = getEventsIndex();
   const todayStr = today();
-  const todaySession = findTodaySession(events, todayStr);
+  const todaySession = findTodaySession(todayStr);
 
   container.innerHTML = `
     <div class="sb-header">
@@ -39,19 +40,20 @@ export function mountSidebar(container, activeSlug = null) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         Nouvel événement
       </button>
-      <button class="sb-nav-item" id="sb-dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Tableau de bord
+      <button class="sb-nav-item" id="sb-home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+        Accueil
       </button>
     </div>
   `;
 
   container.querySelector('#sb-settings')?.addEventListener('click', () => navigate('/settings'));
-  container.querySelector('#sb-dashboard')?.addEventListener('click', () => navigate('/'));
+  container.querySelector('#sb-home')?.addEventListener('click', () => navigate('/'));
   container.querySelector('#sb-routine')?.addEventListener('click', () => navigate('/routine'));
   container.querySelector('#sb-new-event')?.addEventListener('click', () => navigate('/new-event'));
   container.querySelector('#sb-today')?.addEventListener('click', () => {
-    navigate(`/event/${todaySession.slug}/session/${todaySession.session.id}`);
+    const base = todaySession.kind === 'routine' ? '/routine' : `/event/${todaySession.slug}`;
+    navigate(`${base}/session/${todaySession.session.id}`);
   });
   container.querySelectorAll('[data-sb-slug]').forEach(el => {
     el.addEventListener('click', () => navigate(`/event/${el.dataset.sbSlug}`));
@@ -79,28 +81,4 @@ function renderEventItem(e, isActive) {
         </div>` : ''}
     </div>
   `;
-}
-
-function findTodaySession(events, todayStr) {
-  for (const e of events) {
-    const plan = getActivePlan(e.slug);
-    if (!plan) continue;
-    const effPlan = applyDateOverrides(plan, getDateOverrides(e.slug));
-    for (const week of effPlan.weeks) {
-      for (const s of week.sessions) {
-        if (s.date === todayStr && s.type !== 'rest') {
-          return { slug: e.slug, eventName: e.name, session: s };
-        }
-      }
-    }
-  }
-  return null;
-}
-
-function computeCompletion(slug, plan) {
-  const states = getAllSessionStates(slug);
-  const sessions = plan.weeks.flatMap(w => w.sessions).filter(s => s.type !== 'rest');
-  if (!sessions.length) return 0;
-  const done = sessions.filter(s => states[s.id]?.completed).length;
-  return Math.round(done / sessions.length * 100);
 }

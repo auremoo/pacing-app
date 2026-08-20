@@ -15,10 +15,10 @@ function render(container) {
       <div class="empty-state">
         <div class="empty-state__icon">🗓️</div>
         <div class="empty-state__title">Aucun plan général configuré</div>
-        <div class="empty-state__body">Renseigne d'abord tes activités actuelles et tes objectifs dans l'onglet Réglages.</div>
+        <div class="empty-state__body">Renseigne d'abord tes activités actuelles et tes objectifs dans l'onglet Contexte.</div>
       </div>
       <div style="padding:0 var(--space-4)">
-        <button class="btn btn--primary btn--full" id="go-settings-btn">Aller aux réglages</button>
+        <button class="btn btn--primary btn--full" id="go-settings-btn">Aller au contexte</button>
       </div>
     `;
     container.querySelector('#go-settings-btn').addEventListener('click', () => navigate('/routine/settings'));

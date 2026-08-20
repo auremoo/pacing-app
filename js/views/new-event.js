@@ -112,7 +112,7 @@ export function mount(container) {
   dateInput.addEventListener('change', () => autoFillWeeks(dateInput, startInput, weeksInput));
   startInput.addEventListener('change', () => autoFillWeeks(dateInput, startInput, weeksInput));
 
-  container.querySelector('#back-btn').addEventListener('click', () => navigate('/'));
+  container.querySelector('#back-btn').addEventListener('click', () => navigate('/courses'));
 
   const handleCreate = async () => {
     const error = container.querySelector('#form-error');

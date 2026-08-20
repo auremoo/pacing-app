@@ -89,6 +89,22 @@
   z-index: 100;
 }
 
+/* Menu du bas commun (Accueil/Courses/Entraînement/Réglages) — mobile
+   uniquement, la sidebar joue ce rôle sur desktop (voir media query plus bas) */
+.global-tab-bar {
+  display: flex;
+  align-items: stretch;
+  height: calc(var(--tab-bar-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--bg-blur);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 0.5px solid var(--separator);
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+}
+
 .tab-item {
   flex: 1;
   display: flex;
@@ -1602,6 +1618,9 @@ select.form-input {
 @media (min-width: 768px) {
   /* Nav-bar becomes unnecessary — sidebar handles back navigation */
   .nav-bar { display: none; }
+
+  /* Menu du bas commun : la sidebar joue déjà ce rôle sur desktop */
+  .global-tab-bar { display: none; }
 
   /* Tab-bar: static horizontal strip at top of content */
   .tab-bar {

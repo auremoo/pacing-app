@@ -15,7 +15,7 @@ const TABS = [
 export async function mount(container, slug, activeTab = 'plan') {
   // Validate slug
   const meta = getEventMeta(slug);
-  if (!meta) { navigate('/'); return; }
+  if (!meta) { navigate('/courses'); return; }
 
   // Load plan if available
   if (meta.activeVersion) {
@@ -46,7 +46,7 @@ export async function mount(container, slug, activeTab = 'plan') {
     </nav>
   `;
 
-  container.querySelector('#back-btn').addEventListener('click', () => navigate('/'));
+  container.querySelector('#back-btn').addEventListener('click', () => navigate('/courses'));
 
   container.querySelectorAll('[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {

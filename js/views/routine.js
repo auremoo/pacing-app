@@ -9,7 +9,7 @@ import { computeEventRanges, computePausedWeeks }     from '../utils/routine-ove
 
 const TABS = [
   { id: 'plan',     label: 'Plan',     icon: tabIcon('plan')     },
-  { id: 'settings', label: 'Réglages', icon: tabIcon('settings') },
+  { id: 'settings', label: 'Contexte', icon: tabIcon('settings') },
   { id: 'versions', label: 'Versions', icon: tabIcon('versions') },
 ];
 
@@ -24,7 +24,7 @@ export async function mount(container, activeTab = 'plan') {
     <div class="nav-bar">
       <button class="nav-btn" id="back-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-        Courses
+        Accueil
       </button>
       <span class="nav-bar__title">Entraînement général</span>
       <span style="width:72px"></span>
@@ -72,10 +72,10 @@ function mountRoutinePlan(tabContent) {
       <div class="empty-state">
         <div class="empty-state__icon">🗓️</div>
         <div class="empty-state__title">Aucun plan général configuré</div>
-        <div class="empty-state__body">Commence par renseigner tes activités actuelles et tes objectifs dans l'onglet Réglages.</div>
+        <div class="empty-state__body">Commence par renseigner tes activités actuelles et tes objectifs dans l'onglet Contexte.</div>
       </div>
       <div style="padding:0 var(--space-4)">
-        <button class="btn btn--primary btn--full" id="go-settings-btn">Aller aux réglages</button>
+        <button class="btn btn--primary btn--full" id="go-settings-btn">Aller au contexte</button>
       </div>
     `;
     tabContent.querySelector('#go-settings-btn').addEventListener('click', () => navigate('/routine/settings'));

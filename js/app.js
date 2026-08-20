@@ -1,12 +1,13 @@
 // Pacing App — Auteur : Aurélien Moote - Moo - 2026 — Licence MIT
 import { isAuthenticated, mount as mountLock } from './views/lock.js';
-import { mount as mountDashboard }             from './views/dashboard.js';
+import { mount as mountHome }                  from './views/home.js';
+import { mount as mountCourses }               from './views/courses.js';
 import { mount as mountEvent }                 from './views/event.js';
 import { mount as mountSession }               from './views/session-view.js';
 import { mount as mountSettings }             from './views/settings.js';
 import { mount as mountNewEvent }             from './views/new-event.js';
 import { mount as mountRoutine }              from './views/routine.js';
-import { initStore }                           from './store.js';
+import { initStore, ROUTINE_SLUG }             from './store.js';
 import { configure }                           from './github-api.js';
 import { showToast as _showToast }             from './toast.js';
 import { mountSidebar }                        from './views/sidebar.js';
@@ -27,7 +28,8 @@ export function navigate(path) {
 // ── Router ────────────────────────────────────────────────────────
 
 const ROUTES = [
-  { re: /^\/$/, fn: () => mountDashboard(app) },
+  { re: /^\/$/, fn: () => mountHome(app) },
+  { re: /^\/courses$/, fn: () => mountCourses(app) },
   { re: /^\/settings$/, fn: () => mountSettings(app) },
   { re: /^\/new-event$/, fn: () => mountNewEvent(app) },
   { re: /^\/event\/([\w-]+)$/, fn: (m) => mountEvent(app, m[1], 'plan') },
@@ -35,6 +37,7 @@ const ROUTES = [
   { re: /^\/event\/([\w-]+)\/session\/([\w-]+)$/, fn: (m) => mountSession(app, m[1], m[2]) },
   { re: /^\/routine$/, fn: () => mountRoutine(app, 'plan') },
   { re: /^\/routine\/(plan|settings|versions)$/, fn: (m) => mountRoutine(app, m[1]) },
+  { re: /^\/routine\/session\/([\w-]+)$/, fn: (m) => mountSession(app, ROUTINE_SLUG, m[1]) },
 ];
 
 async function route() {
@@ -48,7 +51,7 @@ async function route() {
     const m = path.match(re);
     if (m) { await fn(m); return; }
   }
-  mountDashboard(app);
+  mountHome(app);
 }
 
 // ── Boot ──────────────────────────────────────────────────────────

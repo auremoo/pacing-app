@@ -1,6 +1,6 @@
 import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
          saveSessionNote, getDateOverrides, getWeekMetaOverrides,
-         moveSession, swapSessionDates, swapWeeks } from '../store.js';
+         moveSession, swapSessionDates, swapWeeks, ROUTINE_SLUG } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
@@ -109,7 +109,8 @@ export function mount(container, slug, { pausedWeeks } = {}) {
       if (e.target.closest('[data-session-check]') ||
           e.target.closest('[data-session-skip]') ||
           e.target.closest('[data-session-move]')) return;
-      navigate(`/event/${slug}/session/${el.dataset.sessionNav}`);
+      const base = slug === ROUTINE_SLUG ? '/routine' : `/event/${slug}`;
+      navigate(`${base}/session/${el.dataset.sessionNav}`);
     });
   });
 

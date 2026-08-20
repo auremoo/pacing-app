@@ -31,21 +31,29 @@ pacing-app/
 │   ├── parser.js                   # Parse le template .md → objet structuré
 │   ├── views/
 │   │   ├── lock.js                 # Écran password + déchiffrement PAT
-│   │   ├── dashboard.js            # Liste des événements + bouton Créer
+│   │   ├── home.js                 # Accueil générique : séance du jour + course en préparation (si active)
+│   │   ├── courses.js              # Liste des événements + bouton Créer (route /courses)
+│   │   ├── global-nav.js           # Menu du bas commun (Accueil/Courses/Entraînement/Réglages), mobile only
 │   │   ├── sidebar.js              # Sidebar desktop (événements, séance du jour, nouvel événement)
 │   │   ├── event.js                # Container événement (onglets)
-│   │   ├── plan-view.js            # Plan semaines/séances + checkboxes + état manquée (skipped)
+│   │   ├── plan-view.js            # Plan semaines/séances + checkboxes + état manquée (skipped) — réutilisé par routine.js
 │   │   ├── course-view.js          # Parcours (GPX+PDF+photos, résultat, stats)
-│   │   ├── versions-view.js        # Gestion versions + prompt initial + prompt révision
+│   │   ├── versions-view.js        # Gestion versions + prompt initial + prompt révision (courses)
 │   │   ├── infos-view.js           # Synthèse, Allures, Principes, PPG, Vigilance, Stratégie, Nutrition
-│   │   ├── session-view.js         # Détail d'une séance + note
-│   │   ├── settings.js             # Formulaire profil athlète (stocké dans athlete.json)
-│   │   └── new-event.js            # Formulaire création d'un nouvel événement
+│   │   ├── session-view.js         # Détail d'une séance + note (courses et plan général)
+│   │   ├── settings.js             # Formulaire profil athlète (stocké dans athlete.json), route /settings
+│   │   ├── new-event.js            # Formulaire création d'un nouvel événement
+│   │   ├── routine.js              # Container plan général (onglets Plan/Contexte/Versions), route /routine
+│   │   ├── routine-settings.js     # Activités récurrentes + objectifs du plan général
+│   │   └── routine-versions.js     # Prompt initial/révision + versions du plan général
 │   └── utils/
 │       ├── dates.js
 │       ├── markdown.js             # Renderer markdown minimal
 │       ├── crypto.js               # AES-GCM + PBKDF2 (chiffrement du PAT)
-│       └── gpx-parser.js          # Parse GPX + profil altimétrique + curseur interactif
+│       ├── gpx-parser.js           # Parse GPX + profil altimétrique + curseur interactif
+│       ├── plan-overrides.js       # applyDateOverrides/applyWeekMetaOverrides (échanges/déplacements)
+│       ├── routine-overlap.js      # Détecte les semaines du plan général chevauchant une course active
+│       └── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
 ├── events/
 │   ├── index.json                  # Liste des slugs d'événements
 │   ├── run-in-lyon-2026/
@@ -54,11 +62,22 @@ pacing-app/
 │   │   └── course/                 # Fichiers GPX et PDF importés
 │   └── marathon-alpes-bsm/
 │       └── meta.json
+├── routine/                         # Plan général (hors courses), un seul, jamais dans events/
+│   ├── meta.json                    # context, goals, blockWeeks, startDate, versions, activeVersion
+│   └── plans/v1.md                  # Même format template que les plans de course
 ├── athlete.json                    # Profil athlète (niveau, perfs, volume, jours, équipements, terrain, pathologies, objectifs)
 ├── state.json                      # Sessions cochées, notes
 └── docs/
     └── CLAUDE_PROMPT.md            # Template prompt pour générer des plans
 ```
+
+## Navigation
+
+Menu du bas commun (mobile) / sidebar (desktop) à 4 sections racines : **Accueil** (`/`), **Courses** (`/courses`), **Entraînement** (`/routine`), **Réglages** (`/settings`). Un seul menu/tab-bar visible à la fois : les sections avec leurs propres sous-onglets (`/event/:slug/*`, `/routine/*`) remplacent le menu global par leur propre barre — cohérent avec le pattern déjà utilisé par `event.js`.
+
+**Accueil (`home.js`)** : générique — séance du jour (tous plans confondus, courses puis plan général) + carte(s) "course en préparation" **uniquement si** une course a un plan actif dont la période (`planStart`→`raceDate`) couvre aujourd'hui. Sinon rien d'autre. La liste complète des événements vit dans `/courses`.
+
+**Plan général vs course** : un seul plan général évolutif (`routine/`), bien séparé des courses (jamais dans `events/index.json`). Quand une course a un plan actif qui chevauche une semaine du plan général, cette semaine est marquée "en pause" (grisée, actions désactivées) dans `plan-view.js` — on ne suit jamais deux plans en parallèle. `js/utils/routine-overlap.js` calcule ce chevauchement ; `js/utils/today-session.js` centralise la détection de la séance du jour en respectant cette règle.
 
 ## Flux de données
 
@@ -68,8 +87,10 @@ GitHub repo
   ├── events/{slug}/meta.json → métadonnées + liste des versions
   ├── events/{slug}/plans/v{N}.md → plan parsé en mémoire
   ├── events/{slug}/course/{file} → GPX/PDF/JSON du parcours
+  ├── routine/meta.json      → contexte/objectifs + versions du plan général (lu au boot si présent)
+  ├── routine/plans/v{N}.md  → plan général parsé en mémoire
   ├── athlete.json          → profil athlète (lu au boot, écrit depuis Réglages)
-  └── state.json            → sessions cochées (lu au boot, écrit en temps réel)
+  └── state.json            → sessions cochées (lu au boot, écrit en temps réel) — état du plan général sous la clé interne "__routine__"
 ```
 
 **Auth** : PAT GitHub chiffré AES-GCM (PBKDF2, mot de passe `171225`) stocké dans `config.json` du repo (`encryptedToken`). Jamais en clair dans le repo ni dans localStorage.  
@@ -100,7 +121,7 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
 
 ## Ajouter un événement
 
-**Via l'app (recommandé)** : Dashboard → "Créer un événement" (ou bouton sidebar) → formulaire → `createEvent()` crée `events/{slug}/meta.json` et met à jour `events/index.json` automatiquement.
+**Via l'app (recommandé)** : Courses → "Créer un événement" (ou bouton sidebar) → formulaire → `createEvent()` crée `events/{slug}/meta.json` et met à jour `events/index.json` automatiquement.
 
 **Manuellement** : Créer `events/{slug}/meta.json`, ajouter l'entrée dans `events/index.json`, pusher sur GitHub.
 

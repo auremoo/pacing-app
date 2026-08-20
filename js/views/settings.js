@@ -1,5 +1,6 @@
-import { navigate, showToast } from '../app.js';
+import { showToast } from '../app.js';
 import { getAthleteProfile, saveAthleteProfile } from '../store.js';
+import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 
 export function mount(container) {
   render(container);
@@ -10,14 +11,11 @@ function render(container) {
 
   container.innerHTML = `
     <div class="nav-bar">
-      <button class="nav-btn" id="back-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-        Retour
-      </button>
-      <span class="nav-bar__title">Profil Athlète</span>
+      <span style="width:72px"></span>
+      <span class="nav-bar__title">Réglages</span>
       <button class="nav-btn" id="save-btn">Enregistrer</button>
     </div>
-    <div class="scroll-view">
+    <div id="tab-content" class="scroll-view" style="padding-bottom:calc(var(--tab-bar-height) + var(--safe-bottom))">
     <div class="form-page-body">
 
       <p class="section-header">Niveau & Expérience</p>
@@ -93,9 +91,10 @@ function render(container) {
 
     </div>
     </div>
+    ${renderGlobalTabBar('settings')}
   `;
 
-  container.querySelector('#back-btn').addEventListener('click', () => navigate('/'));
+  attachGlobalTabBar(container);
 
   container.querySelector('#save-btn').addEventListener('click', async () => {
     const btn = container.querySelector('#save-btn');
