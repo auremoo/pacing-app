@@ -17,6 +17,15 @@
       "distanceLabel": "Semi-marathon",
       "distanceKm": 20.8,
       "activeVersion": null
+    },
+    {
+      "slug": "toss-2023",
+      "name": "TOSS 2023",
+      "subtitle": "CentraleSupélec, Paris-Saclay",
+      "raceDate": "2023-05-13",
+      "distanceLabel": "10 km",
+      "distanceKm": 10,
+      "activeVersion": null
     }
   ]
 }

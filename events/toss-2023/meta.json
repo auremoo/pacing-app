@@ -1,0 +1,26 @@
+{
+  "slug": "toss-2023",
+  "name": "TOSS 2023",
+  "distanceKm": 10,
+  "distanceLabel": "10 km",
+  "raceDate": "2023-05-13",
+  "elevationGainM": 0,
+  "objective": "",
+  "objectiveRealistic": "",
+  "courseDescription": "",
+  "location": "CentraleSupélec, Paris-Saclay",
+  "planStart": "",
+  "planWeeks": 0,
+  "activeVersion": null,
+  "versions": [],
+  "course": {
+    "gpx": null,
+    "pdf": null
+  },
+  "photos": [],
+  "result": {
+    "time": "57'00\"",
+    "pacePerKm": "5'42\"/km",
+    "activityUrl": null
+  }
+}
