@@ -39,6 +39,8 @@ export function renderEventCard(e) {
   const pct    = plan ? computeCompletion(e.slug, plan) : null;
   const phase  = plan ? currentPhase(plan) : null;
   const dLabel = formatDaysUntil(e.raceDate);
+  const result = meta?.result;
+  const showResult = past && result?.time;
 
   return `
     <div class="event-card ${past ? 'event-card--past' : ''}" data-event-slug="${e.slug}">
@@ -54,7 +56,14 @@ export function renderEventCard(e) {
           <span class="event-card__meta-label">Course</span>
           <span class="event-card__meta-value">${dLabel}</span>
         </div>
-        ${meta?.objective ? `<div class="event-card__meta-item">
+        ${showResult ? `<div class="event-card__meta-item">
+          <span class="event-card__meta-label">Temps</span>
+          <span class="event-card__meta-value">${result.time}</span>
+        </div>
+        ${result.pacePerKm ? `<div class="event-card__meta-item">
+          <span class="event-card__meta-label">Allure</span>
+          <span class="event-card__meta-value">${result.pacePerKm}</span>
+        </div>` : ''}` : meta?.objective ? `<div class="event-card__meta-item">
           <span class="event-card__meta-label">Objectif</span>
           <span class="event-card__meta-value">${meta.objective}</span>
         </div>` : ''}
