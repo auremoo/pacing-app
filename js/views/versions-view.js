@@ -2,7 +2,7 @@ import { getEventMeta, importPlanVersion, setActiveVersion, getActivePlan, getAl
 import { navigate, showToast } from '../app.js';
 import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
-import { applyDateOverrides, applyWeekMetaOverrides } from '../utils/plan-overrides.js';
+import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 
 export function mount(container, slug) {
   render(container, slug);
@@ -317,10 +317,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
   const pct         = total ? Math.round(done / total * 100) : 0;
 
   // Current week
-  let currentWeekNum = effPlan.weeks[0]?.number || 1;
-  for (const w of effPlan.weeks) {
-    if (w.sessions.some(s => s.date <= todayStr)) currentWeekNum = w.number;
-  }
+  const currentWeekNum = getCurrentWeekNum(effPlan, todayStr);
   const weeksLeft = effPlan.weeks.filter(w => w.number >= currentWeekNum).length;
 
   // Modifications manuelles à signaler explicitement à Claude

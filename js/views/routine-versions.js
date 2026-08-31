@@ -2,7 +2,7 @@ import { getRoutineMeta, importPlanVersion, setActiveVersion, getActivePlan, get
          getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides, ROUTINE_SLUG } from '../store.js';
 import { showToast, navigate } from '../app.js';
 import { today } from '../utils/dates.js';
-import { applyDateOverrides, applyWeekMetaOverrides } from '../utils/plan-overrides.js';
+import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 
 export function mount(container) {
   render(container);
@@ -245,10 +245,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
   const total       = allSessions.length;
   const pct         = total ? Math.round(done / total * 100) : 0;
 
-  let currentWeekNum = effPlan.weeks[0]?.number || 1;
-  for (const w of effPlan.weeks) {
-    if (w.sessions.some(s => s.date <= todayStr)) currentWeekNum = w.number;
-  }
+  const currentWeekNum = getCurrentWeekNum(effPlan, todayStr);
 
   const weekDetail = effPlan.weeks.map(w => {
     const nonRest = w.sessions.filter(s => s.type !== 'rest');

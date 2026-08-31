@@ -2,6 +2,7 @@ import { getEventsIndex, getEventMeta, getActivePlan, getAllSessionStates } from
 import { navigate } from '../app.js';
 import { today, formatDaysUntil, isPast } from '../utils/dates.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
+import { getCurrentWeekNum } from '../utils/plan-overrides.js';
 
 export function mount(container) {
   const events = getEventsIndex();
@@ -92,12 +93,7 @@ export function computeCompletion(slug, plan) {
 }
 
 function currentPhase(plan) {
-  const todayStr = today();
-  for (const week of [...plan.weeks].reverse()) {
-    const hasStarted = week.sessions.some(s => s.date <= todayStr);
-    if (hasStarted) {
-      return plan.phases.find(p => p.id === week.phaseId) || null;
-    }
-  }
-  return plan.phases[0] || null;
+  const weekNum = getCurrentWeekNum(plan, today());
+  const week = plan.weeks.find(w => w.number === weekNum);
+  return plan.phases.find(p => p.id === week?.phaseId) || null;
 }

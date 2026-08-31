@@ -53,3 +53,18 @@ export function getDayLabel(dateStr) {
   const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
   return days[new Date(dateStr + 'T12:00:00').getDay()];
 }
+
+// Semaine "en cours" = celle dont le lundi calendaire est passé/aujourd'hui.
+// Ne se base pas sur la présence d'une séance à une date précise : une
+// semaine dont la première séance tombe un mardi (rien le lundi) doit
+// quand même devenir "en cours" dès le lundi.
+export function getCurrentWeekNum(plan, todayStr) {
+  let currentWeekNum = plan.weeks[0]?.number || 1;
+  for (const w of plan.weeks) {
+    if (!w.sessions.length) continue;
+    const earliestDate = w.sessions.reduce((min, s) => (s.date < min ? s.date : min), w.sessions[0].date);
+    const monday = getWeekMonday(earliestDate);
+    if (monday <= todayStr) currentWeekNum = w.number;
+  }
+  return currentWeekNum;
+}

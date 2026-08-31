@@ -4,7 +4,7 @@ import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
-import { applyDateOverrides, applyWeekMetaOverrides, getWeekMonday, getDayLabel } from '../utils/plan-overrides.js';
+import { applyDateOverrides, applyWeekMetaOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum } from '../utils/plan-overrides.js';
 
 const REASON_LABELS = {
   vacances:      'Vacances',
@@ -35,10 +35,7 @@ export function mount(container, slug, { pausedWeeks } = {}) {
   const dateIndex     = buildDateIndex(effPlan);
 
   // Semaine en cours
-  let currentWeekNum = effPlan.weeks[0]?.number || 1;
-  for (const w of effPlan.weeks) {
-    if (w.sessions.some(s => s.date <= todayStr)) currentWeekNum = w.number;
-  }
+  const currentWeekNum = getCurrentWeekNum(effPlan, todayStr);
 
   const allSessions = effPlan.weeks.flatMap(w => w.sessions).filter(s => s.type !== 'rest');
   const totSessions = allSessions.length;
