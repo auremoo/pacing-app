@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-08-31T09:46:44.818Z",
+  "lastUpdated": "2026-08-31T09:46:50.143Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -554,6 +554,14 @@
         "skipped": false,
         "completedAt": "2026-08-31T09:46:25.604Z",
         "note": "Week-end quad à la place, 300km c’était intense"
+      },
+      "s15-tue": {
+        "skipped": true,
+        "completed": false,
+        "skippedAt": "2026-08-31T09:46:49.247Z",
+        "skipReason": "autre",
+        "completedAt": null,
+        "note": "Autre"
       }
     },
     "marathon-alpes-bsm": {}
