@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-08-31T09:47:23.013Z",
+  "lastUpdated": "2026-08-31T20:21:26.609Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -144,8 +144,15 @@
         "s15-tue": "2026-08-29",
         "s15-sat": "2026-08-25",
         "s15-sun": "2026-08-27",
-        "s16-sun": "2026-09-03",
-        "s16-thu": "2026-09-06"
+        "s16-sun": "2026-09-10",
+        "s16-thu": "2026-09-13",
+        "s16-tue": "2026-09-08",
+        "s16-sat": "2026-09-12",
+        "s17-mon": "2026-08-31",
+        "s17-tue": "2026-09-01",
+        "s17-thu": "2026-09-03",
+        "s17-fri": "2026-09-04",
+        "s17-sun": "2026-09-06"
       },
       "s04-mon": {
         "skipped": true,
@@ -189,6 +196,18 @@
           "phaseId": "phase-2",
           "targetVolumeKm": 17,
           "note": "DÉCHARGE — Semaine de récupération"
+        },
+        "16": {
+          "isDecharge": false,
+          "phaseId": "phase-C",
+          "targetVolumeKm": 31,
+          "note": "Spécifique — travail au seuil"
+        },
+        "17": {
+          "isDecharge": false,
+          "phaseId": "phase-B",
+          "targetVolumeKm": 20,
+          "note": "Semaine allégée + point d'étape"
         }
       },
       "s05-tue": {
