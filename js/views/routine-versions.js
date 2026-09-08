@@ -284,6 +284,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 - Équipements : ${a.equipment || 'Non renseigné'}
 - Terrain local : ${a.terrain || 'Non renseigné'}
 - Pathologies : ${a.pathologies || 'Aucune'}
+- Objectifs secondaires : ${a.goals || 'Aucun'}
 
 ## Contexte du plan général
 
