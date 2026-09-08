@@ -1,17 +1,22 @@
 import { showToast, navigate } from '../app.js';
 import { getRoutineMeta, saveRoutineSettings } from '../store.js';
-import { addDays, weeksBetween } from '../utils/dates.js';
+import { today, addDays, weeksBetween } from '../utils/dates.js';
 import { getWeekMonday } from '../utils/plan-overrides.js';
 
 export function mount(container) {
   render(container);
 }
 
+function nextMonday() {
+  const monday = getWeekMonday(today());
+  return monday === today() ? monday : addDays(monday, 7);
+}
+
 function render(container) {
   const meta = getRoutineMeta() || {};
-  const startDate = meta.startDate || '';
+  const startDate = meta.startDate || nextMonday();
   const blockWeeks = meta.blockWeeks || '';
-  const endDate = (startDate && blockWeeks) ? addDays(startDate, blockWeeks * 7 - 1) : '';
+  const endDate = blockWeeks ? addDays(startDate, blockWeeks * 7 - 1) : '';
 
   container.innerHTML = `
     <div class="form-page-body" style="padding-top:var(--space-4)">
@@ -71,7 +76,7 @@ function render(container) {
 
   // Le lundi de la semaine choisie devient la date de début effective
   startInput.addEventListener('change', () => {
-    if (!startInput.value) return;
+    if (!startInput.value) startInput.value = nextMonday();
     const monday = getWeekMonday(startInput.value);
     if (monday !== startInput.value) {
       startInput.value = monday;
@@ -84,8 +89,13 @@ function render(container) {
   weeksInput.addEventListener('input', () => syncEndFromWeeks(startInput, weeksInput, endInput));
 
   endInput.addEventListener('change', () => {
-    if (!startInput.value || !endInput.value) return;
-    if (endInput.value < startInput.value) { endInput.value = ''; return; }
+    if (!endInput.value) return;
+    if (!startInput.value) { startInput.value = nextMonday(); endInput.min = startInput.value; }
+    if (endInput.value < startInput.value) {
+      showToast('La date de fin doit être après la date de début', 'error');
+      endInput.value = '';
+      return;
+    }
     weeksInput.value = weeksBetween(startInput.value, endInput.value);
   });
 
@@ -113,9 +123,9 @@ function render(container) {
 }
 
 function syncEndFromWeeks(startInput, weeksInput, endInput) {
+  if (!startInput.value) { startInput.value = nextMonday(); endInput.min = startInput.value; }
   const weeks = parseInt(weeksInput.value);
-  if (!startInput.value || !weeks) { endInput.value = ''; return; }
-  endInput.value = addDays(startInput.value, weeks * 7 - 1);
+  endInput.value = weeks ? addDays(startInput.value, weeks * 7 - 1) : '';
 }
 
 function esc(str) {

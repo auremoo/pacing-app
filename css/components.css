@@ -1442,7 +1442,9 @@
 .form-input {
   display: block;
   width: 100%;
-  font-size: 15px;
+  /* 16px minimum : sous ce seuil, Safari iOS zoome automatiquement la page
+     au focus d'un champ (et ne dézoome pas tout seul ensuite). */
+  font-size: 16px;
   color: var(--text-primary);
   background: transparent;
   padding: 0;
