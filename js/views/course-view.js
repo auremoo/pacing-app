@@ -2,6 +2,7 @@ import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta, addPhot
 import { showToast } from '../app.js';
 import { parseGpx, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
 import { isPast } from '../utils/dates.js';
+import { getWeekMonday } from '../utils/plan-overrides.js';
 
 export async function mount(container, slug) {
   container.innerHTML = `<div class="loading-state"><div class="spinner"></div><span>Chargement…</span></div>`;
@@ -32,6 +33,7 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
   const racePast  = isPast(meta?.raceDate);
 
   container.innerHTML = `
+    ${renderGeneralInfo(meta)}
     ${renderCourseInfo(meta, hasGpx, racePast)}
     ${renderResult(meta)}
     ${renderGpxSection(gpxData, hasGpx)}
@@ -40,6 +42,7 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
     <div style="height:var(--space-8)"></div>
   `;
 
+  wireGeneralInfoEdit(container, slug);
   wireCourseInfoEdit(container, slug);
   wireResultEdit(container, slug);
   wireGpxUpload(container, slug);
@@ -62,6 +65,109 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
       const ext  = filename.split('.').pop().toLowerCase();
       const mime = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' }[ext] || 'image/jpeg';
       slot.innerHTML = `<img src="data:${mime};base64,${photoFiles[i].content}" alt="${filename}" loading="lazy">`;
+    }
+  });
+}
+
+// ── Infos générales (editable) ──────────────────────────────────────
+// Champs utilisés dans les prompts (lieu, objectifs, dates du plan) mais
+// non couverts ailleurs — seulement modifiables à la création sinon.
+
+function renderGeneralInfo(meta) {
+  return `
+    <div style="padding:var(--space-4) var(--space-4) 0">
+      <div class="card-group" id="general-info-card">
+        <div id="general-info-view">
+          ${meta?.location ? infoRow('Lieu', escHtml(meta.location)) : ''}
+          ${meta?.objective ? infoRow('Objectif', escHtml(meta.objective)) : ''}
+          ${meta?.objectiveRealistic ? infoRow('Objectif réaliste', escHtml(meta.objectiveRealistic)) : ''}
+          ${meta?.planStart ? infoRow('Début du plan', meta.planStart) : ''}
+          ${meta?.planWeeks ? infoRow('Durée du plan', `${meta.planWeeks} semaines`) : ''}
+          ${meta?.additionalContext ? infoRow('Contexte supplémentaire', escHtml(meta.additionalContext)) : ''}
+          <div class="list-row" id="edit-general-btn" style="cursor:pointer">
+            <div class="list-row__content">
+              <div class="list-row__title" style="color:var(--ios-blue)">Modifier ces infos</div>
+            </div>
+            <svg style="width:16px;height:16px;color:var(--text-tertiary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+        <div id="general-info-edit" style="display:none;padding:var(--space-3) var(--space-4)">
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Lieu</label>
+            <input class="input-field" id="edit-location" type="text" placeholder="Ex : Lyon, France" value="${escHtml(meta?.location || '')}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Objectif temps</label>
+            <input class="input-field" id="edit-objective" type="text" placeholder="Ex : 1h50" value="${escHtml(meta?.objective || '')}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Objectif réaliste</label>
+            <input class="input-field" id="edit-realistic" type="text" placeholder="Ex : 1h51-1h53" value="${escHtml(meta?.objectiveRealistic || '')}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Début du plan (toujours un lundi)</label>
+            <input class="input-field" id="edit-planstart" type="date" value="${escHtml(meta?.planStart || '')}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Durée du plan (semaines)</label>
+            <input class="input-field" id="edit-planweeks" type="number" inputmode="numeric" pattern="[0-9]*" min="1" max="52" value="${meta?.planWeeks || ''}">
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Contexte supplémentaire</label>
+            <textarea class="textarea-field" id="edit-context" rows="3" placeholder="Ex : matériel GPS Garmin, préfère les côtes le weekend…">${escHtml(meta?.additionalContext || '')}</textarea>
+          </div>
+          <div style="display:flex;gap:var(--space-2)">
+            <button class="btn btn--primary" id="save-general-btn" style="flex:1">Enregistrer</button>
+            <button class="btn btn--secondary" id="cancel-general-btn" style="flex:1">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function wireGeneralInfoEdit(container, slug) {
+  const view      = container.querySelector('#general-info-view');
+  const editPane  = container.querySelector('#general-info-edit');
+  const editBtn   = container.querySelector('#edit-general-btn');
+  const saveBtn   = container.querySelector('#save-general-btn');
+  const cancelBtn = container.querySelector('#cancel-general-btn');
+  const startInput = container.querySelector('#edit-planstart');
+
+  editBtn?.addEventListener('click', () => {
+    view.style.display = 'none';
+    editPane.style.display = 'block';
+  });
+  cancelBtn?.addEventListener('click', () => {
+    view.style.display = 'block';
+    editPane.style.display = 'none';
+  });
+  startInput?.addEventListener('change', () => {
+    if (!startInput.value) return;
+    const monday = getWeekMonday(startInput.value);
+    if (monday !== startInput.value) {
+      startInput.value = monday;
+      showToast('Date recalée sur le lundi de la semaine', 'success');
+    }
+  });
+  saveBtn?.addEventListener('click', async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Enregistrement…';
+    try {
+      await updateEventMeta(slug, {
+        location:           container.querySelector('#edit-location').value.trim(),
+        objective:          container.querySelector('#edit-objective').value.trim(),
+        objectiveRealistic: container.querySelector('#edit-realistic').value.trim(),
+        planStart:          startInput.value,
+        planWeeks:          parseInt(container.querySelector('#edit-planweeks').value) || 0,
+        additionalContext:  container.querySelector('#edit-context').value.trim(),
+      });
+      showToast('Infos mises à jour', 'success');
+      await mount(container, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Enregistrer';
     }
   });
 }

@@ -1,4 +1,4 @@
-import { getEventMeta, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides } from '../store.js';
+import { getEventMeta, getEventsIndex, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
@@ -122,6 +122,25 @@ function showInitialPromptModal(container, slug) {
   openPromptModal('Prompt de plan initial', prompt);
 }
 
+// Détecte automatiquement les autres courses dont la date tombe dans la
+// période de préparation (plan_start → date de course), et les combine
+// avec les précisions manuelles éventuelles (matériel, préférences…).
+function buildAdditionalContext(meta) {
+  const autoLines = (meta.planStart && meta.raceDate)
+    ? getEventsIndex()
+        .filter(e => e.slug !== meta.slug && e.raceDate)
+        .filter(e => e.raceDate >= meta.planStart && e.raceDate <= meta.raceDate)
+        .map(e => `- Autre course prévue pendant cette préparation : ${e.name} le ${e.raceDate}${e.distanceLabel ? ` (${e.distanceLabel})` : ''}`)
+    : [];
+
+  const manual = (meta.additionalContext || '').trim();
+  const lines = manual ? [...autoLines, manual] : autoLines;
+
+  return lines.length
+    ? lines.join('\n')
+    : `[Ajoute ici tes préférences d'entraînement, matériel GPS, ou toute autre contrainte particulière]`;
+}
+
 function buildInitialPrompt(meta, athlete) {
   const todayStr = today();
   const a = athlete || {};
@@ -155,7 +174,7 @@ function buildInitialPrompt(meta, athlete) {
 
 ### Contexte supplémentaire
 
-[Ajoute ici les événements intermédiaires, contraintes calendaires, préférences d'entraînement, matériel GPS, etc.]
+${buildAdditionalContext(meta)}
 
 ---
 
@@ -391,6 +410,9 @@ ${swappedWeekNums.length ? `\n**Semaines dont le contenu (décharge/phase/volume
 - Distance : ${meta.distanceKm} km · D+ ${meta.elevationGainM || 0} m
 - Objectif : ${meta.objective || 'Non renseigné'}
 - Objectif réaliste : ${meta.objectiveRealistic || 'Non renseigné'}
+
+## Contexte supplémentaire
+${buildAdditionalContext(meta)}
 
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks.length} (${weeksLeft} semaines restantes dont la semaine en cours)
