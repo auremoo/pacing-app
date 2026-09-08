@@ -53,3 +53,22 @@ export function formatDaysUntil(isoDate) {
   if (weeks < 8) return `Dans ${weeks} sem.`;
   return `Dans ${Math.round(d / 30)} mois`;
 }
+
+export function addDays(isoDate, days) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+// Nombre de semaines couvertes entre deux dates incluses (ex: lundi -> dimanche
+// de la même semaine = 1 semaine).
+export function weeksBetween(startIso, endIso) {
+  const [y1, m1, d1] = startIso.split('-').map(Number);
+  const [y2, m2, d2] = endIso.split('-').map(Number);
+  const diffDays = Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86400000);
+  return Math.max(1, Math.ceil((diffDays + 1) / 7));
+}
