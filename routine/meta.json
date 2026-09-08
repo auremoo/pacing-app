@@ -3,6 +3,13 @@
   "goals": "Courir en plus du bad 2 à 3x par semaine (dont une facultative si pas le temps), travailler la polyvalence, endurance, long run, petites courses, fractionnés etc en proposant des séances possiblement remplaçable par du vélo. Penser à mes temps de repos quand même",
   "blockWeeks": 40,
   "startDate": "2026-09-14",
-  "activeVersion": null,
-  "versions": []
+  "activeVersion": 1,
+  "versions": [
+    {
+      "v": 1,
+      "file": "v1.md",
+      "importedAt": "2026-09-08T10:58:10.843Z",
+      "label": "Bloc fond polyvalent 2026-2027"
+    }
+  ]
 }
