@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-09-11T15:41:06.948Z",
+  "lastUpdated": "2026-09-11T15:41:15.692Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -624,7 +624,8 @@
       "s16-tue": {
         "completed": true,
         "skipped": false,
-        "completedAt": "2026-09-10T19:56:31.765Z"
+        "completedAt": "2026-09-10T19:56:31.765Z",
+        "note": "7km en pile 40min"
       },
       "s17-sun": {
         "completed": true,
