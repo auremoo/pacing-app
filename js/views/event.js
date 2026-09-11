@@ -4,6 +4,8 @@ import { mount as mountPlan }     from './plan-view.js';
 import { mount as mountCourse }   from './course-view.js';
 import { mount as mountVersions } from './versions-view.js';
 import { mount as mountInfos }    from './infos-view.js';
+import { mount as mountStrategy } from './strategy-view.js';
+import { isPrepComplete } from '../utils/prep-report.js';
 
 const TABS = [
   { id: 'plan',     label: 'Plan',     icon: tabIcon('plan')     },
@@ -11,6 +13,15 @@ const TABS = [
   { id: 'versions', label: 'Versions', icon: tabIcon('versions') },
   { id: 'infos',    label: 'Infos',    icon: tabIcon('infos')    },
 ];
+
+// L'onglet Stratégie n'apparaît qu'en fin de préparation (ou si une stratégie
+// a déjà été importée) : inutile de l'avoir sous les yeux pendant 20 semaines.
+function tabsFor(slug, meta, activeTab) {
+  const show = activeTab === 'strategy' || !!meta.strategy || isPrepComplete(slug);
+  return show
+    ? [...TABS, { id: 'strategy', label: 'Stratégie', icon: tabIcon('strategy') }]
+    : TABS;
+}
 
 export async function mount(container, slug, activeTab = 'plan') {
   // Validate slug
@@ -21,6 +32,8 @@ export async function mount(container, slug, activeTab = 'plan') {
   if (meta.activeVersion) {
     await ensurePlanLoaded(slug, meta.activeVersion);
   }
+
+  const tabs = tabsFor(slug, meta, activeTab);
 
   container.innerHTML = `
     <div class="nav-bar">
@@ -37,7 +50,7 @@ export async function mount(container, slug, activeTab = 'plan') {
     </div>
 
     <nav class="tab-bar">
-      ${TABS.map(t => `
+      ${tabs.map(t => `
         <button class="tab-item ${t.id === activeTab ? 'tab-item--active' : ''}"
                 data-tab="${t.id}">
           ${t.icon}
@@ -64,6 +77,7 @@ async function mountTab(tabContent, slug, tab) {
     case 'course':   await mountCourse(tabContent, slug); break;
     case 'versions': mountVersions(tabContent, slug);   break;
     case 'infos':    mountInfos(tabContent, slug);      break;
+    case 'strategy': await mountStrategy(tabContent, slug); break;
     default:         mountPlan(tabContent, slug);
   }
 }
@@ -74,6 +88,7 @@ function tabIcon(id) {
     course: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l4-8 4 4 4-6 4 8"/></svg>`,
     versions: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
     infos: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+    strategy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V4h9l1 2h6v9h-7l-1-2H4"/></svg>`,
   };
   return icons[id] || '';
 }

@@ -3,6 +3,7 @@ import { navigate, showToast } from '../app.js';
 import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
+import { openPromptModal } from '../utils/prompt-modal.js';
 
 export function mount(container, slug) {
   render(container, slug);
@@ -279,46 +280,6 @@ function showExportModal(container, slug) {
   openPromptModal('Prompt de révision', prompt);
 }
 
-function openPromptModal(title, prompt) {
-  const modal = document.createElement('div');
-  modal.className = 'export-modal';
-  modal.innerHTML = `
-    <div class="export-modal__overlay"></div>
-    <div class="export-modal__panel">
-      <div class="export-modal__header">
-        <span class="export-modal__title">${title}</span>
-        <button class="export-modal__close" id="modal-close">✕</button>
-      </div>
-      <div class="export-modal__hint">
-        Copie ce texte et envoie-le à Claude pour obtenir le plan au format .md à importer.
-      </div>
-      <textarea class="export-modal__textarea" id="prompt-text" readonly>${escHtml(prompt)}</textarea>
-      <div class="export-modal__footer">
-        <button class="btn btn--primary" id="copy-prompt-btn" style="flex:1">Copier le prompt</button>
-        <button class="btn btn--secondary" id="close-modal-btn" style="flex:1">Fermer</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  const close = () => document.body.removeChild(modal);
-  modal.querySelector('#modal-close').addEventListener('click', close);
-  modal.querySelector('#close-modal-btn').addEventListener('click', close);
-  modal.querySelector('.export-modal__overlay').addEventListener('click', close);
-
-  modal.querySelector('#copy-prompt-btn').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(prompt);
-      showToast('Prompt copié !', 'success');
-    } catch {
-      modal.querySelector('#prompt-text').select();
-      document.execCommand('copy');
-      showToast('Prompt copié !', 'success');
-    }
-  });
-}
-
 function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides) {
   const todayStr    = today();
   const nextVersion = (meta.activeVersion || 1) + 1;
@@ -500,9 +461,6 @@ IDs de session : s{NN}-{daycode} (ex: s01-mon, s03-thu)
 `;
 }
 
-function escHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 // ── Version card ──────────────────────────────────────────────────
 

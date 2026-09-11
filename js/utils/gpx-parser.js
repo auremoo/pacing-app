@@ -38,6 +38,45 @@ export function parseGpx(gpxText) {
   };
 }
 
+// Découpe le profil en tranches d'1 km : D+/D- et altitudes par kilomètre.
+// Sert à donner à l'IA le relief réel du parcours pour bâtir un plan d'allure
+// segment par segment plutôt que des généralités.
+export function splitByKm(profile, threshold = 1.5) {
+  if (!profile || profile.length < 2) return [];
+
+  const totalM = profile[profile.length - 1].dist;
+  const kms = [];
+  let i = 0;   // curseur : premier point de la tranche courante
+
+  for (let k = 0; k * 1000 < totalM; k++) {
+    const endM = Math.min((k + 1) * 1000, totalM);
+
+    // La tranche démarre sur le dernier point du km précédent pour ne pas
+    // perdre le dénivelé de la jonction entre deux kilomètres.
+    const start = Math.max(0, i - 1);
+    while (i < profile.length && profile[i].dist <= endM) i++;
+    const pts = profile.slice(start, i);
+
+    if (pts.length < 2) continue;
+
+    const { gain, loss } = calcElevationThreshold(pts, threshold);
+    const eles = pts.map(p => p.ele);
+
+    kms.push({
+      km:        k + 1,
+      lengthM:   Math.round(endM - k * 1000),
+      gainM:     Math.round(gain),
+      lossM:     Math.round(loss),
+      minEleM:   Math.round(Math.min(...eles)),
+      maxEleM:   Math.round(Math.max(...eles)),
+      startEleM: Math.round(pts[0].ele),
+      endEleM:   Math.round(pts[pts.length - 1].ele),
+    });
+  }
+
+  return kms;
+}
+
 function calcElevationThreshold(points, threshold = 5) {
   let gain = 0, loss = 0;
   let ref = points[0].ele;

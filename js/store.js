@@ -105,6 +105,9 @@ export function getActivePlanRaw(slug) {
   return _planRaw[slug]?.[meta.activeVersion] || null;
 }
 
+export function getPlanVersion(slug, v)    { return _plans[slug]?.[v] || null; }
+export function getPlanRawVersion(slug, v) { return _planRaw[slug]?.[v] || null; }
+
 // ── Sessions / State ──────────────────────────────────────────────
 
 export function getSessionState(slug, sessionId) {
@@ -115,6 +118,13 @@ export function getAllSessionStates(slug) {
   return _state.events?.[slug] || {};
 }
 
+// Version du plan en vigueur au moment du cochage : indispensable pour
+// reconstruire un historique honnête quand plusieurs versions se chevauchent
+// (v1 et v2 peuvent partager les mêmes numéros de semaine sur les mêmes dates).
+function activeVersionOf(slug) {
+  return getEventMeta(slug)?.activeVersion ?? null;
+}
+
 export async function toggleSession(slug, sessionId, completed) {
   if (!_state.events[slug]) _state.events[slug] = {};
   const prev = _state.events[slug][sessionId] || {};
@@ -122,7 +132,9 @@ export async function toggleSession(slug, sessionId, completed) {
     ...prev,
     completed,
     skipped: completed ? false : prev.skipped,
-    ...(completed ? { completedAt: new Date().toISOString() } : { completedAt: null })
+    ...(completed
+      ? { completedAt: new Date().toISOString(), version: activeVersionOf(slug) }
+      : { completedAt: null })
   };
   scheduleSyncState();
 }
@@ -135,7 +147,7 @@ export async function skipSession(slug, sessionId, skipped, reason = null) {
     skipped,
     completed: skipped ? false : prev.completed,
     ...(skipped
-      ? { skippedAt: new Date().toISOString(), skipReason: reason }
+      ? { skippedAt: new Date().toISOString(), skipReason: reason, version: activeVersionOf(slug) }
       : { skippedAt: null, skipReason: null }),
     ...(skipped ? { completedAt: null } : {})
   };
@@ -410,4 +422,34 @@ export async function saveRoutineSettings(updates) {
   if (!existing) return createRoutine(updates);
   await updateEventMeta(ROUTINE_SLUG, updates);
   return getRoutineMeta();
+}
+
+// ── Bilan de préparation & stratégie de course ──────────────────────
+// Deux documents par course, générés en fin de préparation :
+//   bilan.md    → historique consolidé de la prépa (toutes versions confondues)
+//   strategy.md → réponse de l'IA (objectif atteignable + plan de course)
+
+function prepReportPath(slug) { return `events/${slug}/bilan.md`; }
+function strategyPath(slug)   { return `events/${slug}/strategy.md`; }
+
+export async function savePrepReport(slug, mdContent) {
+  const existing = await getFile(prepReportPath(slug)).catch(() => null);
+  await putFile(prepReportPath(slug), mdContent, existing?.sha || null);
+  await updateEventMeta(slug, {
+    prepReport: { file: 'bilan.md', generatedAt: new Date().toISOString() }
+  });
+}
+
+export async function saveRaceStrategy(slug, mdContent) {
+  const existing = await getFile(strategyPath(slug)).catch(() => null);
+  await putFile(strategyPath(slug), mdContent, existing?.sha || null);
+  await updateEventMeta(slug, {
+    strategy: { file: 'strategy.md', importedAt: new Date().toISOString() }
+  });
+}
+
+export async function getRaceStrategy(slug) {
+  if (!getEventMeta(slug)?.strategy) return null;
+  const file = await getFile(strategyPath(slug)).catch(() => null);
+  return file?.content || null;
 }

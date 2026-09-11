@@ -40,6 +40,7 @@ pacing-app/
 │   │   ├── course-view.js          # Parcours (GPX+PDF+photos, résultat, stats)
 │   │   ├── versions-view.js        # Gestion versions + prompt initial + prompt révision (courses)
 │   │   ├── infos-view.js           # Synthèse, Allures, Principes, PPG, Vigilance, Stratégie, Nutrition
+│   │   ├── strategy-view.js        # Onglet Stratégie : bilan de fin de prépa + prompt + stratégie IA
 │   │   ├── session-view.js         # Détail d'une séance + note (courses et plan général)
 │   │   ├── settings.js             # Formulaire profil athlète (stocké dans athlete.json), route /settings
 │   │   ├── new-event.js            # Formulaire création d'un nouvel événement
@@ -52,6 +53,8 @@ pacing-app/
 │       ├── crypto.js               # AES-GCM + PBKDF2 (chiffrement du PAT)
 │       ├── gpx-parser.js           # Parse GPX + profil altimétrique + curseur interactif
 │       ├── plan-overrides.js       # applyDateOverrides/applyWeekMetaOverrides (échanges/déplacements)
+│       ├── prep-report.js          # Bilan de fin de prépa consolidé toutes versions + prompt de stratégie
+│       ├── prompt-modal.js         # Modale "copier un prompt" partagée (versions + stratégie)
 │       ├── routine-overlap.js      # Détecte les semaines du plan général chevauchant une course active
 │       └── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
 ├── events/
@@ -59,6 +62,8 @@ pacing-app/
 │   ├── run-in-lyon-2026/
 │   │   ├── meta.json               # Métadonnées + versions + course (gpx + pdf)
 │   │   ├── plans/v1.md             # Plan au format template
+│   │   ├── bilan.md                # Bilan de préparation consolidé (généré en fin de prépa)
+│   │   ├── strategy.md             # Stratégie de course renvoyée par l'IA (importée)
 │   │   └── course/                 # Fichiers GPX et PDF importés
 │   └── marathon-alpes-bsm/
 │       └── meta.json
@@ -116,8 +121,9 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
 **Types de séance valides :** `rest`, `easy`, `long`, `intervals`, `tempo`, `hills`, `race`, `strength`, `cross`
 
 **IDs de session :** générés par le parser → `s{NN}-{daycode}` (ex: `s01-mon`, `s03-thu`)  
-**State.json** structure : `{ events: { "slug": { "s01-mon": { completed, completedAt, skipped, skippedAt, note } } } }`  
-`skipped: true` = séance manquée (orange, barré). Exclusif avec `completed`.
+**State.json** structure : `{ events: { "slug": { "s01-mon": { completed, completedAt, skipped, skippedAt, note, version } } } }`  
+`skipped: true` = séance manquée (orange, barré). Exclusif avec `completed`.  
+`version` = version du plan active au moment du cochage. Indispensable au bilan de fin de prépa : deux versions peuvent partager les mêmes numéros de semaine aux mêmes dates avec des séances différentes (v1 et v2 de `run-in-lyon-2026` partagent S13→S20). Pour l'historique antérieur à ce champ, `prep-report.js` déduit la version via `versions[].importedAt` comparé à la date de cochage.
 
 ## Ajouter un événement
 
@@ -132,6 +138,31 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
    - Avec plan : "Générer un prompt de révision" → copier → Claude → obtenir .md → importer
 2. Les deux prompts sont pré-remplis avec le profil athlète (Réglages) + les données de l'événement
 3. "Importer nouvelle version" upload le .md et met à jour `meta.json` automatiquement
+
+## Bilan de fin de préparation et stratégie de course
+
+Onglet **Stratégie** d'un événement (`strategy-view.js`), 5e onglet affiché uniquement
+quand la préparation est terminée ou qu'une stratégie a déjà été importée.
+
+**Déclencheur** : `isPrepComplete(slug)` — la dernière séance d'entraînement du plan
+actif (types `race` et `rest` exclus, car la dernière séance du plan est la course
+elle-même) est traitée, cochée comme faite *ou* comme manquée.
+
+**Flux** :
+1. « Générer le bilan et le prompt » consolide l'historique réel de la prépa toutes
+   versions confondues (`buildConsolidatedHistory`), l'écrit dans `events/{slug}/bilan.md`
+   et ouvre le prompt à copier.
+2. Le prompt contient : objectif de départ (lu dans `plans/v1.md`, seule source non
+   écrasée) et ses révisions, profil athlète, assiduité par type de séance, détail
+   semaine par semaine avec le contenu prescrit, et le profil du parcours km par km
+   calculé depuis le GPX (`splitByKm`).
+3. L'IA choisit elle-même l'objectif atteignable et renvoie un plan d'allure ; le .md
+   est importé dans `events/{slug}/strategy.md` et rendu dans l'onglet.
+
+**Convention de lecture du réalisé**, rappelée explicitement dans le prompt :
+séance cochée **sans** note = faite exactement comme prescrite ; séance cochée **avec**
+note = la note décrit l'écart ; séance manquée = non faite ; séance jamais cochée =
+statut inconnu.
 
 ## Profil athlète
 
@@ -162,6 +193,8 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
     "pdf": { "filename": "…pdf", "importedAt": "…" }
   },
   "photos": ["photo-1234567890.jpg"],
+  "prepReport": { "file": "bilan.md", "generatedAt": "…" },
+  "strategy": { "file": "strategy.md", "importedAt": "…" },
   "result": { "time": "1h52'34\"", "pacePerKm": "5'20\"/km", "activityUrl": null }
 }
 ```
@@ -186,7 +219,8 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 - **Création événement** : `createEvent(data)` — crée `events/{slug}/meta.json` + màj `events/index.json` via API GitHub
 - **Profil athlète** : `getAthleteProfile()` / `saveAthleteProfile(profile)` — `athlete.json` à la racine du repo
 - **Photos** : 2 max par événement, 5 Mo max, stockées en base64 dans `events/{slug}/course/`, MIME auto-détecté
-- **GPX parser** : `smoothElevation(points, 3)` + `calcElevationThreshold(smoothed, 1.5)` pour D+/D- précis
+- **GPX parser** : `smoothElevation(points, 3)` + `calcElevationThreshold(smoothed, 1.5)` pour D+/D- précis ; `splitByKm(profile)` découpe le profil en tranches d'1 km (D+/D-/altitudes) pour le prompt de stratégie
+- **Bilan de prépa** : `prep-report.js` — historique consolidé multi-versions, `events/{slug}/bilan.md` + `events/{slug}/strategy.md`
 
 ## Conventions de code
 
