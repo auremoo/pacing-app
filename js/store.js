@@ -1,6 +1,7 @@
 import { getFile, putFile } from './github-api.js';
 import { parsePlan } from './parser.js';
 import { showToast } from './toast.js';
+import { stripReasonLines } from './utils/skip-reasons.js';
 
 // ── In-memory state ───────────────────────────────────────────────
 
@@ -125,6 +126,12 @@ function activeVersionOf(slug) {
   return getEventMeta(slug)?.activeVersion ?? null;
 }
 
+// Une séance qui n'est plus manquée ne doit pas garder le libellé de sa raison
+// dans la note : il se lirait comme une remarque de l'athlète sur la séance faite.
+function noteWithoutSkipReason(prev) {
+  return prev.skipped && prev.note ? stripReasonLines(prev.note) : prev.note;
+}
+
 export async function toggleSession(slug, sessionId, completed) {
   if (!_state.events[slug]) _state.events[slug] = {};
   const prev = _state.events[slug][sessionId] || {};
@@ -133,7 +140,7 @@ export async function toggleSession(slug, sessionId, completed) {
     completed,
     skipped: completed ? false : prev.skipped,
     ...(completed
-      ? { completedAt: new Date().toISOString(), version: activeVersionOf(slug) }
+      ? { completedAt: new Date().toISOString(), version: activeVersionOf(slug), note: noteWithoutSkipReason(prev) }
       : { completedAt: null })
   };
   scheduleSyncState();
@@ -148,7 +155,7 @@ export async function skipSession(slug, sessionId, skipped, reason = null) {
     completed: skipped ? false : prev.completed,
     ...(skipped
       ? { skippedAt: new Date().toISOString(), skipReason: reason, version: activeVersionOf(slug) }
-      : { skippedAt: null, skipReason: null }),
+      : { skippedAt: null, skipReason: null, note: noteWithoutSkipReason(prev) }),
     ...(skipped ? { completedAt: null } : {})
   };
   scheduleSyncState();

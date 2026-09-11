@@ -290,8 +290,7 @@
         "completed": true,
         "skippedAt": null,
         "skipReason": null,
-        "completedAt": "2026-07-20T10:33:26.687Z",
-        "note": "Autre"
+        "completedAt": "2026-07-20T10:33:26.687Z"
       },
       "s06-thu": {
         "skipped": true,
@@ -314,8 +313,7 @@
         "completed": true,
         "skippedAt": null,
         "skipReason": null,
-        "completedAt": "2026-07-07T08:10:29.538Z",
-        "note": "Autre"
+        "completedAt": "2026-07-07T08:10:29.538Z"
       },
       "s07-sun": {
         "skipped": true,
@@ -364,7 +362,7 @@
         "note": "Autre"
       },
       "s08-sat": {
-        "note": "Via ferrata du p’chti niveau intermédiaire + rafting ",
+        "note": "Via ferrata du p’chti niveau intermédiaire + rafting",
         "completed": true,
         "skipped": false,
         "completedAt": "2026-07-13T13:01:31.010Z"
@@ -418,7 +416,7 @@
         "completed": true,
         "skipped": false,
         "completedAt": "2026-07-23T23:50:43.663Z",
-        "note": "Je suis en vacances au Canada jusqu’au 9 août inclus, c’est pourquoi je ne vais pas suivre forcément correctement les séances durant ces dates "
+        "note": "Je suis en vacances au Canada jusqu’au 9 août inclus, c’est pourquoi je ne vais pas suivre forcément correctement les séances durant ces dates"
       },
       "s10-sat": {
         "skipped": true,
@@ -608,8 +606,7 @@
         "completed": true,
         "skippedAt": null,
         "skipReason": null,
-        "completedAt": "2026-09-05T18:03:27.777Z",
-        "note": "Autre"
+        "completedAt": "2026-09-05T18:03:27.777Z"
       },
       "s17-tue": {
         "skipped": true,

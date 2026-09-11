@@ -4,6 +4,7 @@ import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { openPromptModal } from '../utils/prompt-modal.js';
+import { skipReasonLabel } from '../utils/skip-reasons.js';
 
 export function mount(container, slug) {
   render(container, slug);
@@ -331,8 +332,7 @@ ${swappedWeekNums.length ? `\n**Semaines dont le contenu (décharge/phase/volume
 
     const rows = nonRest.map(s => {
       const st = states[s.id];
-      const reasonMap = { vacances: 'Vacances', professionnel: 'Empêch. pro.', maladie: 'Maladie', blessure: 'Blessure', autre: 'Autre' };
-      const skipStr   = st?.skipReason ? ` (${reasonMap[st.skipReason] || st.skipReason})` : '';
+      const skipStr   = st?.skipReason ? ` (${skipReasonLabel(st.skipReason)})` : '';
       const status    = st?.completed ? '✓ Faite' : st?.skipped ? `✗ Manquée${skipStr}` : (s.date < todayStr ? '— Non cochée' : '· À venir');
       const note   = st?.note ? ` [Note: ${st.note.replace(/\n/g, ' ')}]` : '';
       const moved  = (dateOverrides && dateOverrides[s.id]) ? ` [déplacée, était le ${originalDateById[s.id]}]` : '';

@@ -16,6 +16,7 @@
 import { getEventMeta, getAllSessionStates, getActivePlan, getPlanVersion,
          ensurePlanLoaded, getDateOverrides, getWeekMetaOverrides } from '../store.js';
 import { applyDateOverrides, applyWeekMetaOverrides } from './plan-overrides.js';
+import { skipReasonLabel, stripReasonLines } from './skip-reasons.js';
 import { today } from './dates.js';
 
 // ── Déclencheur ───────────────────────────────────────────────────
@@ -111,7 +112,7 @@ export function buildConsolidatedHistory(slug) {
       ...session,
       date:   overrides[id] || session.date,
       status: st.completed ? 'done' : 'skipped',
-      note:   st.note || '',
+      note:   stripReasonLines(st.note),
       skipReason: st.skipReason || null,
       version, versionInferred: inferred,
     });
@@ -172,14 +173,9 @@ const TYPE_FR = {
   rest: 'Repos', easy: 'Footing', long: 'Sortie longue', intervals: 'Fractionné',
   tempo: 'Tempo/seuil', hills: 'Côtes', race: 'Course', strength: 'PPG', cross: 'Cross-training',
 };
-const SKIP_FR = {
-  vacances: 'vacances', professionnel: 'empêchement pro', maladie: 'maladie',
-  blessure: 'blessure', autre: 'autre',
-};
-
 function statusLabel(s) {
   if (s.status === 'done')    return s.note ? 'Faite (avec écart, voir note)' : 'Faite comme prescrite';
-  if (s.status === 'skipped') return `Non faite${s.skipReason ? ` (${SKIP_FR[s.skipReason] || s.skipReason})` : ''}`;
+  if (s.status === 'skipped') return `Non faite${s.skipReason ? ` (${skipReasonLabel(s.skipReason).toLowerCase()})` : ''}`;
   return 'Jamais cochée (statut inconnu)';
 }
 
@@ -319,7 +315,6 @@ Ne reprends pas mécaniquement l'objectif de départ : c'était une intention, p
 - Une séance **faite avec une note** a été réalisée avec l'écart décrit dans la note — la note fait foi sur le prescrit.
 - Une séance **non faite** n'a pas été réalisée du tout.
 - Une séance **jamais cochée** est un statut inconnu : ne suppose ni qu'elle a été faite, ni l'inverse.
-- Certaines notes sont des résidus sans information (\`Autre\`, \`Vacances\`, un mot isolé) : sur une séance faite, traite-la alors comme faite conformément au prescrit.
 - Le contenu prescrit de chaque séance est dans les blocs dépliants du bilan : c'est lui qui donne mes allures réelles quand il n'y a pas de note.
 
 ---

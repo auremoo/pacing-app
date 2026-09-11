@@ -5,14 +5,9 @@ import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum } from '../utils/plan-overrides.js';
+import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
 
-const REASON_LABELS = {
-  vacances:      'Vacances',
-  professionnel: 'Empêchement pro.',
-  maladie:       'Maladie',
-  blessure:      'Blessure',
-  autre:         'Autre',
-};
+
 
 export function mount(container, slug, { pausedWeeks } = {}) {
   const plan = getActivePlan(slug);
