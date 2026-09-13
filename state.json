@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-09-13T15:31:20.069Z",
+  "lastUpdated": "2026-09-13T15:31:44.072Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -586,7 +586,8 @@
         "completed": true,
         "skipped": false,
         "completedAt": "2026-09-13T15:31:19.149Z",
-        "version": 2
+        "version": 2,
+        "note": "Rando de 4km avec 150 D+"
       },
       "s17-mon": {
         "note": "Badminton",
