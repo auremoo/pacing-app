@@ -121,9 +121,16 @@ function rad(deg) { return deg * Math.PI / 180; }
 // viewBox 800×200 ne laissait que ~90 px de haut, presque impossible à viser.
 const CHART = { width: 800, height: 300, pad: { top: 16, right: 16, bottom: 34, left: 44 } };
 
-function chartScales(profile) {
-  const W = CHART.width  - CHART.pad.left - CHART.pad.right;
-  const H = CHART.height - CHART.pad.top  - CHART.pad.bottom;
+// Le plein écran dispose de plus de hauteur : la géométrie est donc variable,
+// mais elle est écrite sur le SVG au rendu et relue par le curseur — les deux
+// ne peuvent pas diverger.
+function geometry(height = CHART.height) {
+  return { ...CHART, height };
+}
+
+function chartScales(profile, height = CHART.height) {
+  const W = CHART.width - CHART.pad.left - CHART.pad.right;
+  const H = height      - CHART.pad.top  - CHART.pad.bottom;
   const maxDist = profile[profile.length - 1].dist;
   const minEle  = Math.min(...profile.map(p => p.ele));
   const maxEle  = Math.max(...profile.map(p => p.ele));
@@ -179,13 +186,14 @@ function cell(label, value) {
 // Curseur interactif. Sur mobile, un simple appui suffit et le repère reste
 // affiché quand on relève le doigt ; le scroll vertical de la page continue de
 // passer (touch-action: pan-y), seul le glissement horizontal pilote le curseur.
-export function attachElevationCursor(container, data) {
+export function attachElevationCursor(container, data, { touch = true } = {}) {
   if (!data?.profile?.length) return;
   const svg = container.querySelector('svg');
   if (!svg) return;
 
   const { profile } = data;
-  const { W, H, maxDist, toX, toY } = chartScales(profile);
+  const height = parseInt(svg.dataset.chartHeight) || CHART.height;
+  const { W, H, maxDist, toX, toY } = chartScales(profile, height);
   const gains = cumulativeGain(profile);
   const ns = 'http://www.w3.org/2000/svg';
 
@@ -206,7 +214,7 @@ export function attachElevationCursor(container, data) {
   // horizontale est de toute façon ramenée dans les bornes du profil.
   const overlay = document.createElementNS(ns, 'rect');
   overlay.setAttribute('x', 0); overlay.setAttribute('y', 0);
-  overlay.setAttribute('width', CHART.width); overlay.setAttribute('height', CHART.height);
+  overlay.setAttribute('width', CHART.width); overlay.setAttribute('height', height);
   overlay.setAttribute('fill', 'transparent');
   overlay.style.cursor = 'crosshair';
   overlay.style.touchAction = 'pan-y';   // laisse la page défiler verticalement
@@ -222,10 +230,13 @@ export function attachElevationCursor(container, data) {
 
   let dragging = false;
 
-  function move(clientX) {
-    const rect = svg.getBoundingClientRect();
-    const svgX = (clientX - rect.left) / rect.width * CHART.width;
-    const clampedX = Math.min(Math.max(svgX, CHART.pad.left), CHART.pad.left + W);
+  function move(clientX, clientY) {
+    // getBoundingClientRect renvoie une boîte alignée sur les axes : fausse dès
+    // que le graphique est pivoté. La matrice du SVG, elle, suit la rotation.
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const pt = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
+    const clampedX = Math.min(Math.max(pt.x, CHART.pad.left), CHART.pad.left + W);
 
     const i = nearestIndex(profile, ((clampedX - CHART.pad.left) / W) * maxDist);
     const p = profile[i];
@@ -249,13 +260,14 @@ export function attachElevationCursor(container, data) {
   }
 
   overlay.addEventListener('pointerdown', e => {
+    if (!touch && e.pointerType !== 'mouse') return;   // l'appui est réservé à l'ouverture du plein écran
     dragging = true;
     overlay.setPointerCapture?.(e.pointerId);
-    move(e.clientX);
+    move(e.clientX, e.clientY);
   });
   overlay.addEventListener('pointermove', e => {
     // Souris : on suit le survol. Doigt : seulement pendant l'appui.
-    if (dragging || e.pointerType === 'mouse') move(e.clientX);
+    if (dragging || e.pointerType === 'mouse') move(e.clientX, e.clientY);
   });
   overlay.addEventListener('pointerup',     () => { dragging = false; });
   overlay.addEventListener('pointercancel', () => { dragging = false; });
@@ -267,18 +279,18 @@ export function attachElevationCursor(container, data) {
 // Pas de graduation rond donnant 4 à 6 repères. L'ancien calcul
 // (ceil(km/5)*5) dépassait la distance elle-même : un semi ou un marathon
 // n'affichaient qu'un seul repère, « 0km », impossible de s'y situer.
-function niceKmStep(maxKm) {
+function niceKmStep(maxKm, maxTicks = 6) {
   for (const step of [0.5, 1, 2, 5, 10, 20, 25, 50, 100]) {
-    if (maxKm / step <= 6) return step;
+    if (maxKm / step <= maxTicks) return step;
   }
-  return Math.ceil(maxKm / 6);
+  return Math.ceil(maxKm / maxTicks);
 }
 
-export function renderElevationChart(profile) {
+export function renderElevationChart(profile, { maxTicks = 6, height = CHART.height } = {}) {
   if (!profile || profile.length < 2) return '';
 
-  const { W, H, maxDist, minEle, eleRange, toX, toY } = chartScales(profile);
-  const { pad, width, height } = CHART;
+  const { W, H, maxDist, minEle, eleRange, toX, toY } = chartScales(profile, height);
+  const { pad, width } = geometry(height);
 
   const pts = profile.map(p => `${toX(p.dist).toFixed(1)},${toY(p.ele).toFixed(1)}`).join(' ');
   const areaPath = `M${pad.left},${pad.top + H} ` +
@@ -295,7 +307,7 @@ export function renderElevationChart(profile) {
            `<text x="${pad.left - 4}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-secondary)" font-size="10">${Math.round(ele)}m</text>`;
   }).join('');
 
-  const kmStep = niceKmStep(maxDist / 1000);
+  const kmStep = niceKmStep(maxDist / 1000, maxTicks);
   const xAxis = [];
   for (let km = 0; km <= maxDist / 1000; km += kmStep) {
     const x = toX(km * 1000).toFixed(1);
@@ -307,7 +319,7 @@ export function renderElevationChart(profile) {
   }
 
   return `
-    <svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+    <svg viewBox="0 0 ${width} ${height}" data-chart-height="${height}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
       <defs>
         <linearGradient id="elev-grad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="var(--ios-blue)" stop-opacity="0.3"/>

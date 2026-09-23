@@ -1,6 +1,7 @@
 import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta, addPhoto, removePhoto, getPhoto } from '../store.js';
 import { showToast } from '../app.js';
 import { parseGpx, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
+import { openGpxModal } from './gpx-modal.js';
 import { isPast } from '../utils/dates.js';
 import { getWeekMonday } from '../utils/plan-overrides.js';
 
@@ -55,7 +56,13 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
 
   if (gpxData) {
     const chartEl = container.querySelector('.elevation-chart-container');
-    if (chartEl) attachElevationCursor(chartEl, gpxData);
+    if (chartEl) {
+      // En vignette, l'appui ouvre le plein écran : viser un point du tracé au
+      // doigt dans cette hauteur n'a pas de sens. Le survol souris, lui, reste
+      // actif car il n'entre pas en conflit avec le clic.
+      attachElevationCursor(chartEl, gpxData, { touch: false });
+      chartEl.addEventListener('click', () => openGpxModal(gpxData, meta?.name || ''));
+    }
   }
 
   // Render loaded photos

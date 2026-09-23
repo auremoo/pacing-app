@@ -1322,6 +1322,89 @@
   width: 100%;
 }
 
+/* ─── Profil altimétrique en plein écran ──────────────────────── */
+
+.gpx-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.gpx-modal__stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 1100px;
+  padding: var(--space-4);
+}
+
+/* Téléphone tenu à la verticale : on pivote la scène pour lire le profil dans
+   la hauteur de l'écran. 100vh/100vw sont volontairement croisés. */
+.gpx-modal__stage--rotated {
+  position: absolute;
+  width: 100vh;
+  height: 100vw;
+  max-width: none;
+  transform: rotate(90deg);
+  justify-content: center;
+}
+
+.gpx-modal__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.gpx-modal__close {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 0.5px solid var(--separator);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.gpx-modal__close:active { opacity: 0.6; }
+.gpx-modal__close svg { width: 18px; height: 18px; }
+
+.gpx-modal__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gpx-modal__stats {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.gpx-modal__chart {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.gpx-modal__chart svg { display: block; width: 100%; }
+
+/* La vignette annonce qu'elle s'ouvre en grand. */
+.elevation-chart-container { cursor: zoom-in; }
+
 /* Ligne de lecture du profil : sous le graphique, jamais par-dessus, pour que
    ni la bulle ni le doigt ne masquent le tracé. */
 .elevation-readout {

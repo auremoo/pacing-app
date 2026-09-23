@@ -41,6 +41,7 @@ pacing-app/
 │   │   ├── versions-view.js        # Gestion versions + prompt initial + prompt révision (courses)
 │   │   ├── infos-view.js           # Synthèse, Allures, Principes, PPG, Vigilance, Stratégie, Nutrition
 │   │   ├── strategy-view.js        # Onglet Stratégie : bilan de fin de prépa + prompt + stratégie IA
+│   │   ├── gpx-modal.js            # Profil altimétrique plein écran (pivoté en paysage sur mobile)
 │   │   ├── session-view.js         # Détail d'une séance + note (courses et plan général)
 │   │   ├── settings.js             # Formulaire profil athlète (stocké dans athlete.json), route /settings
 │   │   ├── new-event.js            # Formulaire création d'un nouvel événement
@@ -220,7 +221,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 - **Profil athlète** : `getAthleteProfile()` / `saveAthleteProfile(profile)` — `athlete.json` à la racine du repo
 - **Photos** : 2 max par événement, 5 Mo max, stockées en base64 dans `events/{slug}/course/`, MIME auto-détecté
 - **GPX parser** : `smoothElevation(points, 3)` + `calcElevationThreshold(smoothed, 1.5)` pour D+/D- précis ; `splitByKm(profile)` découpe le profil en tranches d'1 km (D+/D-/altitudes) pour le prompt de stratégie
-- **Profil altimétrique** : un appui (ou le survol souris) pose le curseur, qui reste affiché quand on relève le doigt ; `touch-action: pan-y` laisse la page défiler. Les valeurs (km, altitude, pente locale sur ±75 m, D+ cumulé) s'affichent dans une ligne **sous** le graphique, jamais en bulle par-dessus le tracé. Géométrie partagée rendu/curseur dans la constante `CHART`
+- **Profil altimétrique** : en vignette, un appui (ou un clic) ouvre le plein écran — le curseur n'y répond qu'au survol souris, les deux gestes ne pouvant pas coexister au doigt. En plein écran (`gpx-modal.js`), la scène est pivotée de 90° quand le téléphone est en portrait (iOS Safari n'expose pas `screen.orientation.lock()`) ; la croix vit dans la scène pivotée, donc en haut à gauche de ce que l'utilisateur regarde une fois le téléphone tourné ; fermeture aussi par Échap. Le curseur convertit les coordonnées via `svg.getScreenCTM()` et non `getBoundingClientRect()`, seule façon de rester juste dans un conteneur pivoté. Valeurs (km, altitude, pente locale sur ±75 m, D+ cumulé) dans une ligne **sous** le graphique, jamais par-dessus le tracé. `touch-action: pan-y` laisse la page défiler. La hauteur du viewBox est inscrite dans `data-chart-height` sur le SVG et relue par le curseur : rendu et curseur ne peuvent pas diverger
 - **Bilan de prépa** : `prep-report.js` — historique consolidé multi-versions, `events/{slug}/bilan.md` + `events/{slug}/strategy.md`
 
 ## Conventions de code
