@@ -1013,7 +1013,7 @@
   color: var(--ios-orange);
 }
 
-/* Actions group (skip + check) */
+/* Actions group (déplacer + fait + manquée) */
 .session-item__actions {
   display: flex;
   align-items: center;
@@ -1320,6 +1320,39 @@
 .elevation-chart-container svg {
   display: block;
   width: 100%;
+}
+
+/* Ligne de lecture du profil : sous le graphique, jamais par-dessus, pour que
+   ni la bulle ni le doigt ne masquent le tracé. */
+.elevation-readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-around;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-top: 0.5px solid var(--separator);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-height: 34px;
+}
+.elevation-readout__cell {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+.elevation-readout__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.elevation-readout__hint {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-tertiary);
 }
 
 .course-stats {

@@ -51,7 +51,7 @@ pacing-app/
 │       ├── dates.js
 │       ├── markdown.js             # Renderer markdown minimal
 │       ├── crypto.js               # AES-GCM + PBKDF2 (chiffrement du PAT)
-│       ├── gpx-parser.js           # Parse GPX + profil altimétrique + curseur interactif
+│       ├── gpx-parser.js           # Parse GPX + profil altimétrique + curseur (tap/survol) + splitByKm
 │       ├── plan-overrides.js       # applyDateOverrides/applyWeekMetaOverrides (échanges/déplacements)
 │       ├── prep-report.js          # Bilan de fin de prépa consolidé toutes versions + prompt de stratégie
 │       ├── prompt-modal.js         # Modale "copier un prompt" partagée (versions + stratégie)
@@ -220,6 +220,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 - **Profil athlète** : `getAthleteProfile()` / `saveAthleteProfile(profile)` — `athlete.json` à la racine du repo
 - **Photos** : 2 max par événement, 5 Mo max, stockées en base64 dans `events/{slug}/course/`, MIME auto-détecté
 - **GPX parser** : `smoothElevation(points, 3)` + `calcElevationThreshold(smoothed, 1.5)` pour D+/D- précis ; `splitByKm(profile)` découpe le profil en tranches d'1 km (D+/D-/altitudes) pour le prompt de stratégie
+- **Profil altimétrique** : un appui (ou le survol souris) pose le curseur, qui reste affiché quand on relève le doigt ; `touch-action: pan-y` laisse la page défiler. Les valeurs (km, altitude, pente locale sur ±75 m, D+ cumulé) s'affichent dans une ligne **sous** le graphique, jamais en bulle par-dessus le tracé. Géométrie partagée rendu/curseur dans la constante `CHART`
 - **Bilan de prépa** : `prep-report.js` — historique consolidé multi-versions, `events/{slug}/bilan.md` + `events/{slug}/strategy.md`
 
 ## Conventions de code

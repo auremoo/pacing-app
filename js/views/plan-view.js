@@ -506,16 +506,16 @@ function renderSessionItem(session, state, isMoved) {
             <path d="M16 2v4M8 2v4M3 10h18"/>
           </svg>
         </button>
+        <button class="checkbox ${completed ? 'checkbox--checked' : ''}"
+                data-session-check="${session.id}"
+                data-completed="${completed}"
+                aria-label="${completed ? 'Marquer non réalisée' : 'Marquer réalisée'}">
+        </button>
         <button class="skipbox ${skipped ? 'skipbox--skipped' : ''}"
                 data-session-skip="${session.id}"
                 data-skipped="${skipped}"
                 aria-label="${skipped ? 'Retirer la mention manquée' : 'Marquer comme manquée'}">
           <span data-skipbox></span>
-        </button>
-        <button class="checkbox ${completed ? 'checkbox--checked' : ''}"
-                data-session-check="${session.id}"
-                data-completed="${completed}"
-                aria-label="${completed ? 'Marquer non réalisée' : 'Marquer réalisée'}">
         </button>
       </div>
     </div>
