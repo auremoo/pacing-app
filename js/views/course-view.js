@@ -57,11 +57,14 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
   if (gpxData) {
     const chartEl = container.querySelector('.elevation-chart-container');
     if (chartEl) {
-      // En vignette, l'appui ouvre le plein écran : viser un point du tracé au
-      // doigt dans cette hauteur n'a pas de sens. Le survol souris, lui, reste
-      // actif car il n'entre pas en conflit avec le clic.
-      attachElevationCursor(chartEl, gpxData, { touch: false });
-      chartEl.addEventListener('click', () => openGpxModal(gpxData, meta?.name || ''));
+      // Deux gestes sur la vignette : un appui ouvre le plein écran, un
+      // glissement lit le profil sur place. L'ouverture passe par onTap et non
+      // par un listener 'click', qui se déclencherait aussi à la fin d'un
+      // glissement à la souris.
+      attachElevationCursor(chartEl, gpxData, {
+        onTap: () => openGpxModal(gpxData, meta?.name || ''),
+        hint:  'Touchez pour agrandir, glissez pour le détail',
+      });
     }
   }
 

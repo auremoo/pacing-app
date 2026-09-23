@@ -177,16 +177,26 @@ function slopeAt(profile, i, windowM = 75) {
   return run < 1 ? 0 : ((profile[b].ele - profile[a].ele) / run) * 100;
 }
 
-const HINT = '<span class="elevation-readout__hint">Touchez ou survolez le profil pour le détail</span>';
+const DEFAULT_HINT = 'Touchez ou faites glisser le profil pour le détail';
+
+function hintHtml(text) {
+  return `<span class="elevation-readout__hint">${text}</span>`;
+}
 
 function cell(label, value) {
   return `<span class="elevation-readout__cell"><span class="elevation-readout__label">${label}</span>${value}</span>`;
 }
 
-// Curseur interactif. Sur mobile, un simple appui suffit et le repère reste
-// affiché quand on relève le doigt ; le scroll vertical de la page continue de
-// passer (touch-action: pan-y), seul le glissement horizontal pilote le curseur.
-export function attachElevationCursor(container, data, { touch = true } = {}) {
+// Curseur interactif.
+//
+// Le repère reste affiché quand on relève le doigt, et le scroll vertical de la
+// page continue de passer (touch-action: pan-y) : seul un geste horizontal
+// pilote le curseur.
+//
+// `onTap` permet de distinguer deux gestes sur le même élément : un appui sans
+// déplacement déclenche le callback (ouvrir le plein écran), un glissement
+// pilote le curseur. Sans lui, tout appui pilote le curseur.
+export function attachElevationCursor(container, data, { onTap = null, hint = DEFAULT_HINT } = {}) {
   if (!data?.profile?.length) return;
   const svg = container.querySelector('svg');
   if (!svg) return;
@@ -225,10 +235,12 @@ export function attachElevationCursor(container, data, { touch = true } = {}) {
   // reste. Ici rien ne recouvre le profil et la ligne reste lisible.
   const readout = document.createElement('div');
   readout.className = 'elevation-readout';
-  readout.innerHTML = HINT;
+  readout.innerHTML = hintHtml(hint);
   container.appendChild(readout);
 
+  const TAP_SLOP = 8;          // au-delà, le geste est un glissement, pas un appui
   let dragging = false;
+  let origin   = null;        // point de départ d'un appui en attente d'arbitrage
 
   function move(clientX, clientY) {
     // getBoundingClientRect renvoie une boîte alignée sur les axes : fausse dès
@@ -256,21 +268,35 @@ export function attachElevationCursor(container, data, { touch = true } = {}) {
 
   function hide() {
     vLine.style.opacity = '0'; dot.style.opacity = '0';
-    readout.innerHTML = HINT;
+    readout.innerHTML = hintHtml(hint);
   }
 
   overlay.addEventListener('pointerdown', e => {
-    if (!touch && e.pointerType !== 'mouse') return;   // l'appui est réservé à l'ouverture du plein écran
-    dragging = true;
     overlay.setPointerCapture?.(e.pointerId);
-    move(e.clientX, e.clientY);
+    origin = { x: e.clientX, y: e.clientY };
+    // Sans onTap, l'appui pilote directement le curseur. Avec, on attend de
+    // savoir si le doigt bouge avant de trancher entre les deux gestes.
+    if (!onTap) { dragging = true; move(e.clientX, e.clientY); }
   });
+
   overlay.addEventListener('pointermove', e => {
-    // Souris : on suit le survol. Doigt : seulement pendant l'appui.
+    if (origin && !dragging &&
+        Math.hypot(e.clientX - origin.x, e.clientY - origin.y) > TAP_SLOP) {
+      dragging = true;      // c'est un glissement : le curseur prend la main
+    }
+    // Souris : on suit le survol. Doigt : seulement pendant un glissement.
     if (dragging || e.pointerType === 'mouse') move(e.clientX, e.clientY);
   });
-  overlay.addEventListener('pointerup',     () => { dragging = false; });
-  overlay.addEventListener('pointercancel', () => { dragging = false; });
+
+  overlay.addEventListener('pointerup', e => {
+    const tapped = onTap && origin && !dragging &&
+                   Math.hypot(e.clientX - origin.x, e.clientY - origin.y) <= TAP_SLOP;
+    dragging = false;
+    origin   = null;
+    if (tapped) onTap();
+  });
+
+  overlay.addEventListener('pointercancel', () => { dragging = false; origin = null; });
   // Le repère reste après avoir relevé le doigt ; seule la souris qui quitte
   // le graphique l'efface.
   overlay.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hide(); });
