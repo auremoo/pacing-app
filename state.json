@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-09-25T12:10:10.183Z",
+  "lastUpdated": "2026-09-25T12:10:35.984Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -702,6 +702,12 @@
         "completed": true,
         "skipped": false,
         "completedAt": "2026-09-23T13:53:11.133Z",
+        "version": 2
+      },
+      "s20-sat": {
+        "completed": false,
+        "skipped": false,
+        "completedAt": null,
         "version": 2
       }
     },
