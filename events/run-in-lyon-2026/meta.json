@@ -41,5 +41,9 @@
   "prepReport": {
     "file": "bilan.md",
     "generatedAt": "2026-10-03T17:31:33.432Z"
+  },
+  "strategy": {
+    "file": "strategy.md",
+    "importedAt": "2026-10-03T17:39:20.303Z"
   }
 }
