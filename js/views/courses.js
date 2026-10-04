@@ -36,7 +36,10 @@ export function mount(container) {
 export function renderEventCard(e) {
   const meta   = getEventMeta(e.slug);
   const plan   = getActivePlan(e.slug);
-  const past   = isPast(e.raceDate);
+  // Clôturée ou date dépassée : dans les deux cas la course appartient au passé.
+  // Sans le closedAt, une course cochée le jour même resterait « en cours »
+  // jusqu'au lendemain.
+  const past   = isPast(e.raceDate) || !!meta?.closedAt;
   const pct    = plan ? computeCompletion(e.slug, plan) : null;
   const phase  = plan ? currentPhase(plan) : null;
   const dLabel = formatDaysUntil(e.raceDate);
