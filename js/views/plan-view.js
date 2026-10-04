@@ -6,6 +6,7 @@ import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
+import { syncEventClosure } from './event-closure.js';
 
 
 
@@ -362,6 +363,7 @@ async function handleToggle(btn, sessionId, completed, slug, plan, container) {
   try {
     await toggleSession(slug, sessionId, completed);
     if (completed) navigator.vibrate?.(10);
+    await syncEventClosure(slug, sessionId, completed);
   } catch {
     btn.dataset.completed = String(!completed);
     btn.classList.toggle('checkbox--checked', !completed);
@@ -369,6 +371,7 @@ async function handleToggle(btn, sessionId, completed, slug, plan, container) {
     showToast('Erreur de synchronisation', 'error');
   }
 }
+
 
 async function handleSkip(btn, sessionId, skipped, reason, slug, plan, container) {
   const item = btn.closest('.session-item');

@@ -3,6 +3,7 @@ import { navigate, showToast } from '../app.js';
 import { formatDate } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { applyDateOverrides } from '../utils/plan-overrides.js';
+import { syncEventClosure } from './event-closure.js';
 
 export function mount(container, slug, sessionId) {
   const listPath = slug === ROUTINE_SLUG ? '/routine' : `/event/${slug}`;
@@ -76,6 +77,7 @@ export function mount(container, slug, sessionId) {
     try {
       await toggleSession(slug, sessionId, currentCompleted);
       if (currentCompleted) navigator.vibrate?.(10);
+      await syncEventClosure(slug, sessionId, currentCompleted);
       syncStatus.textContent = 'Synchronisé ✓';
       setTimeout(() => { syncStatus.textContent = ''; }, 2000);
     } catch {

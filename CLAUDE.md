@@ -42,6 +42,8 @@ pacing-app/
 │   │   ├── infos-view.js           # Synthèse, Allures, Principes, PPG, Vigilance, Stratégie, Nutrition
 │   │   ├── strategy-view.js        # Onglet Stratégie : bilan de fin de prépa + prompt + stratégie IA
 │   │   ├── gpx-modal.js            # Profil altimétrique plein écran (pivoté en paysage sur mobile)
+│   │   ├── event-closure.js        # Clôture d'un événement quand la séance de course est cochée
+│   │   ├── race-result-modal.js    # Saisie du résultat proposée juste après la clôture
 │   │   ├── session-view.js         # Détail d'une séance + note (courses et plan général)
 │   │   ├── settings.js             # Formulaire profil athlète (stocké dans athlete.json), route /settings
 │   │   ├── new-event.js            # Formulaire création d'un nouvel événement
@@ -165,6 +167,25 @@ séance cochée **sans** note = faite exactement comme prescrite ; séance coch�
 note = la note décrit l'écart ; séance manquée = non faite ; séance jamais cochée =
 statut inconnu.
 
+## Clôture d'un événement
+
+Cocher la séance **de course** (`type: race` ET date == `meta.raceDate`) clôt l'événement :
+`closedAt` est écrit dans `meta.json` et la saisie du résultat s'ouvre dans la foulée
+(`race-result-modal.js`). Décocher la séance rouvre l'événement (`closedAt: null`).
+
+Un événement clôturé sort des « courses en préparation » de l'accueil
+(`getActiveRacePreps` ignore `closedAt`), même le jour J où sa période le couvre encore.
+La liste `/courses` est inchangée : elle grise déjà les courses passées via `event-card--past`.
+
+Une course **test** au milieu du plan est elle aussi de type `race` (S08 et S16 de
+`run-in-lyon-2026`) : seule la séance tombant le jour de la course déclenche la clôture.
+La comparaison se fait sur la date d'origine de la séance (plan brut, pas le planning
+effectif) pour qu'un déplacement manuel ne la fausse pas.
+
+`syncEventClosure` est appelée après chaque `toggleSession` d'un événement — par
+`plan-view.js` et `session-view.js`, qui cochent tous deux une séance. Un nouveau point
+de cochage devrait l'appeler aussi.
+
 ## Profil athlète
 
 Stocké dans `athlete.json` à la racine du repo. Chargé au boot dans `_athlete`. Géré depuis Réglages (formulaire).  
@@ -194,6 +215,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
     "pdf": { "filename": "…pdf", "importedAt": "…" }
   },
   "photos": ["photo-1234567890.jpg"],
+  "closedAt": "2026-10-04T16:20:00.000Z",
   "prepReport": { "file": "bilan.md", "generatedAt": "…" },
   "strategy": { "file": "strategy.md", "importedAt": "…" },
   "result": { "time": "1h52'34\"", "pacePerKm": "5'20\"/km", "activityUrl": null }

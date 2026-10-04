@@ -431,6 +431,24 @@ export async function saveRoutineSettings(updates) {
   return getRoutineMeta();
 }
 
+// ── Clôture d'un événement ──────────────────────────────────────────
+// Cocher la séance de course clôt l'événement : il n'est plus « en
+// préparation » et la saisie du résultat est proposée dans la foulée.
+
+export async function closeEvent(slug) {
+  if (getEventMeta(slug)?.closedAt) return;
+  await updateEventMeta(slug, { closedAt: new Date().toISOString() });
+}
+
+export async function reopenEvent(slug) {
+  if (!getEventMeta(slug)?.closedAt) return;
+  await updateEventMeta(slug, { closedAt: null });
+}
+
+export async function saveRaceResult(slug, result) {
+  await updateEventMeta(slug, { result });
+}
+
 // ── Bilan de préparation & stratégie de course ──────────────────────
 // Deux documents par course, générés en fin de préparation :
 //   bilan.md    → historique consolidé de la prépa (toutes versions confondues)
