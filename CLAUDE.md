@@ -57,6 +57,7 @@ pacing-app/
 │       ├── gpx-parser.js           # Parse GPX + profil altimétrique + curseur (tap/survol) + splitByKm
 │       ├── plan-overrides.js       # applyDateOverrides/applyWeekMetaOverrides (échanges/déplacements)
 │       ├── prep-report.js          # Bilan de fin de prépa consolidé toutes versions + prompt de stratégie
+│       ├── race-status.js          # Séance de course d'un événement + isRaceDone (course courue ?)
 │       ├── prompt-modal.js         # Modale "copier un prompt" partagée (versions + stratégie)
 │       ├── routine-overlap.js      # Détecte les semaines du plan général chevauchant une course active
 │       └── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
@@ -173,9 +174,18 @@ Cocher la séance **de course** (`type: race` ET date == `meta.raceDate`) clôt 
 `closedAt` est écrit dans `meta.json` et la saisie du résultat s'ouvre dans la foulée
 (`race-result-modal.js`). Décocher la séance rouvre l'événement (`closedAt: null`).
 
-Un événement clôturé sort des « courses en préparation » de l'accueil
-(`getActiveRacePreps` ignore `closedAt`), même le jour J où sa période le couvre encore.
-La liste `/courses` est inchangée : elle grise déjà les courses passées via `event-card--past`.
+**Source de vérité de l'état « course courue » : le cochage de la séance**
+(`isRaceDone` dans `js/utils/race-status.js`), pas `closedAt`. Les deux vivent dans des
+fichiers écrits séparément (`state.json` et `meta.json`) et peuvent diverger — c'est
+arrivé sur Run in Lyon, séance cochée et `closedAt` revenu à `null` après un
+décochage/recochage rapide. `closedAt` ne sert plus qu'à horodater et à ne pas
+reproposer la saisie du résultat.
+
+Une course courue sort des « courses en préparation » de l'accueil (`getActiveRacePreps`),
+même le jour J où sa période la couvre encore. Dans `/courses`, sa carte passe en
+`event-card--past` : grisée, temps et allure à la place de l'objectif, **sans** phase ni
+complétion ni barre de progression — sinon elle gardait sa pastille de phase et sa barre
+verte à côté du chrono, là où les courses sans plan n'affichent que le résultat.
 
 Une course **test** au milieu du plan est elle aussi de type `race` (S08 et S16 de
 `run-in-lyon-2026`) : seule la séance tombant le jour de la course déclenche la clôture.

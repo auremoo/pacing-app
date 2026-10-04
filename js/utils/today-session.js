@@ -4,6 +4,7 @@
 
 import { getEventsIndex, getEventMeta, getActivePlan, getDateOverrides, getWeekMetaOverrides,
          getRoutineMeta, ROUTINE_SLUG } from '../store.js';
+import { isRaceDone } from './race-status.js';
 import { applyDateOverrides, applyWeekMetaOverrides } from './plan-overrides.js';
 import { computeEventRanges, computePausedWeeks } from './routine-overlap.js';
 
@@ -46,12 +47,12 @@ export function findTodaySession(todayStr) {
 }
 
 // Courses dont la période de plan (planStart → raceDate) couvre aujourd'hui.
-// Une course clôturée (séance de course cochée) n'est plus une préparation en
-// cours, même le jour J où sa période la couvre encore.
+// Une course déjà courue (séance de course cochée) n'est plus une préparation
+// en cours, même le jour J où sa période la couvre encore.
 export function getActiveRacePreps(todayStr) {
   return getEventsIndex().filter(e => {
     const meta = getEventMeta(e.slug);
-    return meta?.activeVersion && meta.planStart && meta.raceDate && !meta.closedAt &&
+    return meta?.activeVersion && meta.planStart && meta.raceDate && !isRaceDone(e.slug) &&
            meta.planStart <= todayStr && todayStr <= meta.raceDate;
   });
 }
