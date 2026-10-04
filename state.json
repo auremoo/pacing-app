@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-04T13:21:05.864Z",
+  "lastUpdated": "2026-10-04T13:21:08.168Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -757,7 +757,11 @@
         "note": "3,23km - 20min"
       },
       "s20-sun": {
-        "note": "21.35km - 2h03:38"
+        "note": "21.35km - 2h03:38",
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-04T13:21:06.001Z",
+        "version": 2
       }
     },
     "marathon-alpes-bsm": {}
