@@ -1,3 +1,16 @@
+// Seuil d'hystérésis du dénivelé, en mètres : un changement d'altitude n'est
+// compté qu'une fois dépassé ce seuil depuis le dernier point de référence.
+//
+// Il était à 1,5 m, ce qui comptait chaque micro-oscillation du modèle
+// d'élévation comme une vraie montée : sur un semi urbain, 189 m de D+ annoncés
+// pour ~70 m réellement grimpés. Les altitudes des traces dessinées (gpx.studio,
+// fonds de carte) viennent d'un modèle de terrain et non d'un baromètre ; 5 m
+// est le compromis usuel pour ce type de données.
+//
+// Partagé par le D+ total, le découpage kilométrique et le cumul du curseur :
+// les trois doivent raconter la même chose.
+export const ELEVATION_THRESHOLD_M = 5;
+
 export function parseGpx(gpxText) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(gpxText, 'application/xml');
@@ -21,9 +34,9 @@ export function parseGpx(gpxText) {
   }
 
   // Threshold hysteresis: only commit a change once it exceeds threshold from
-  // last ref point. window=3 pre-smoothing removes spikes, threshold=2 removes
+  // last ref point. window=3 pre-smoothing removes spikes, the threshold removes
   // remaining micro-oscillations without cutting real climbs.
-  const { gain: elevGain, loss: elevLoss } = calcElevationThreshold(smoothed, 1.5);
+  const { gain: elevGain, loss: elevLoss } = calcElevationThreshold(smoothed, ELEVATION_THRESHOLD_M);
 
   const minEle = Math.min(...profile.map(p => p.ele));
   const maxEle = Math.max(...profile.map(p => p.ele));
@@ -41,7 +54,7 @@ export function parseGpx(gpxText) {
 // Découpe le profil en tranches d'1 km : D+/D- et altitudes par kilomètre.
 // Sert à donner à l'IA le relief réel du parcours pour bâtir un plan d'allure
 // segment par segment plutôt que des généralités.
-export function splitByKm(profile, threshold = 1.5) {
+export function splitByKm(profile, threshold = ELEVATION_THRESHOLD_M) {
   if (!profile || profile.length < 2) return [];
 
   const totalM = profile[profile.length - 1].dist;
@@ -77,7 +90,7 @@ export function splitByKm(profile, threshold = 1.5) {
   return kms;
 }
 
-function calcElevationThreshold(points, threshold = 5) {
+function calcElevationThreshold(points, threshold = ELEVATION_THRESHOLD_M) {
   let gain = 0, loss = 0;
   let ref = points[0].ele;
   for (let i = 1; i < points.length; i++) {
@@ -144,7 +157,7 @@ function chartScales(profile, height = CHART.height) {
 
 // D+ cumulé point par point, même hystérésis que le D+ total : le curseur peut
 // ainsi dire « 87 m grimpés à ce stade » sans recalculer à chaque déplacement.
-function cumulativeGain(profile, threshold = 1.5) {
+function cumulativeGain(profile, threshold = ELEVATION_THRESHOLD_M) {
   const out = new Array(profile.length).fill(0);
   let gain = 0, ref = profile[0].ele;
   for (let i = 1; i < profile.length; i++) {

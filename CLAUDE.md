@@ -226,7 +226,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 `location`, `objectiveRealistic`, `courseDescription` sont optionnels mais utilisés dans les prompts générés.
 
 `course.gpx` et `course.pdf` sont `null` si pas encore importés. `photos` est un tableau de noms de fichiers (max 2, 5 Mo/photo, stockés dans `events/{slug}/course/`).  
-**GPX** : quand un GPX est présent, distance et D+ sont calculés automatiquement (window=3 + threshold=1.5m). Ces champs sont en **lecture seule avant la date de course**, puis **éditables après** (pour saisir les valeurs officielles).  
+**GPX** : quand un GPX est présent, distance et D+ sont calculés automatiquement (window=3 + `ELEVATION_THRESHOLD_M`, 5 m). Ces champs sont en **lecture seule avant la date de course**, puis **éditables après** (pour saisir les valeurs officielles).  
 **Fichiers > 1MB** : `getFile` détecte un `content` vide et passe par `download_url` pour récupérer le fichier brut.
 
 ## Layout responsive
@@ -242,7 +242,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 - **Création événement** : `createEvent(data)` — crée `events/{slug}/meta.json` + màj `events/index.json` via API GitHub
 - **Profil athlète** : `getAthleteProfile()` / `saveAthleteProfile(profile)` — `athlete.json` à la racine du repo
 - **Photos** : 2 max par événement, 5 Mo max, stockées en base64 dans `events/{slug}/course/`, MIME auto-détecté
-- **GPX parser** : `smoothElevation(points, 3)` + `calcElevationThreshold(smoothed, 1.5)` pour D+/D- précis ; `splitByKm(profile)` découpe le profil en tranches d'1 km (D+/D-/altitudes) pour le prompt de stratégie
+- **GPX parser** : `smoothElevation(points, 3)` + `calcElevationThreshold(smoothed, ELEVATION_THRESHOLD_M)` pour le D+/D- ; le seuil d'hystérésis (5 m) est une constante partagée par le total, `splitByKm` et le cumul du curseur. Il était à 1,5 m, trop bas pour des altitudes issues d'un modèle de terrain (traces dessinées sur gpx.studio ou fonds de carte) : 189 m annoncés sur le semi de Lyon pour ~70 m réellement grimpés. Un GPX dessiné reste une estimation — après la course, distance et D+ sont éditables pour saisir les valeurs mesurées ; `splitByKm(profile)` découpe le profil en tranches d'1 km (D+/D-/altitudes) pour le prompt de stratégie
 - **Profil altimétrique** : en vignette, deux gestes cohabitent — un appui ouvre le plein écran, un glissement lit le profil sur place. `attachElevationCursor` arbitre via `onTap` et un seuil de 8 px : sous le seuil c'est un appui, au-delà un glissement. L'ouverture ne passe pas par un listener `click`, qui se déclencherait aussi à la fin d'un glissement à la souris. En plein écran (`gpx-modal.js`), la scène est pivotée de 90° quand le téléphone est en portrait (iOS Safari n'expose pas `screen.orientation.lock()`) ; la croix vit dans la scène pivotée, donc en haut à gauche de ce que l'utilisateur regarde une fois le téléphone tourné ; fermeture aussi par Échap. Le curseur convertit les coordonnées via `svg.getScreenCTM()` et non `getBoundingClientRect()`, seule façon de rester juste dans un conteneur pivoté. Valeurs (km, altitude, pente locale sur ±75 m, D+ cumulé) dans une ligne **sous** le graphique, jamais par-dessus le tracé. `touch-action: pan-y` laisse la page défiler. La hauteur du viewBox est inscrite dans `data-chart-height` sur le SVG et relue par le curseur : rendu et curseur ne peuvent pas diverger
 - **Bilan de prépa** : `prep-report.js` — historique consolidé multi-versions, `events/{slug}/bilan.md` + `events/{slug}/strategy.md`
 

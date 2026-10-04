@@ -356,8 +356,10 @@ ${Object.entries(stats.byType).sort((x, y) => y[1].total - x[1].total).map(([t, 
 
 ${profileTable ? `## Profil du parcours, kilomètre par kilomètre
 
-Calculé depuis la trace GPX (lissage 3 points, seuil 1,5 m). Le D+ est recalculé
-par tranche, la somme peut donc s'écarter de quelques mètres du D+ total.
+Calculé depuis la trace GPX (lissage 3 points, seuil d'hystérésis 5 m). Le D+ est
+recalculé par tranche, la somme peut donc s'écarter de quelques mètres du total.
+Une trace dessinée donne des altitudes modélisées : à prendre comme un ordre de
+grandeur du relief, pas comme une mesure.
 
 ${profileTable}
 ` : ''}
