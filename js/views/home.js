@@ -1,6 +1,6 @@
 import { navigate } from '../app.js';
 import { today } from '../utils/dates.js';
-import { findTodaySession, getActiveRacePreps } from '../utils/today-session.js';
+import { findTodaySession, getActiveRacePreps, todaySessionTitle } from '../utils/today-session.js';
 import { renderEventCard } from './courses.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 
@@ -52,7 +52,7 @@ function renderTodayCard(todaySession) {
     <div class="today-card" id="today-card">
       <div class="today-card__label">Aujourd'hui</div>
       <div class="today-card__event">${eventName}</div>
-      <div class="today-card__title">${session.title}</div>
+      <div class="today-card__title">${todaySessionTitle(session)}</div>
       <div class="today-card__desc">${session.description}</div>
     </div>
   `;

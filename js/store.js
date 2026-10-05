@@ -180,6 +180,28 @@ export async function swapSessionDates(slug, id1, newDate1, id2, newDate2) {
   scheduleSyncState();
 }
 
+// ── Type d'activité changé sur une journée (plan général uniquement) ─
+// Une séance prévue peut être faite sous une autre forme (vélo au lieu d'un
+// footing, bad au lieu d'une PPG). La note le dit, mais la pastille doit le
+// montrer. Réservé au plan général : un plan de course est une prescription à
+// suivre, on n'en réécrit pas les séances. Les événements renvoient donc
+// toujours {}, ce qui rend l'application des remplacements sans effet sur eux.
+
+export function getTypeOverrides(slug) {
+  if (slug !== ROUTINE_SLUG) return {};
+  return _state.events?.[slug]?._typeOverrides || {};
+}
+
+// type null (ou égal au type prévu, géré par l'appelant) = retour au prévu
+export async function setSessionTypeOverride(slug, sessionId, type) {
+  if (slug !== ROUTINE_SLUG) return;
+  if (!_state.events[slug]) _state.events[slug] = {};
+  const ov = { ...(_state.events[slug]._typeOverrides || {}) };
+  if (type) ov[sessionId] = type; else delete ov[sessionId];
+  _state.events[slug]._typeOverrides = ov;
+  scheduleSyncState();
+}
+
 export function getWeekMetaOverrides(slug) {
   return _state.events?.[slug]?._weekMetaOverrides || {};
 }

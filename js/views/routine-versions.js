@@ -1,8 +1,10 @@
 import { getRoutineMeta, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates,
-         getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides, ROUTINE_SLUG } from '../store.js';
+         getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides, ROUTINE_SLUG,
+         getTypeOverrides } from '../store.js';
 import { showToast, navigate } from '../app.js';
 import { today } from '../utils/dates.js';
-import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
+import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
+import { typeName } from '../utils/session-types.js';
 
 export function mount(container) {
   render(container);
@@ -226,7 +228,10 @@ function showExportModal() {
     return;
   }
 
-  const effPlan = applyWeekMetaOverrides(applyDateOverrides(plan, dateOverrides), weekMetaOverrides);
+  const effPlan = applyTypeOverrides(
+    applyWeekMetaOverrides(applyDateOverrides(plan, dateOverrides), weekMetaOverrides),
+    getTypeOverrides(ROUTINE_SLUG)
+  );
   const prompt  = buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides);
   openPromptModal('Prompt de révision', prompt);
 }
@@ -260,7 +265,10 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
       const status = st?.completed ? '✓ Faite' : st?.skipped ? '✗ Manquée' : (s.date < todayStr ? '— Non cochée' : '· À venir');
       const note   = st?.note ? ` [Note: ${st.note.replace(/\n/g, ' ')}]` : '';
       const moved  = (dateOverrides && dateOverrides[s.id]) ? ` [déplacée, était le ${originalDateById[s.id]}]` : '';
-      return `  | ${s.date} | ${s.type.padEnd(10)} | ${s.title.substring(0, 35).padEnd(35)} | ${status}${note}${moved} |`;
+      // Activité changée par l'athlète : la colonne type dit ce qui a été fait,
+      // la mention rappelle ce qui était prévu.
+      const swapped = s.plannedType ? ` [activité changée : ${typeName(s.type)} au lieu de ${typeName(s.plannedType)}]` : '';
+      return `  | ${s.date} | ${s.type.padEnd(10)} | ${s.title.substring(0, 35).padEnd(35)} | ${status}${note}${moved}${swapped} |`;
     }).join('\n');
 
     return `### S${String(w.number).padStart(2, '0')} — ${w.dateRange} (${w.phaseId}) — ${wDone}/${wTotal} faites${wSkipped > 0 ? `, ${wSkipped} manquée${wSkipped > 1 ? 's' : ''}` : ''}${label}\n${rows}`;
@@ -339,6 +347,7 @@ generated: ${todayStr}
 \`\`\`
 
 Types de séance valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
+(Dans le bilan, les types bike, badminton, swim, hike et other désignent des activités que l'athlète a faites à la place de la séance prévue. Ne les utilise pas dans le plan généré : une séance de vélo ou de badminton s'écrit \`cross\`.)
 IDs de session : s{NN}-{daycode} (ex: s01-mon, s03-thu)
 `;
 }

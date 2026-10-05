@@ -3,9 +3,10 @@
 // Utilisé par l'accueil (mobile) et la sidebar (desktop) pour rester cohérents.
 
 import { getEventsIndex, getEventMeta, getActivePlan, getDateOverrides, getWeekMetaOverrides,
-         getRoutineMeta, ROUTINE_SLUG } from '../store.js';
+         getRoutineMeta, ROUTINE_SLUG, getTypeOverrides } from '../store.js';
 import { isRaceDone } from './race-status.js';
-import { applyDateOverrides, applyWeekMetaOverrides } from './plan-overrides.js';
+import { typeName } from './session-types.js';
+import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides } from './plan-overrides.js';
 import { computeEventRanges, computePausedWeeks } from './routine-overlap.js';
 
 // { slug, eventName, session, kind: 'event' | 'routine' } | null
@@ -27,9 +28,14 @@ export function findTodaySession(todayStr) {
   if (routineMeta?.activeVersion) {
     const plan = getActivePlan(ROUTINE_SLUG);
     if (plan) {
-      const effPlan = applyWeekMetaOverrides(
-        applyDateOverrides(plan, getDateOverrides(ROUTINE_SLUG)),
-        getWeekMetaOverrides(ROUTINE_SLUG)
+      // Avec les activités changées : un jour de repos transformé en vélo devient
+      // la séance du jour, un footing passé en repos n'en est plus une.
+      const effPlan = applyTypeOverrides(
+        applyWeekMetaOverrides(
+          applyDateOverrides(plan, getDateOverrides(ROUTINE_SLUG)),
+          getWeekMetaOverrides(ROUTINE_SLUG)
+        ),
+        getTypeOverrides(ROUTINE_SLUG)
       );
       const pausedWeeks = computePausedWeeks(effPlan, computeEventRanges(getEventsIndex(), getEventMeta));
       for (const week of effPlan.weeks) {
@@ -55,4 +61,12 @@ export function getActiveRacePreps(todayStr) {
     return meta?.activeVersion && meta.planStart && meta.raceDate && !isRaceDone(e.slug) &&
            meta.planStart <= todayStr && todayStr <= meta.raceDate;
   });
+}
+
+// Titre à afficher pour la séance du jour : quand l'activité a été changée, le
+// titre prévu (« EF + lignes droites ») ne décrit plus ce qui est fait.
+export function todaySessionTitle(session) {
+  return session.plannedType
+    ? `${typeName(session.type)} — à la place de « ${session.title} »`
+    : session.title;
 }

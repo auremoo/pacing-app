@@ -58,6 +58,7 @@ pacing-app/
 │       ├── plan-overrides.js       # applyDateOverrides/applyWeekMetaOverrides (échanges/déplacements)
 │       ├── prep-report.js          # Bilan de fin de prépa consolidé toutes versions + prompt de stratégie
 │       ├── race-status.js          # Séance de course d'un événement + isRaceDone (course courue ?)
+│       ├── session-types.js        # Types de séance : pastille + nom (types du plan + activités concrètes)
 │       ├── prompt-modal.js         # Modale "copier un prompt" partagée (versions + stratégie)
 │       ├── routine-overlap.js      # Détecte les semaines du plan général chevauchant une course active
 │       └── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
@@ -123,6 +124,8 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
 **Onglet Infos** (infos-view.js) : 7 onglets — Synthèse, Allures, Principes, PPG, Vigilance, Stratégie, Nutrition (onglets masqués si section vide).
 
 **Types de séance valides :** `rest`, `easy`, `long`, `intervals`, `tempo`, `hills`, `race`, `strength`, `cross`
+
+**Activité changée sur une journée (plan général uniquement)** : depuis le détail d'une séance du plan général, l'athlète peut remplacer le type par un autre type du plan ou par une activité concrète — `bike`, `badminton`, `swim`, `hike`, `other` — qui n'existent que comme remplacement (le parser ne les accepte pas dans un plan). Stocké dans `state.json` sous `events.__routine__._typeOverrides` (`{ sessionId: type }`) ; choisir le type prévu supprime le remplacement. `applyTypeOverrides` (plan-overrides.js) pose `type` = activité faite et `plannedType` = type prévu ; la liste affiche la nouvelle pastille et « · prévu EF ». `getTypeOverrides` renvoie `{}` pour tout événement et `setSessionTypeOverride` les refuse : un plan de course est une prescription, on n'en réécrit pas les séances. Appliqué partout où le plan général est affiché (plan-view, session-view, séance du jour) et dans son prompt de révision, qui rappelle à l'IA de ne pas réutiliser ces types dans le plan généré. Libellés et noms dans `js/utils/session-types.js`, source unique.
 
 **IDs de session :** générés par le parser → `s{NN}-{daycode}` (ex: `s01-mon`, `s03-thu`)  
 **State.json** structure : `{ events: { "slug": { "s01-mon": { completed, completedAt, skipped, skippedAt, note, version } } } }`  

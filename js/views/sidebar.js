@@ -1,7 +1,7 @@
 import { getEventsIndex, getActivePlan, getEventMeta } from '../store.js';
 import { navigate } from '../app.js';
 import { today, isPast } from '../utils/dates.js';
-import { findTodaySession } from '../utils/today-session.js';
+import { findTodaySession, todaySessionTitle } from '../utils/today-session.js';
 import { computeCompletion } from './courses.js';
 
 export function mountSidebar(container, activeSlug = null) {
@@ -22,7 +22,7 @@ export function mountSidebar(container, activeSlug = null) {
     ${todaySession ? `
     <div class="sb-today" id="sb-today">
       <div class="sb-today__label">Aujourd'hui</div>
-      <div class="sb-today__title">${todaySession.session.title}</div>
+      <div class="sb-today__title">${todaySessionTitle(todaySession.session)}</div>
       <div class="sb-today__event">${todaySession.eventName}</div>
     </div>` : ''}
 

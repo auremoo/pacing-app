@@ -31,6 +31,22 @@ export function applyDateOverrides(plan, overrides) {
   return { ...plan, weeks: plan.weeks.map(w => ({ ...w, sessions: weekSessions[w.number] || [] })) };
 }
 
+// Remplace le type d'activité des séances concernées. Le type prévu est gardé
+// dans plannedType pour pouvoir afficher « prévu : EF » et revenir en arrière.
+export function applyTypeOverrides(plan, typeOverrides) {
+  if (!plan || !Object.keys(typeOverrides || {}).length) return plan;
+  return {
+    ...plan,
+    weeks: plan.weeks.map(w => ({
+      ...w,
+      sessions: w.sessions.map(s => {
+        const t = typeOverrides[s.id];
+        return t && t !== s.type ? { ...s, type: t, plannedType: s.type } : s;
+      }),
+    })),
+  };
+}
+
 export function applyWeekMetaOverrides(plan, metaOverrides) {
   if (!Object.keys(metaOverrides).length) return plan;
   return {

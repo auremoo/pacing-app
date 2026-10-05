@@ -1,10 +1,11 @@
 import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
          saveSessionNote, getDateOverrides, getWeekMetaOverrides,
-         moveSession, swapSessionDates, swapWeeks, ROUTINE_SLUG } from '../store.js';
+         moveSession, swapSessionDates, swapWeeks, ROUTINE_SLUG,
+         getTypeOverrides } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
-import { applyDateOverrides, applyWeekMetaOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum } from '../utils/plan-overrides.js';
+import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
 import { syncEventClosure } from './event-closure.js';
 
@@ -27,7 +28,12 @@ export function mount(container, slug, { pausedWeeks } = {}) {
   const states    = getAllSessionStates(slug);
   const overrides     = getDateOverrides(slug);
   const metaOverrides = getWeekMetaOverrides(slug);
-  const effPlan       = applyWeekMetaOverrides(applyDateOverrides(plan, overrides), metaOverrides);
+  // getTypeOverrides renvoie {} pour un événement : seul le plan général voit
+  // ses types d'activité remplacés.
+  const effPlan       = applyTypeOverrides(
+    applyWeekMetaOverrides(applyDateOverrides(plan, overrides), metaOverrides),
+    getTypeOverrides(slug)
+  );
   const dateIndex     = buildDateIndex(effPlan);
 
   // Semaine en cours
@@ -492,6 +498,9 @@ function renderSessionItem(session, state, isMoved) {
   const dateStr      = formatDateShort(session.date);
   const reasonSuffix = skipped && reason ? ` · ${REASON_LABELS[reason] || reason}` : '';
   const movedMark    = isMoved ? ' · ↕' : '';
+  // Activité changée : la pastille montre ce qui a été fait, la ligne rappelle
+  // ce qui était prévu.
+  const plannedMark  = session.plannedType ? ` · prévu ${SESSION_LABELS[session.plannedType] || session.plannedType}` : '';
 
   return `
     <div class="session-item ${completed ? 'session-item--completed' : ''} ${skipped ? 'session-item--skipped' : ''}"
@@ -499,7 +508,7 @@ function renderSessionItem(session, state, isMoved) {
       <span class="session-item__type-badge type-${session.type}">${label}</span>
       <div class="session-item__content">
         <div class="session-item__title">${session.title}</div>
-        <div class="session-item__meta">${session.dayLabel} ${dateStr}${reasonSuffix}${movedMark}</div>
+        <div class="session-item__meta">${session.dayLabel} ${dateStr}${reasonSuffix}${movedMark}${plannedMark}</div>
       </div>
       <div class="session-item__actions">
         <button class="movebtn" data-session-move="${session.id}" aria-label="Déplacer">

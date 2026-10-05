@@ -1,3 +1,5 @@
+import { TYPE_INFO } from './utils/session-types.js';
+
 const SESSION_TYPES = new Set(['rest','easy','long','intervals','tempo','hills','race','strength','cross']);
 const DAY_CODE = { lundi:'mon', mardi:'tue', mercredi:'wed', jeudi:'thu', vendredi:'fri', samedi:'sat', dimanche:'sun' };
 
@@ -165,14 +167,8 @@ function parseSessionTable(lines, weekNum) {
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-export const SESSION_LABELS = {
-  rest:      'REPOS',
-  easy:      'EF',
-  long:      'SL',
-  intervals: 'FRAC',
-  tempo:     'TEMPO',
-  hills:     'CÔTES',
-  race:      'RACE',
-  strength:  'PPG',
-  cross:     'CROSS'
-};
+// Pastilles par type, dérivées de la source unique (activités concrètes du
+// plan général comprises, pour que tout affichage les connaisse).
+export const SESSION_LABELS = Object.fromEntries(
+  Object.entries(TYPE_INFO).map(([type, info]) => [type, info.badge])
+);

@@ -29,6 +29,12 @@
   --type-race: #FF3B30;
   --type-strength: #5856D6;
   --type-cross: #30B0C7;
+  /* Activités concrètes (remplacements sur le plan général uniquement) */
+  --type-bike: #FF2D55;
+  --type-badminton: #D99A00;
+  --type-swim: #1C5DCC;
+  --type-hike: #A2845E;
+  --type-other: #48484A;
 
   /* Grays */
   --gray-1: #8E8E93;

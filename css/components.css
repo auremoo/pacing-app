@@ -1093,8 +1093,66 @@
 .type-race { background: var(--type-race); }
 .type-strength { background: var(--type-strength); }
 .type-cross { background: var(--type-cross); }
+.type-bike { background: var(--type-bike); }
+.type-badminton { background: var(--type-badminton); }
+.type-swim { background: var(--type-swim); }
+.type-hike { background: var(--type-hike); }
+.type-other { background: var(--type-other); }
 
 /* ─── Session Detail View ─────────────────────────────────────── */
+
+/* Activité changée sur une journée du plan général */
+.session-detail__planned {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.type-picker {
+  padding: 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.type-picker__hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.type-picker__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--separator);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.type-chip:active { opacity: 0.6; }
+.type-chip--active {
+  border-color: var(--ios-blue);
+  box-shadow: 0 0 0 1px var(--ios-blue);
+  font-weight: 600;
+}
+.type-chip__badge {
+  min-width: 28px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 800;
+  color: #fff;
+}
 
 .session-detail {
   padding: var(--space-4);
