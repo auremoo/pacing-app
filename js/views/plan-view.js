@@ -5,6 +5,7 @@ import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
+import { sessionTitle } from '../utils/session-types.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
 import { syncEventClosure } from './event-closure.js';
@@ -500,14 +501,14 @@ function renderSessionItem(session, state, isMoved) {
   const movedMark    = isMoved ? ' · ↕' : '';
   // Activité changée : la pastille montre ce qui a été fait, la ligne rappelle
   // ce qui était prévu.
-  const plannedMark  = session.plannedType ? ` · prévu ${SESSION_LABELS[session.plannedType] || session.plannedType}` : '';
+  const plannedMark  = session.plannedType ? ` · prévu : ${session.title}` : '';
 
   return `
     <div class="session-item ${completed ? 'session-item--completed' : ''} ${skipped ? 'session-item--skipped' : ''}"
          data-session-nav="${session.id}">
       <span class="session-item__type-badge type-${session.type}">${label}</span>
       <div class="session-item__content">
-        <div class="session-item__title">${session.title}</div>
+        <div class="session-item__title">${sessionTitle(session)}</div>
         <div class="session-item__meta">${session.dayLabel} ${dateStr}${reasonSuffix}${movedMark}${plannedMark}</div>
       </div>
       <div class="session-item__actions">

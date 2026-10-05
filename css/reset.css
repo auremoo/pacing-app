@@ -9,6 +9,16 @@ html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+}
+
+/* Pas de zoom au double-tap (un tap rapide sur une coche ou une pastille
+   zoomait la page). Posé sur html seul, ça ne suffisait pas : la valeur
+   effective de touch-action ne remonte que jusqu'au premier conteneur qui
+   défile, et tout le contenu de l'app vit dans des .scroll-view. On la pose
+   donc sur chaque élément. `manipulation` garde le défilement et le pincement
+   pour zoomer ; un touch-action plus restrictif posé en inline (curseur du
+   profil altimétrique : pan-y) reste prioritaire. */
+* {
   touch-action: manipulation;
 }
 

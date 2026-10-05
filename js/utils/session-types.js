@@ -33,3 +33,10 @@ export function typeBadge(type) {
 export function typeName(type) {
   return TYPE_INFO[type]?.name || type;
 }
+
+// Titre à montrer pour une séance. Quand l'activité a été changée, le titre du
+// plan (« Repos », « EF + lignes droites ») décrit ce qui était prévu, plus ce
+// qui a été fait : c'est le nom de l'activité qui prend sa place.
+export function sessionTitle(session) {
+  return session.plannedType ? typeName(session.type) : session.title;
+}

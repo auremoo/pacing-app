@@ -4,7 +4,7 @@ import { navigate, showToast } from '../app.js';
 import { formatDate } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { applyDateOverrides, applyTypeOverrides } from '../utils/plan-overrides.js';
-import { PLAN_TYPES, ACTIVITY_TYPES, typeBadge, typeName } from '../utils/session-types.js';
+import { PLAN_TYPES, ACTIVITY_TYPES, typeBadge, typeName, sessionTitle } from '../utils/session-types.js';
 import { syncEventClosure } from './event-closure.js';
 
 export function mount(container, slug, sessionId) {
@@ -41,14 +41,18 @@ export function mount(container, slug, sessionId) {
             <div class="session-detail__type-badge type-${session.type}" id="type-badge">${label}</div>
             <div>
               <div class="session-detail__type-label" id="type-label">${typeName(session.type)}</div>
-              <div class="session-detail__planned" id="type-planned" ${session.plannedType ? '' : 'hidden'}>
-                Prévu : ${typeName(plannedType)}
-              </div>
             </div>
           </div>
-          <div class="session-detail__title">${session.title}</div>
+          <div class="session-detail__title" id="session-title">${sessionTitle(session)}</div>
           <div class="session-detail__date">${formatDate(session.date)}</div>
-          <div class="session-detail__description">${renderDescription(session.description)}</div>
+          <!-- Activité changée : la séance du plan n'est plus ce qui a été fait,
+               elle reste lisible en retrait sous « Séance prévue ». -->
+          <div class="session-detail__description" id="plan-desc" ${session.plannedType ? 'hidden' : ''}>${renderDescription(session.description)}</div>
+          <div class="session-detail__planned" id="type-planned" ${session.plannedType ? '' : 'hidden'}>
+            <div class="session-detail__planned-label">Séance prévue · ${typeName(plannedType)}</div>
+            <div class="session-detail__planned-title">${session.title}</div>
+            <div class="session-detail__planned-desc">${renderDescription(session.description)}</div>
+          </div>
         </div>
 
         <!-- Check button -->
@@ -97,7 +101,7 @@ export function mount(container, slug, sessionId) {
     }
   });
 
-  if (canChangeType) wireTypePicker(container, slug, sessionId, plannedType, syncStatus);
+  if (canChangeType) wireTypePicker(container, slug, sessionId, plannedType, session.title, syncStatus);
 
   const saveNoteBtn = container.querySelector('#save-note-btn');
 
@@ -150,7 +154,7 @@ function renderTypePicker(current, planned) {
     </div>`;
 }
 
-function wireTypePicker(container, slug, sessionId, planned, syncStatus) {
+function wireTypePicker(container, slug, sessionId, planned, plannedTitle, syncStatus) {
   container.querySelectorAll('[data-type-pick]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const type = btn.dataset.typePick;
@@ -165,7 +169,10 @@ function wireTypePicker(container, slug, sessionId, planned, syncStatus) {
       badge.className = `session-detail__type-badge type-${type}`;
       badge.textContent = typeBadge(type);
       container.querySelector('#type-label').textContent = typeName(type);
-      container.querySelector('#type-planned').hidden = type === planned;
+      const changed = type !== planned;
+      container.querySelector('#session-title').textContent = changed ? typeName(type) : plannedTitle;
+      container.querySelector('#type-planned').hidden = !changed;
+      container.querySelector('#plan-desc').hidden = changed;
 
       syncStatus.textContent = type === planned ? 'Activité prévue rétablie' : `Activité : ${typeName(type)}`;
       setTimeout(() => { syncStatus.textContent = ''; }, 2000);

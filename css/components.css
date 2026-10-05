@@ -1103,9 +1103,30 @@
 
 /* Activité changée sur une journée du plan général */
 .session-detail__planned {
-  font-size: 13px;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md, 10px);
+  background: var(--fill-secondary, rgba(120,120,128,0.12));
   color: var(--text-secondary);
+}
+.session-detail__planned[hidden],
+.session-detail__description[hidden] { display: none; }
+.session-detail__planned-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-tertiary);
+}
+.session-detail__planned-title {
+  font-size: 15px;
+  font-weight: 600;
   margin-top: 2px;
+}
+.session-detail__planned-desc {
+  font-size: 14px;
+  line-height: 1.45;
+  margin-top: 4px;
 }
 
 .type-picker {
