@@ -2,5 +2,12 @@
   "owner": "auremoo",
   "repo": "pacing-app",
   "branch": "main",
-  "encryptedToken": "s0vI0t9nhrySsNrSdsHR6rQCFed1MYfdDl8ui6N/3i4qC26pX65XwkBRGXfzxcXkgRQJ1zsSYiVNPChYJsGz322/a4r034aTc5QimOqS/ARDhFAsmeITOLTxaBTQbxjjPwfLcWEDaX3ybhTuFgg9QarlXxVZIagnNw=="
+  "encryptedToken": "s0vI0t9nhrySsNrSdsHR6rQCFed1MYfdDl8ui6N/3i4qC26pX65XwkBRGXfzxcXkgRQJ1zsSYiVNPChYJsGz322/a4r034aTc5QimOqS/ARDhFAsmeITOLTxaBTQbxjjPwfLcWEDaX3ybhTuFgg9QarlXxVZIagnNw==",
+  "users": [
+    {
+      "name": "Aurélien",
+      "dataPath": "",
+      "encryptedToken": "s0vI0t9nhrySsNrSdsHR6rQCFed1MYfdDl8ui6N/3i4qC26pX65XwkBRGXfzxcXkgRQJ1zsSYiVNPChYJsGz322/a4r034aTc5QimOqS/ARDhFAsmeITOLTxaBTQbxjjPwfLcWEDaX3ybhTuFgg9QarlXxVZIagnNw=="
+    }
+  ]
 }

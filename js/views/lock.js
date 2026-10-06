@@ -1,7 +1,7 @@
 import { configure } from '../github-api.js';
 import { renderMarkdown } from '../utils/markdown.js';
 import { findUserByNameAndPassword, saveSession, hasInvite, tokenFromInvite,
-         getLastName, rememberName } from '../utils/users.js';
+         getLastName, rememberName, listUserNames } from '../utils/users.js';
 import { addUser } from '../store.js';
 
 export { isAuthenticated } from '../utils/users.js';
@@ -15,8 +15,12 @@ export function mount(container, onUnlock) {
         <div class="lock-screen__subtitle">Mes plans de préparation</div>
       </div>
       <form class="lock-screen__form" id="lock-form" autocomplete="on">
-        <input type="text" class="input-field" id="lock-name" placeholder="Prénom"
-               autocomplete="username" autocapitalize="words" value="${escAttr(getLastName())}">
+        <!-- Remplacé par une liste des prénoms dès que config.json est lu ;
+             reste un champ texte si aucun compte n'a encore de nom. -->
+        <div id="lock-name-slot">
+          <input type="text" class="input-field" id="lock-name" placeholder="Prénom"
+                 autocomplete="username" autocapitalize="words" value="${escAttr(getLastName())}">
+        </div>
         <input
           type="password"
           inputmode="numeric"
@@ -100,8 +104,12 @@ export function mount(container, onUnlock) {
   readmeOverlay.addEventListener('click', closeReadme);
 
   // Prénom mémorisé : on va droit au mot de passe.
-  const nameInput = container.querySelector('#lock-name');
-  (nameInput.value ? input : nameInput).focus();
+  const focusFirstEmpty = () => {
+    const nameField = container.querySelector('#lock-name');
+    (nameField.value ? input : nameField).focus();
+  };
+  focusFirstEmpty();
+  fillNameList(container).then(focusFirstEmpty);
 
   // ── Bascule connexion / inscription ──────────────────────────────
   const signupForm = container.querySelector('#signup-form');
@@ -198,4 +206,30 @@ export function mount(container, onUnlock) {
 
 function escAttr(str) {
   return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+// Liste déroulante des prénoms. Le dernier prénom utilisé est présélectionné ;
+// s'il n'apparaît pas encore (compte tout juste créé, GitHub Pages n'a pas
+// republié config.json), on l'ajoute quand même pour ne pas le perdre.
+async function fillNameList(container) {
+  let names = [];
+  try {
+    const res = await fetch(`./config.json?_t=${Date.now()}`);
+    if (res.ok) names = listUserNames(await res.json());
+  } catch { return; }
+  if (!names.length) return;   // aucun nom enregistré : on garde le champ texte
+
+  const last = getLastName();
+  // Comparaison sans accents ni casse, comme à la connexion : « aurelien »
+  // tapé avant la liste désigne « Aurélien », pas un deuxième prénom.
+  const norm = n => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  if (last && !names.some(n => norm(n) === norm(last))) names.push(last);
+  names.sort((a, b) => a.localeCompare(b, 'fr'));
+
+  const selected = (last && names.find(n => norm(n) === norm(last))) || '';
+  container.querySelector('#lock-name-slot').innerHTML = `
+    <select class="input-field lock-screen__select" id="lock-name" autocomplete="username" required>
+      <option value="" ${selected ? '' : 'selected'} disabled>Choisis ton prénom</option>
+      ${names.map(n => `<option value="${escAttr(n)}" ${n === selected ? 'selected' : ''}>${escAttr(n)}</option>`).join('')}
+    </select>`;
 }

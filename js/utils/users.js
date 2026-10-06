@@ -19,6 +19,12 @@ const PAT_KEY     = 'pacing_pat';
 const DATA_KEY    = 'pacing_data_path';
 const NAME_KEY    = 'pacing_user';
 
+// Prénoms proposés sur l'écran de connexion. Ils sont déjà publics dans
+// config.json (le dépôt l'est), la liste ne révèle donc rien de plus.
+export function listUserNames(cfg) {
+  return listUsers(cfg).map(u => u.name).filter(Boolean);
+}
+
 export function listUsers(cfg) {
   if (Array.isArray(cfg?.users) && cfg.users.length) return cfg.users;
   return cfg?.encryptedToken ? [{ name: null, dataPath: '', encryptedToken: cfg.encryptedToken }] : [];
@@ -129,9 +135,11 @@ export async function buildConfigWithUser(cfg, { name, password, token, currentN
 
   const { users } = withNamedUsers(cfg, currentName);
 
-  if (users.some(u => (u.name || '').toLowerCase() === name.toLowerCase())) {
-    throw new Error(`Il existe déjà un utilisateur « ${name} ».`);
-  }
+  // Même comparaison que la connexion (sans accents ni casse) : « Aurelien »
+  // et « Aurélien » désignent le même compte à l'écran de connexion, ils ne
+  // peuvent donc pas coexister.
+  const clash = users.find(u => normName(u.name) === normName(name));
+  if (clash) throw new Error(`Le prénom « ${clash.name} » est déjà pris : choisis-en un autre (ajoute une initiale, par exemple).`);
 
   let dataPath = `users/${slugifyName(name)}`;
   for (let i = 2; users.some(u => u.dataPath === dataPath); i++) dataPath = `users/${slugifyName(name)}-${i}`;
