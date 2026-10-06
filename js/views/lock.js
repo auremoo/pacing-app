@@ -1,6 +1,7 @@
 import { configure } from '../github-api.js';
 import { renderMarkdown } from '../utils/markdown.js';
-import { findUserByPassword, saveSession, hasInvite, tokenFromInvite } from '../utils/users.js';
+import { findUserByNameAndPassword, saveSession, hasInvite, tokenFromInvite,
+         getLastName, rememberName } from '../utils/users.js';
 import { addUser } from '../store.js';
 
 export { isAuthenticated } from '../utils/users.js';
@@ -13,7 +14,9 @@ export function mount(container, onUnlock) {
         <div class="lock-screen__title">Pacing App</div>
         <div class="lock-screen__subtitle">Mes plans de préparation</div>
       </div>
-      <form class="lock-screen__form" id="lock-form" autocomplete="off">
+      <form class="lock-screen__form" id="lock-form" autocomplete="on">
+        <input type="text" class="input-field" id="lock-name" placeholder="Prénom"
+               autocomplete="username" autocapitalize="words" value="${escAttr(getLastName())}">
         <input
           type="password"
           inputmode="numeric"
@@ -21,7 +24,6 @@ export function mount(container, onUnlock) {
           class="input-field"
           id="lock-input"
           placeholder="Mot de passe"
-          autofocus
           autocomplete="current-password"
         />
         <div class="lock-screen__error" id="lock-error"></div>
@@ -45,7 +47,7 @@ export function mount(container, onUnlock) {
       </form>
 
       <div class="lock-screen__footer">
-        Cette application est privée : on y entre avec son mot de passe, ou sur invitation.
+        Cette application est privée : on y entre avec son prénom et son mot de passe, ou sur invitation.
         <a href="#" class="lock-screen__readme-link" id="lock-readme-link">En savoir plus →</a>
       </div>
     </div>
@@ -97,6 +99,10 @@ export function mount(container, onUnlock) {
   readmeClose.addEventListener('click', closeReadme);
   readmeOverlay.addEventListener('click', closeReadme);
 
+  // Prénom mémorisé : on va droit au mot de passe.
+  const nameInput = container.querySelector('#lock-name');
+  (nameInput.value ? input : nameInput).focus();
+
   // ── Bascule connexion / inscription ──────────────────────────────
   const signupForm = container.querySelector('#signup-form');
   container.querySelector('#show-signup').addEventListener('click', () => {
@@ -145,6 +151,7 @@ export function mount(container, onUnlock) {
       // config.json : on connaît déjà son token et son dossier.
       configure({ ...repo, dataPath: user.dataPath });
       saveSession(token, user);
+      rememberName(user.name);
       onUnlock();
     } catch (err) {
       sErr.textContent = err.message;
@@ -169,8 +176,11 @@ export function mount(container, onUnlock) {
       const cfg = await res.json();
       if (!cfg.encryptedToken && !cfg.users?.length) throw new Error('Token non configuré — ouvre setup.html d\'abord.');
 
-      const found = await findUserByPassword(cfg, pwd);
-      if (!found) throw new Error('Mot de passe incorrect.');
+      const name  = container.querySelector('#lock-name').value.trim();
+      const found = await findUserByNameAndPassword(cfg, name, pwd);
+      if (found.error === 'unknown')  throw new Error(`Aucun compte au nom de « ${name} ».`);
+      if (found.error === 'password') throw new Error('Mot de passe incorrect.');
+      rememberName(found.user.name || name);
 
       configure({ token: found.token, owner: cfg.owner, repo: cfg.repo,
                   branch: cfg.branch || 'main', dataPath: found.user.dataPath });
@@ -184,4 +194,8 @@ export function mount(container, onUnlock) {
       input.focus();
     }
   });
+}
+
+function escAttr(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }

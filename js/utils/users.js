@@ -35,6 +35,45 @@ export async function findUserByPassword(cfg, password) {
   return null;
 }
 
+// Connexion par prénom + mot de passe. Le prénom restreint les entrées à
+// essayer (une seule en pratique) et permet de distinguer « compte inconnu » de
+// « mauvais mot de passe ». Comparaison sans accents ni casse.
+// Une config au format historique n'a pas de nom pour son utilisateur : un
+// prénom qui ne correspond à personne retombe alors sur les entrées sans nom,
+// pour que le premier utilisateur puisse se connecter avec le sien.
+// Sans prénom, toutes les entrées sont essayées (comportement d'avant).
+// → { token, user } | { error: 'unknown' | 'password' }
+export async function findUserByNameAndPassword(cfg, name, password) {
+  const users = listUsers(cfg);
+  const wanted = normName(name);
+  let pool = wanted ? users.filter(u => normName(u.name) === wanted) : users;
+  if (wanted && !pool.length) pool = users.filter(u => !u.name);
+  if (!pool.length) return { error: 'unknown' };
+
+  for (const user of pool) {
+    try {
+      const token = await decryptToken(user.encryptedToken, password);
+      // Entrée sans nom : on garde celui tapé, pour l'affichage de la session.
+      return { token, user: user.name ? user : { ...user, name: (name || '').trim() || null } };
+    } catch { /* pas cette entrée */ }
+  }
+  return { error: 'password' };
+}
+
+function normName(name) {
+  return (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
+
+// Prénom de la dernière connexion, pour pré-remplir l'écran de connexion.
+// localStorage peut être indisponible (navigation privée) : sans effet alors.
+const LAST_NAME_KEY = 'pacing_last_name';
+export function getLastName() {
+  try { return localStorage.getItem(LAST_NAME_KEY) || ''; } catch { return ''; }
+}
+export function rememberName(name) {
+  try { if (name) localStorage.setItem(LAST_NAME_KEY, name); } catch { /* ignoré */ }
+}
+
 // ── Session (sessionStorage, le temps que l'app reste ouverte) ────────
 
 export function isAuthenticated() {
