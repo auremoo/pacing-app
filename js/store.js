@@ -452,6 +452,7 @@ export async function createRoutine(settings) {
   const meta = {
     context: settings.context || '',
     goals: settings.goals || '',
+    targets: settings.targets || [],
     blockWeeks: parseInt(settings.blockWeeks) || 0,
     startDate: settings.startDate || '',
     activeVersion: null,

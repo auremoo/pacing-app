@@ -5,6 +5,7 @@ import { showToast, navigate } from '../app.js';
 import { today } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { typeName } from '../utils/session-types.js';
+import { getTargets, formatTargets } from '../utils/routine-context.js';
 
 export function mount(container) {
   render(container);
@@ -44,6 +45,7 @@ function render(container) {
           ✦ Générer un prompt de révision
         </button>
       </div>
+      ${targetsHint(meta)}
     ` : ''}
 
     ${!hasPlan ? `
@@ -57,6 +59,7 @@ function render(container) {
           ✦ Générer le prompt de plan initial
         </button>
       </div>
+      ${targetsHint(meta)}
     ` : `
       <p class="section-header">Versions du plan général</p>
       ${versions.map(v => renderVersionCard(v, meta.activeVersion)).join('')}
@@ -75,6 +78,8 @@ function render(container) {
     await handleImport(container, file);
     e.target.value = '';
   });
+
+  container.querySelectorAll('.targets-hint__edit').forEach(b => b.addEventListener('click', () => navigate('/routine/settings')));
 
   container.querySelector('#export-prompt-btn')?.addEventListener('click', () => {
     showExportModal();
@@ -136,6 +141,34 @@ function showInitialPromptModal() {
   openPromptModal('Prompt de plan initial', prompt);
 }
 
+// Rappel, sous le bouton de prompt, des objectifs chrono qui y seront repris :
+// c'est avant de générer qu'on les choisit ou les change.
+function targetsHint(meta) {
+  const targets = getTargets(meta);
+  const list = targets.length
+    ? targets.map(t => `${escHtml(t.distance)} en ${escHtml(t.time)}${t.achieved ? ' ✓' : ''}`).join(' · ')
+    : 'aucun';
+  return `<p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-3)">
+      Objectifs chrono repris dans le prompt : ${list}.
+      <button class="targets-hint__edit" type="button" style="color:var(--ios-blue)">Modifier dans Contexte</button>
+    </p>`;
+}
+
+// Objectifs chrono perso : des records visés hors course officielle. Le plan
+// doit y mener (séances spécifiques) et prévoir quand les tenter.
+function targetsSection(meta, level) {
+  const targets = getTargets(meta);
+  if (!targets.length) return '';
+  return `
+${level} Objectifs chrono personnels
+
+${formatTargets(targets)}
+
+Ce ne sont pas des courses officielles : ce sont des records que je veux battre seul, à l'entraînement. Pour chaque objectif non atteint, prévois les séances qui y mènent et place un **test chronométré** (type \`race\`, titre du type « Test 5 km ») au moment où je peux raisonnablement le réussir — avant l'échéance s'il y en a une, en arrivant reposé (pas de séance dure les 2 jours avant). Si un objectif te paraît irréaliste dans le délai, dis-le dans la SYNTHESE et propose un palier intermédiaire. Un objectif déjà atteint sert de repère pour mes allures.
+
+`;
+}
+
 function buildInitialPrompt(meta, athlete) {
   const todayStr = today();
   const a = athlete || {};
@@ -161,7 +194,7 @@ ${meta.context || '[à compléter — ex : Badminton le mercredi soir, 1x/semain
 
 ${meta.goals || '[à compléter — ex : 2 séances de fractionné/sprint en plus par semaine]'}
 
-### Paramètres du bloc
+${targetsSection(meta, '###')}### Paramètres du bloc
 
 - Date de début du plan : ${meta.startDate || '[à compléter — toujours un lundi]'}
 - Durée souhaitée du bloc : ${meta.blockWeeks ? meta.blockWeeks + ' semaines' : '[à compléter]'}
@@ -298,7 +331,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 
 - Activités récurrentes déclarées : ${meta.context || 'Non renseigné'}
 - Objectifs de ce bloc : ${meta.goals || 'Non renseigné'}
-
+${targetsSection(meta, '##')}
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks.length}
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}

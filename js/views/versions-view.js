@@ -5,6 +5,7 @@ import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { openPromptModal } from '../utils/prompt-modal.js';
 import { skipReasonLabel } from '../utils/skip-reasons.js';
+import { buildRoutineSectionForRace } from '../utils/routine-context.js';
 
 export function mount(container, slug) {
   render(container, slug);
@@ -143,6 +144,13 @@ function buildAdditionalContext(meta) {
     : `[Ajoute ici tes préférences d'entraînement, matériel GPS, ou toute autre contrainte particulière]`;
 }
 
+// Activités récurrentes, historique récent et objectifs perso du plan général,
+// mis en pause pendant la préparation : voir utils/routine-context.js.
+function routineSection(todayStr, level, opts) {
+  const body = buildRoutineSectionForRace(todayStr, opts);
+  return body ? `\n${level} Entraînement général en cours\n\n${body}\n` : '';
+}
+
 function buildInitialPrompt(meta, athlete) {
   const todayStr = today();
   const a = athlete || {};
@@ -177,7 +185,7 @@ function buildInitialPrompt(meta, athlete) {
 ### Contexte supplémentaire
 
 ${buildAdditionalContext(meta)}
-
+${routineSection(todayStr, '###')}
 ---
 
 **FORMAT DE SORTIE OBLIGATOIRE**
@@ -374,7 +382,7 @@ ${swappedWeekNums.length ? `\n**Semaines dont le contenu (décharge/phase/volume
 
 ## Contexte supplémentaire
 ${buildAdditionalContext(meta)}
-
+${routineSection(todayStr, '##', { withRecent: false })}
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks.length} (${weeksLeft} semaines restantes dont la semaine en cours)
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}

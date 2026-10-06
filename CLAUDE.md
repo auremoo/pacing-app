@@ -61,6 +61,7 @@ pacing-app/
 │       ├── race-status.js          # Séance de course d'un événement + isRaceDone (course courue ?)
 │       ├── session-types.js        # Types de séance : pastille + nom (types du plan + activités concrètes)
 │       ├── prompt-modal.js         # Modale "copier un prompt" partagée (versions + stratégie)
+│       ├── routine-context.js      # Plan général → prompts : activités récurrentes, historique récent, objectifs chrono perso
 │       ├── routine-overlap.js      # Détecte les semaines du plan général chevauchant une course active
 │       └── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
 ├── events/
@@ -89,6 +90,10 @@ Menu du bas commun (mobile) / sidebar (desktop) à 4 sections racines : **Accuei
 **Accueil (`home.js`)** : contextuel — séance du jour (tous plans confondus), puis ce qu'on prépare en ce moment : la carte « Course en préparation » si une course a un plan actif couvrant aujourd'hui, **sinon** la carte « Entraînement en cours » du plan général (semaine, séances faites, phase, prochaine séance — `getRoutineProgress`). Jamais les deux : le plan général est en pause pendant une prépa. La liste complète des événements vit dans `/courses`. Sur desktop, la sidebar a une rubrique « Entraînement » avant « Mes courses ».
 
 **Plan général vs course** : un seul plan général évolutif (`routine/`), bien séparé des courses (jamais dans `events/index.json`). Quand une course a un plan actif qui chevauche une semaine du plan général, cette semaine est marquée "en pause" (grisée, actions désactivées) dans `plan-view.js` — on ne suit jamais deux plans en parallèle. `js/utils/routine-overlap.js` calcule ce chevauchement ; `js/utils/today-session.js` centralise la détection de la séance du jour en respectant cette règle.
+
+**Le plan général dans les prompts de course** : puisque le plan général est en pause pendant une prépa, le plan de course doit reprendre lui-même les activités fixes (club, badminton…). `buildRoutineSectionForRace` (`js/utils/routine-context.js`) ajoute aux prompts de plan initial et de révision d'une course une section « Entraînement général en cours » : activités récurrentes du Contexte (à intégrer comme séances et à compter dans la charge), bilan des 4 dernières semaines du plan général (plan initial seulement — en révision il est en pause depuis le début de la prépa ; séance jamais cochée = statut inconnu) et objectifs chrono perso. Section absente si rien de tout ça n'est renseigné.
+
+**Objectifs chrono perso** (plan général → Contexte) : records visés hors course officielle, `routine/meta.json` → `targets: [{ distance, time, by, achieved }]` (`by` = échéance facultative). Distance libre avec suggestions (`TARGET_DISTANCES`). Ligne vide ignorée, ligne à moitié remplie refusée à l'enregistrement. Repris dans les prompts initial et de révision du plan général (`targetsSection`), qui demandent des séances adaptées et un test chronométré (type `race`, « Test 5 km ») avant l'échéance ; un objectif atteint sert de repère d'allure. Sous les boutons de prompt de l'onglet Versions, un rappel liste les objectifs qui seront repris, avec un lien vers Contexte : c'est là qu'on les choisit avant le plan initial ou une nouvelle version.
 
 ## Flux de données
 

@@ -54,7 +54,8 @@ function pages(name) {
         <ol class="onb-steps">
           ${STEP(1, '<strong>Activités récurrentes</strong> : ce que tu fais déjà (badminton le lundi, vélo…)')}
           ${STEP(2, '<strong>Ce que tu veux travailler</strong> : endurance, vitesse, reprise…')}
-          ${STEP(3, '<strong>Début et durée</strong> du bloc, puis «&nbsp;Enregistrer&nbsp;»')}
+          ${STEP(3, '<strong>Objectifs chrono perso</strong> (facultatif) : un record visé, ex. 5 km en 24\'30, avec ou sans échéance')}
+          ${STEP(4, '<strong>Début et durée</strong> du bloc, puis «&nbsp;Enregistrer&nbsp;»')}
         </ol>`,
     },
     {

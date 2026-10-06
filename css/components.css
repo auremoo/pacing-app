@@ -2568,3 +2568,21 @@ select.form-input {
   letter-spacing: 0.3px;
   color: var(--ios-blue);
 }
+
+/* ─── Objectifs chrono perso (plan général → Contexte) ─────────── */
+.target-row__head { display: flex; align-items: center; gap: var(--space-2); }
+.target-row__head .target-distance { flex: 1; font-weight: 600; }
+.target-remove {
+  flex: none; width: 32px; height: 32px; border-radius: 50%;
+  color: var(--text-secondary); font-size: 14px;
+}
+.target-row__grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.target-row__grid label { min-width: 0; }
+.target-row__done {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-top: var(--space-2); font-size: 15px; color: var(--text-secondary);
+}
+.target-row__done input { -webkit-appearance: checkbox; appearance: auto; width: 18px; height: 18px; margin: 0; accent-color: var(--ios-green); }
