@@ -27,23 +27,40 @@ export const TARGET_KINDS = {
   autre:  { label: 'Autre',  what: 'Objectif', whatPh: "ex : 10 pompes d'affilée", value: null, valuePh: '' },
 };
 
+// Un chrono se vise en temps (« 5 km en 24'30 ») ou en allure (« 4'40/km »,
+// distance alors facultative) : measure 'time' | 'pace', 'time' par défaut.
+export const CHRONO_MEASURES = {
+  time: { label: 'en temps',   value: 'Temps visé',   valuePh: "ex : 24'30", what: 'Distance' },
+  pace: { label: 'en allure',  value: 'Allure visée', valuePh: "ex : 4'40/km", what: 'Distance (facultatif)' },
+};
+
 export function normalizeTarget(t) {
   if (!t) return null;
-  if (t.kind) return { kind: t.kind, what: t.what || '', value: t.value || '', by: t.by || '', achieved: !!t.achieved };
-  return { kind: 'chrono', what: t.distance || '', value: t.time || '', by: t.by || '', achieved: !!t.achieved };
+  const base = t.kind
+    ? { kind: t.kind, what: t.what || '', value: t.value || '' }
+    : { kind: 'chrono', what: t.distance || '', value: t.time || '' };
+  return { ...base, measure: t.measure === 'pace' ? 'pace' : 'time', by: t.by || '', achieved: !!t.achieved };
 }
 
 // Les champs que le type d'objectif demande sont tous remplis.
 export function isTargetComplete(t) {
   const k = TARGET_KINDS[t.kind];
   if (!k) return false;
-  return (!k.what || !!t.what.trim()) && (!k.value || !!t.value.trim());
+  const whatNeeded = k.what && !(t.kind === 'chrono' && t.measure === 'pace');
+  return (!whatNeeded || !!t.what.trim()) && (!k.value || !!t.value.trim());
+}
+
+// « 4'40 » ou « 4.40min » → « 4'40/km » : une allure sans unité se lit au km.
+function withPaceUnit(value) {
+  return /\/\s*(km|mi|100\s*m)|km/i.test(value) ? value : `${value}/km`;
 }
 
 export function targetText(t) {
   const what = t.what.trim(), value = t.value.trim();
   switch (t.kind) {
-    case 'chrono': return `${what} en ${value}`;
+    case 'chrono':
+      if (t.measure === 'pace') return what ? `${what} à ${withPaceUnit(value)}` : `Courir à ${withPaceUnit(value)} (distance à choisir)`;
+      return `${what} en ${value}`;
     case 'force':  return `${what} : ${value}`;
     case 'poids':  return `Atteindre ${value}`;
     default:       return what;
@@ -57,7 +74,7 @@ export function getTargets(meta = getRoutineMeta()) {
 // Une ligne par objectif, pour les prompts.
 export function formatTargets(targets) {
   return targets.map(t => {
-    const by = t.by ? ` — d'ici le ${formatDateLong(t.by)}` : ' — sans échéance';
+    const by = t.by ? ` — d'ici le ${formatDateLong(t.by)}` : ' — sans échéance (à toi de choisir le moment)';
     const done = t.achieved ? ' (✓ déjà atteint)' : '';
     return `- [${TARGET_KINDS[t.kind].label}] ${targetText(t)}${by}${done}`;
   }).join('\n');

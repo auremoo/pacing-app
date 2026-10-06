@@ -13,7 +13,7 @@ import { getAthleteProfile, getEventsIndex } from '../store.js';
 
 export const SPORTS = [
   { id: 'running', label: 'Course à pied', hint: 'Plans de course, allures, parcours GPX' },
-  { id: 'gym',     label: 'Salle : muscu / cardio', hint: 'Musculation, cardio, HIIT, cours collectifs' },
+  { id: 'gym',     label: 'Salle : muscu / cardio', hint: 'Le plan te programme des séances de muscu / cardio' },
 ];
 
 export function getSports(profile = getAthleteProfile()) {

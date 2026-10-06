@@ -2576,7 +2576,8 @@ select.form-input {
 
 /* ─── Objectifs chrono perso (plan général → Contexte) ─────────── */
 .target-row__head { display: flex; align-items: center; gap: var(--space-2); }
-.target-row__head .target-kind { flex: 1; font-weight: 600; }
+.target-row__head .target-kind { flex: 1; font-weight: 600; min-width: 0; }
+.target-row__head .target-measure { flex: 1; min-width: 0; color: var(--text-secondary); }
 .target-row__wide { grid-column: 1 / -1; }
 .target-remove {
   flex: none; width: 32px; height: 32px; border-radius: 50%;

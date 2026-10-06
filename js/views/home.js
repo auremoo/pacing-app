@@ -113,25 +113,37 @@ function renderWeightCard() {
   const last = latestEntry();
   const c4 = weightChange(28);
   const target = weightTarget();
+  if (!last) return `
+    <p class="section-header">Poids</p>
+    <div class="event-card" id="weight-card">
+      <div class="event-card__header">
+        <div>
+          <div class="event-card__title">Aucune pesée pour l'instant</div>
+          <div class="event-card__subtitle">Touche pour enregistrer la première</div>
+        </div>
+      </div>
+    </div>`;
+  const left = target != null ? Math.round((target - last.weight) * 10) / 10 : null;
   return `
     <p class="section-header">Poids</p>
     <div class="event-card" id="weight-card">
-      ${last ? `
-      <div class="event-card__meta" style="margin-top:0">
-        <div class="event-card__meta-item">
-          <span class="event-card__meta-label">Dernière pesée</span>
-          <span class="event-card__meta-value">${fmtKg(last.weight)} · ${formatDateShort(last.date)}</span>
+      <div class="event-card__header">
+        <div>
+          <div class="event-card__title">${fmtKg(last.weight)}</div>
+          <div class="event-card__subtitle">Dernière pesée · ${formatDateShort(last.date)}</div>
         </div>
+        ${c4 ? `<span class="event-card__distance-badge">${fmtDelta(c4.delta)} en 4 sem.</span>` : ''}
+      </div>
+      ${target != null ? `
+      <div class="event-card__meta">
         <div class="event-card__meta-item">
-          <span class="event-card__meta-label">4 semaines</span>
-          <span class="event-card__meta-value">${c4 ? fmtDelta(c4.delta) : '—'}</span>
-        </div>
-        ${target != null ? `<div class="event-card__meta-item">
           <span class="event-card__meta-label">Objectif</span>
           <span class="event-card__meta-value">${fmtKg(target)}</span>
-        </div>` : ''}
-      </div>` : `
-      <div class="event-card__title">Aucune pesée pour l'instant</div>
-      <div class="event-card__subtitle">Touche pour enregistrer la première</div>`}
+        </div>
+        <div class="event-card__meta-item">
+          <span class="event-card__meta-label">Reste</span>
+          <span class="event-card__meta-value">${left === 0 ? 'atteint' : fmtDelta(left)}</span>
+        </div>
+      </div>` : ''}
     </div>`;
 }

@@ -2,7 +2,7 @@ import { showToast, navigate } from '../app.js';
 import { getRoutineMeta, saveRoutineSettings } from '../store.js';
 import { today, addDays, weeksBetween } from '../utils/dates.js';
 import { getWeekMonday } from '../utils/plan-overrides.js';
-import { TARGET_DISTANCES, TARGET_KINDS, normalizeTarget, isTargetComplete } from '../utils/routine-context.js';
+import { TARGET_DISTANCES, TARGET_KINDS, CHRONO_MEASURES, normalizeTarget, isTargetComplete } from '../utils/routine-context.js';
 import { doesRun, doesGym } from '../utils/sports.js';
 
 export function mount(container) {
@@ -48,7 +48,7 @@ function render(container) {
       <div style="padding:0 var(--space-4) var(--space-1)">
         <button class="btn btn--ghost btn--full" id="add-target-btn" type="button">+ Ajouter un objectif</button>
       </div>
-      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Ce que tu aimerais atteindre, hors course officielle : un chrono (5 km en 24'30), une charge (squat 60 kg), un poids, ou autre chose. Le plan prévoira les séances et les tests qui y mènent. Modifiable à tout moment : la prochaine version du plan en tiendra compte.</p>
+      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Ce que tu aimerais atteindre, hors course officielle : un chrono (5 km en 24'30) ou une allure (4'40/km), une charge (squat 60 kg), un poids, ou autre chose. Le plan prévoira les séances et les tests qui y mènent ; sans date, c'est l'IA qui choisit quand, d'après ton niveau actuel. Modifiable à tout moment : la prochaine version du plan en tiendra compte.</p>
       <datalist id="target-distances">${TARGET_DISTANCES.map(d => `<option value="${esc(d)}">`).join('')}</datalist>
 
       <p class="section-header">Paramètres du bloc</p>
@@ -116,17 +116,19 @@ function render(container) {
   syncTargetsVisibility();
   container.querySelector('#add-target-btn').addEventListener('click', () => {
     const kind = doesRun() ? 'chrono' : doesGym() ? 'force' : 'poids';
-    targetsList.insertAdjacentHTML('beforeend', targetRow({ kind, what: '', value: '', by: '', achieved: false }));
+    targetsList.insertAdjacentHTML('beforeend', targetRow({ kind, measure: 'time', what: '', value: '', by: '', achieved: false }));
     syncTargetsVisibility();
     targetsList.lastElementChild.querySelector('.target-what, .target-value')?.focus();
   });
-  // Changer le type d'objectif change les champs ; échéance et « atteint » restent.
+  // Changer le type d'objectif change les champs ; échéance et « atteint »
+  // restent. Passer un chrono du temps à l'allure garde la distance.
   targetsList.addEventListener('change', e => {
-    const sel = e.target.closest('.target-kind');
-    if (!sel) return;
-    const row = sel.closest('.target-row');
-    const t = { ...readRow(row), kind: sel.value, what: '', value: '' };
-    row.outerHTML = targetRow(t);
+    const kindSel = e.target.closest('.target-kind');
+    const measureSel = e.target.closest('.target-measure');
+    if (!kindSel && !measureSel) return;
+    const row = e.target.closest('.target-row');
+    const t = readRow(row);
+    row.outerHTML = targetRow(kindSel ? { ...t, what: '', value: '' } : { ...t, value: '' });
   });
   targetsList.addEventListener('click', e => {
     const del = e.target.closest('.target-remove');
@@ -170,13 +172,19 @@ function render(container) {
 // Un objectif : type (chrono, force, poids, autre), un ou deux champs selon le
 // type, échéance facultative, case « atteint ».
 function targetRow(t) {
-  const k = TARGET_KINDS[t.kind] || TARGET_KINDS.autre;
+  const base = TARGET_KINDS[t.kind] || TARGET_KINDS.autre;
+  const chrono = t.kind === 'chrono';
+  const m = CHRONO_MEASURES[t.measure] || CHRONO_MEASURES.time;
+  const k = chrono ? { ...base, what: m.what, value: m.value, valuePh: m.valuePh } : base;
   return `
     <div class="form-field target-row">
       <div class="target-row__head">
         <select class="form-input target-kind" aria-label="Type d'objectif">
           ${Object.entries(TARGET_KINDS).map(([id, kk]) => `<option value="${id}" ${id === t.kind ? 'selected' : ''}>${kk.label}</option>`).join('')}
         </select>
+        ${chrono ? `<select class="form-input target-measure" aria-label="Temps ou allure">
+          ${Object.entries(CHRONO_MEASURES).map(([id, mm]) => `<option value="${id}" ${id === t.measure ? 'selected' : ''}>${mm.label}</option>`).join('')}
+        </select>` : ''}
         <button class="target-remove" type="button" aria-label="Supprimer cet objectif">✕</button>
       </div>
       <div class="target-row__grid">
@@ -184,7 +192,7 @@ function targetRow(t) {
           <input class="form-input target-what" ${t.kind === 'chrono' ? 'list="target-distances"' : ''} placeholder="${esc(k.whatPh)}" value="${esc(t.what)}"></label>` : ''}
         ${k.value ? `<label><span class="form-label">${k.value}</span>
           <input class="form-input target-value" placeholder="${esc(k.valuePh)}" value="${esc(t.value)}"></label>` : ''}
-        <label><span class="form-label">D'ici le (facultatif)</span>
+        <label><span class="form-label">D'ici le (sinon l'IA choisit)</span>
           <input class="form-input target-by" type="date" value="${esc(t.by)}"></label>
       </div>
       <label class="target-row__done"><input type="checkbox" class="target-achieved" ${t.achieved ? 'checked' : ''}> Atteint</label>
@@ -194,6 +202,7 @@ function targetRow(t) {
 function readRow(row) {
   return {
     kind:     row.querySelector('.target-kind').value,
+    measure:  row.querySelector('.target-measure')?.value || 'time',
     what:     row.querySelector('.target-what')?.value.trim() || '',
     value:    row.querySelector('.target-value')?.value.trim() || '',
     by:       row.querySelector('.target-by').value || '',

@@ -163,7 +163,7 @@ function targetsSection(meta, level) {
   if (!targets.length) return '';
   const kinds = new Set(targets.filter(t => !t.achieved).map(t => t.kind));
   const rules = [
-    kinds.has('chrono') && `- **Chrono** : prévois les séances qui y mènent et place un test chronométré (type \`race\`, titre du type « Test 5 km ») au moment où je peux raisonnablement le réussir, en arrivant reposé (pas de séance dure les 2 jours avant).`,
+    kinds.has('chrono') && `- **Chrono** : prévois les séances qui y mènent et place un test chronométré (type \`race\`, titre du type « Test 5 km ») au moment où je peux raisonnablement le réussir, en arrivant reposé (pas de séance dure les 2 jours avant).${targets.some(t => t.kind === 'chrono' && t.measure === 'pace' && !t.achieved) ? ` Pour un objectif d'allure, cale les allures des séances pour y arriver ; si la distance n'est pas précisée, choisis une distance de test pertinente et indique-la.` : ''}`,
     kinds.has('force')  && `- **Force** : progression de charge sur l'exercice visé (et ses exercices d'assistance), puis un test (type \`gym\`, titre du type « Test squat »), en arrivant reposé.`,
     kinds.has('poids')  && `- **Poids** : organise l'entraînement pour y contribuer (perte : volume d'activité et maintien de la masse musculaire ; prise de masse : priorité à la musculation, cardio modéré) et donne dans la SYNTHESE quelques repères généraux de nutrition, sans régime strict. Rythme raisonnable, pas de promesse irréaliste.`,
     kinds.has('autre')  && `- **Autre** : prévois les séances qui y mènent et, si ça se mesure, un moment pour le tester.`,
@@ -175,7 +175,7 @@ ${formatTargets(targets)}
 
 Ce ne sont pas des courses ou des compétitions officielles : ce sont des objectifs que je veux atteindre à l'entraînement.
 ${rules}
-Respecte les échéances quand il y en a. Si un objectif te paraît irréaliste dans le délai, dis-le dans la SYNTHESE et propose un palier intermédiaire. Un objectif déjà atteint sert de repère (allures, charges).
+Respecte les échéances quand il y en a. **Sans échéance, c'est à toi de choisir quand tenter l'objectif**, d'après mon niveau actuel (profil, historique) et la progression du plan — ni trop tôt pour le rater, ni repoussé indéfiniment — et indique dans la SYNTHESE la date retenue et pourquoi. Si un objectif te paraît irréaliste dans le délai, dis-le dans la SYNTHESE et propose un palier intermédiaire. Un objectif déjà atteint sert de repère (allures, charges).
 
 `;
 }
