@@ -1,6 +1,6 @@
 # Pacing App — CLAUDE.md
 
-Application web PWA mobile-first pour gérer des plans de préparation sportive.  
+Application web PWA mobile-first pour gérer des plans de préparation sportive, **plurisport** (course à pied, salle muscu/cardio, ou un mélange).  
 Multi-utilisateur : une seule app, un dossier de données par personne, le mot de passe désigne l'utilisateur. Données stockées sur GitHub via API.
 
 ## Stack
@@ -50,7 +50,8 @@ pacing-app/
 │   │   ├── new-event.js            # Formulaire création d'un nouvel événement
 │   │   ├── routine.js              # Container plan général (onglets Plan/Contexte/Versions), route /routine
 │   │   ├── routine-settings.js     # Activités récurrentes + objectifs du plan général
-│   │   └── routine-versions.js     # Prompt initial/révision + versions du plan général
+│   │   ├── routine-versions.js     # Prompt initial/révision + versions du plan général
+│   │   └── body-view.js            # Onglet Suivi du plan général : pesées + courbe
 │   └── utils/
 │       ├── dates.js
 │       ├── markdown.js             # Renderer markdown minimal
@@ -61,7 +62,9 @@ pacing-app/
 │       ├── race-status.js          # Séance de course d'un événement + isRaceDone (course courue ?)
 │       ├── session-types.js        # Types de séance : pastille + nom (types du plan + activités concrètes)
 │       ├── prompt-modal.js         # Modale "copier un prompt" partagée (versions + stratégie)
-│       ├── routine-context.js      # Plan général → prompts : activités récurrentes, historique récent, objectifs chrono perso
+│       ├── sports.js               # Mes sports (athlete.json) : ce que l'app montre selon les sports
+│       ├── body.js                 # Suivi du poids : évolution, objectif, courbe SVG, section de prompt
+│       ├── routine-context.js      # Plan général → prompts : activités récurrentes, historique récent, objectifs perso
 │       ├── routine-overlap.js      # Détecte les semaines du plan général chevauchant une course active
 │       └── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
 ├── events/
@@ -79,6 +82,7 @@ pacing-app/
 │   └── plans/v1.md                  # Même format template que les plans de course
 ├── athlete.json                    # Profil athlète (niveau, perfs, volume, jours, équipements, terrain, pathologies, objectifs)
 ├── state.json                      # Sessions cochées, notes
+├── body.json                       # Pesées (créé à la première), si « Suivre mon poids »
 └── docs/
     └── CLAUDE_PROMPT.md            # Template prompt pour générer des plans
 ```
@@ -91,9 +95,9 @@ Menu du bas commun (mobile) / sidebar (desktop) à 4 sections racines : **Accuei
 
 **Plan général vs course** : un seul plan général évolutif (`routine/`), bien séparé des courses (jamais dans `events/index.json`). Quand une course a un plan actif qui chevauche une semaine du plan général, cette semaine est marquée "en pause" (grisée, actions désactivées) dans `plan-view.js` — on ne suit jamais deux plans en parallèle. `js/utils/routine-overlap.js` calcule ce chevauchement ; `js/utils/today-session.js` centralise la détection de la séance du jour en respectant cette règle.
 
-**Le plan général dans les prompts de course** : puisque le plan général est en pause pendant une prépa, le plan de course doit reprendre lui-même les activités fixes (club, badminton…). `buildRoutineSectionForRace` (`js/utils/routine-context.js`) ajoute aux prompts de plan initial et de révision d'une course une section « Entraînement général en cours » : activités récurrentes du Contexte (à intégrer comme séances et à compter dans la charge), bilan des 4 dernières semaines du plan général (plan initial seulement — en révision il est en pause depuis le début de la prépa ; séance jamais cochée = statut inconnu) et objectifs chrono perso. Section absente si rien de tout ça n'est renseigné.
+**Le plan général dans les prompts de course** : puisque le plan général est en pause pendant une prépa, le plan de course doit reprendre lui-même les activités fixes (club, badminton…). `buildRoutineSectionForRace` (`js/utils/routine-context.js`) ajoute aux prompts de plan initial et de révision d'une course une section « Entraînement général en cours » : activités récurrentes du Contexte (à intégrer comme séances et à compter dans la charge), bilan des 4 dernières semaines du plan général (plan initial seulement — en révision il est en pause depuis le début de la prépa ; séance jamais cochée = statut inconnu) et objectifs perso. Section absente si rien de tout ça n'est renseigné.
 
-**Objectifs chrono perso** (plan général → Contexte) : records visés hors course officielle, `routine/meta.json` → `targets: [{ distance, time, by, achieved }]` (`by` = échéance facultative). Distance libre avec suggestions (`TARGET_DISTANCES`). Ligne vide ignorée, ligne à moitié remplie refusée à l'enregistrement. Repris dans les prompts initial et de révision du plan général (`targetsSection`), qui demandent des séances adaptées et un test chronométré (type `race`, « Test 5 km ») avant l'échéance ; un objectif atteint sert de repère d'allure. Sous les boutons de prompt de l'onglet Versions, un rappel liste les objectifs qui seront repris, avec un lien vers Contexte : c'est là qu'on les choisit avant le plan initial ou une nouvelle version.
+**Objectifs perso** (plan général → Contexte) : ce qu'on vise hors course officielle, `routine/meta.json` → `targets: [{ kind, what, value, by, achieved }]`, `kind` ∈ `chrono` (distance + temps), `force` (exercice + charge), `poids` (poids visé), `autre` (texte) — champs et libellés dans `TARGET_KINDS`. Les tout premiers objectifs, chrono seulement, étaient `{ distance, time }` : `normalizeTarget` les relit. Type par défaut d'un nouvel objectif selon les sports (chrono si course, force si salle, sinon poids). Ligne vide ignorée, ligne à moitié remplie refusée à l'enregistrement. Repris dans les prompts du plan général (`targetsSection`) avec une consigne par type présent : test chronométré (`race`), test de charge (`gym`), poids (entraînement + repères nutritionnels généraux dans la SYNTHESE). Un rappel sous les boutons de prompt de l'onglet Versions liste les objectifs repris, avec un lien vers Contexte : c'est là qu'on les choisit avant le plan initial ou une nouvelle version.
 
 ## Flux de données
 
@@ -114,10 +118,22 @@ GitHub repo
 **Ajout d'un utilisateur** : Réglages → Compte → « Ajouter un utilisateur » (`addUser` dans store.js) : crée `users/<prenom>/` (events/index.json vide, state.json, athlete.json) puis l'entrée dans `config.json`, avec le PAT de la session courante chiffré par le nouveau mot de passe (chiffres uniquement, ≥ 6 : l'écran de connexion montre le pavé numérique). Un mot de passe déjà pris est refusé. Connexion possible après redéploiement de GitHub Pages (config.json est servi par le site). **Limite** : si le PAT est renouvelé, `setup.html` ne régénère que l'entrée historique — les autres utilisateurs devront être recréés (leurs mots de passe ne sont connus que d'eux).  
 **Inscription depuis l'écran de connexion** (« Créer un compte ») : demande un **code d'invitation**. Raison : créer un compte exige d'écrire dans le dépôt, donc le PAT, alors que personne n'est connecté ; une inscription libre rendrait ce PAT récupérable par n'importe quel visiteur de l'URL publique, avec les droits d'écriture sur le dépôt — donc sur le code même de l'app publiée. Le PAT est donc aussi chiffré par le code (`config.invite = { encryptedToken, createdAt }`). Le code se crée, se change ou se retire dans Réglages → Compte → « Code d'invitation » (`setInviteCode`). Garde-fous : le code ne peut pas être le mot de passe d'un utilisateur, et un nouveau mot de passe ne peut pas être le code (sinon tous les invités pourraient ouvrir ce compte). Après inscription, la personne est connectée tout de suite (le dossier est connu, inutile d'attendre la republication de config.json) et voit le tutoriel. « Ajouter un utilisateur » dans Réglages reste disponible pour un utilisateur déjà connecté.  
 **Déconnexion** : `flushSync()` envoie d'abord les écritures de `state.json` encore dans le délai de regroupement (600 ms) — sinon une coche ou la fermeture du tutoriel faites juste avant étaient perdues au rechargement.  
-**Tutoriel de prise en main** (`onboarding.js`) : 8 pages à faire glisser (défilement horizontal natif en `scroll-snap`, piloté aussi par Suivant, les points et les flèches du clavier) — bienvenue, profil (les 8 champs de Réglages), entraînement général, prompt → Claude → import (avec l'encart « remplis d'abord, génère ensuite » : le prompt est construit au clic, un champ vide y devient `[à compléter]`), fiche d'une course (ses 11 champs, regroupés), plan et parcours de la course, usage quotidien, révisions. S'ouvre à la première connexion d'un utilisateur **ajouté** : `addUser` pose `onboardingPending: true` dans son `state.json`, retiré à la fermeture (`completeOnboarding`). Jamais d'office pour le premier utilisateur. Rejouable depuis Réglages → « Revoir le tutoriel ». Les boutons de la dernière page vivent dans la barre du bas, hors de la zone qui défile, pour ne jamais être rognés sur petit écran. Le texte décrit les vrais noms d'écrans et de boutons : à mettre à jour si on les renomme.  
+**Tutoriel de prise en main** (`onboarding.js`) : 8 pages (la page profil présente « Mes sports », la page course est titrée « Si tu cours ») à faire glisser (défilement horizontal natif en `scroll-snap`, piloté aussi par Suivant, les points et les flèches du clavier) — bienvenue, profil (les 8 champs de Réglages), entraînement général, prompt → Claude → import (avec l'encart « remplis d'abord, génère ensuite » : le prompt est construit au clic, un champ vide y devient `[à compléter]`), fiche d'une course (ses 11 champs, regroupés), plan et parcours de la course, usage quotidien, révisions. S'ouvre à la première connexion d'un utilisateur **ajouté** : `addUser` pose `onboardingPending: true` dans son `state.json`, retiré à la fermeture (`completeOnboarding`). Jamais d'office pour le premier utilisateur. Rejouable depuis Réglages → « Revoir le tutoriel ». Les boutons de la dernière page vivent dans la barre du bas, hors de la zone qui défile, pour ne jamais être rognés sur petit écran. Le texte décrit les vrais noms d'écrans et de boutons : à mettre à jour si on les renomme.  
 **Session app** : `sessionStorage` (`pacing_auth`, `pacing_pat`, `pacing_data_path`, `pacing_user`) pour la durée de la session ; « Se déconnecter » dans Réglages la vide.  
 **Nouveau device** : aucune config à faire — le PAT est dans `config.json` (repo public), déchiffré automatiquement au login.  
 **`setup.html`** : page standalone pour générer un nouveau `config.json` (nouveau PAT ou changement de repo).
+
+## Plurisport
+
+**Mes sports** (Réglages, en tête) : interrupteurs « Course à pied » et « Salle : muscu / cardio », champ « Autres sports », interrupteur « Suivre mon poids » — `athlete.json` → `sports: ['running','gym']`, `otherSports`, `trackWeight`. Les interrupteurs s'enregistrent tout de suite (le menu suit) ; `sports` absent = coureur, comportement d'avant. `js/utils/sports.js` (`doesRun`, `doesGym`, `tracksWeight`, `showsCourses`, `sportsSummary`) décide de ce qui s'affiche :
+- **Onglet Courses** (menu du bas et barre latérale, avec « Nouvel événement ») : seulement si on court **ou** qu'on a déjà des courses (`showsCourses`) — décocher la course ne cache pas des données existantes.
+- **Exemples des champs du profil** : version salle quand on ne court pas (« 3 séances de 1h », « Lieu d'entraînement »).
+- **Types proposés dans « Activité réalisée »** : sans course, pas de types course ; sans salle, pas de types salle (le type prévu et l'actuel restent toujours proposés).
+- **Prompts du plan général** : ligne « Sports pratiqués », types valides et consignes selon les sports (`sessionRules`), description de muscu en séries × reps × charge. Les prompts de course ajoutent les types salle si l'athlète va aussi en salle (`gymTypesNote`).
+
+**Volume de semaine libre** : l'en-tête `### S01 | … | phase | {volume} | note` accepte `18km` (ou un nombre seul = km, comme avant), `4 séances`, `3h30`, ou `-`. Le parser pose `targetVolumeKm` (0 hors km) et `volumeLabel` (texte affiché, via `weekVolumeLabel`). Un échange de semaines antérieur à `volumeLabel` reconstruit le libellé depuis les km.
+
+**Suivi du poids** (si « Suivre mon poids ») : onglet **Suivi** du plan général (`body-view.js`, route `/routine/body`) — résumé (dernière pesée, évolution sur 4 semaines, objectif), courbe avec l'objectif de poids en pointillés (premier objectif `poids` non atteint, `weightTarget`), saisie (date, poids, tour de taille facultatif), historique supprimable. Une pesée par jour au plus (une nouvelle le même jour remplace). Stocké dans `body.json` du dossier de l'utilisateur, écrit tout de suite (`saveBodyEntry`/`deleteBodyEntry`, SHA relu avant chaque PUT). Carte « Poids » sur l'accueil. Les prompts du plan général reçoivent la section « Suivi du poids » (`bodyPromptSection`) : première et dernière pesée, évolution, 12 dernières pesées, consigne de rythme raisonnable.
 
 ## Template .md des plans
 
@@ -134,7 +150,7 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
 
 **Onglet Infos** (infos-view.js) : 7 onglets — Synthèse, Allures, Principes, PPG, Vigilance, Stratégie, Nutrition (onglets masqués si section vide).
 
-**Types de séance valides :** `rest`, `easy`, `long`, `intervals`, `tempo`, `hills`, `race`, `strength`, `cross`
+**Types de séance valides :** course `easy`, `long`, `intervals`, `tempo`, `hills`, `race` ; salle `gym` (musculation), `cardio`, `hiit`, `mobility`, `class` (cours collectif) ; communs `strength`, `cross`, `rest`. Source unique : `PLAN_TYPES` dans `session-types.js`, que le parser utilise.
 
 **Activité changée sur une journée (plan général uniquement)** : depuis le détail d'une séance du plan général, l'athlète peut remplacer le type par un autre type du plan ou par une activité concrète — `bike`, `badminton`, `swim`, `hike`, `other` — qui n'existent que comme remplacement (le parser ne les accepte pas dans un plan). Stocké dans `state.json` sous `events.__routine__._typeOverrides` (`{ sessionId: type }`) ; choisir le type prévu supprime le remplacement. `applyTypeOverrides` (plan-overrides.js) pose `type` = activité faite et `plannedType` = type prévu ; la liste affiche la nouvelle pastille et « · prévu EF ». `getTypeOverrides` renvoie `{}` pour tout événement et `setSessionTypeOverride` les refuse : un plan de course est une prescription, on n'en réécrit pas les séances. Appliqué partout où le plan général est affiché (plan-view, session-view, séance du jour) et dans son prompt de révision, qui rappelle à l'IA de ne pas réutiliser ces types dans le plan généré. Libellés et noms dans `js/utils/session-types.js`, source unique.
 
