@@ -1,7 +1,8 @@
 import { getEventsIndex, getActivePlan, getEventMeta } from '../store.js';
 import { navigate } from '../app.js';
 import { today, isPast } from '../utils/dates.js';
-import { findTodaySession, todaySessionTitle } from '../utils/today-session.js';
+import { findTodaySession, todaySessionTitle, getRoutineProgress } from '../utils/today-session.js';
+import { isRaceDone } from '../utils/race-status.js';
 import { computeCompletion } from './courses.js';
 
 export function mountSidebar(container, activeSlug = null) {
@@ -26,16 +27,17 @@ export function mountSidebar(container, activeSlug = null) {
       <div class="sb-today__event">${todaySession.eventName}</div>
     </div>` : ''}
 
+    <div class="sb-section-label">Entraînement</div>
+    <nav class="sb-nav">
+      ${renderRoutineItem(getRoutineProgress(todayStr))}
+    </nav>
+
     <div class="sb-section-label">Mes courses</div>
     <nav class="sb-nav">
       ${events.map(e => renderEventItem(e, activeSlug === e.slug)).join('')}
     </nav>
 
     <div class="sb-footer">
-      <button class="sb-nav-item" id="sb-routine">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        Entraînement général
-      </button>
       <button class="sb-nav-item" id="sb-new-event">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         Nouvel événement
@@ -63,8 +65,8 @@ export function mountSidebar(container, activeSlug = null) {
 function renderEventItem(e, isActive) {
   const meta  = getEventMeta(e.slug);
   const plan  = getActivePlan(e.slug);
-  const past  = isPast(e.raceDate);
-  const pct   = plan ? computeCompletion(e.slug, plan) : null;
+  const past  = isPast(e.raceDate) || isRaceDone(e.slug);
+  const pct   = !past && plan ? computeCompletion(e.slug, plan) : null;
   const result = meta?.result;
 
   return `
@@ -74,6 +76,24 @@ function renderEventItem(e, isActive) {
       <div class="sb-event-item__meta">
         ${e.distanceLabel} · ${e.raceDate}
         ${result?.time ? ` · ${result.time}` : ''}
+      </div>
+      ${pct !== null ? `
+        <div class="sb-event-item__bar">
+          <div class="sb-event-item__bar-fill" style="width:${pct}%"></div>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+function renderRoutineItem(progress) {
+  const pct = progress?.total ? Math.round(progress.done / progress.total * 100) : null;
+  return `
+    <div class="sb-event-item" id="sb-routine">
+      <div class="sb-event-item__name">Entraînement général</div>
+      <div class="sb-event-item__meta">
+        ${progress
+          ? `S${String(progress.week.number).padStart(2, '0')} · ${progress.done}/${progress.total} cette semaine`
+          : 'En pause ou aucun plan en cours'}
       </div>
       ${pct !== null ? `
         <div class="sb-event-item__bar">

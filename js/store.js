@@ -2,6 +2,7 @@ import { getFile, putFile } from './github-api.js';
 import { parsePlan } from './parser.js';
 import { showToast } from './toast.js';
 import { stripReasonLines } from './utils/skip-reasons.js';
+import { buildConfigWithUser, getSession } from './utils/users.js';
 
 // ── In-memory state ───────────────────────────────────────────────
 
@@ -499,4 +500,42 @@ export async function getRaceStrategy(slug) {
   if (!getEventMeta(slug)?.strategy) return null;
   const file = await getFile(strategyPath(slug)).catch(() => null);
   return file?.content || null;
+}
+
+// ── Utilisateurs ────────────────────────────────────────────────────
+// Ajoute une personne : son dossier de données vierge (aucune course, pas de
+// plan général, profil vide) puis son entrée dans config.json, avec le token de
+// la session courante chiffré par SON mot de passe. Le dossier est créé avant
+// la config : si l'écriture s'interrompt, on a au pire un dossier orphelin,
+// jamais un utilisateur qui pointe vers des fichiers absents.
+
+export async function addUser({ name, password, currentName }) {
+  const { token } = getSession();
+  if (!token) throw new Error('Session expirée, reconnecte-toi.');
+
+  const cfgFile = await getFile('config.json', { root: true });
+  if (!cfgFile) throw new Error('config.json introuvable dans le dépôt.');
+  const cfg = JSON.parse(cfgFile.content);
+
+  const { config, user } = await buildConfigWithUser(cfg, { name, password, token, currentName });
+
+  const starters = {
+    'events/index.json': { events: [] },
+    'state.json':        { version: 2, events: {} },
+    'athlete.json':      {},
+  };
+  for (const [file, content] of Object.entries(starters)) {
+    const path = `${user.dataPath}/${file}`;
+    const existing = await getFile(path, { root: true });
+    if (!existing) await putFile(path, JSON.stringify(content, null, 2), null, { root: true });
+  }
+
+  await putFile('config.json', JSON.stringify(config, null, 2), cfgFile.sha,
+                { root: true, commitMessage: `pacing-app: ajoute l'utilisateur ${name}` });
+  return user;
+}
+
+export async function getUsersConfig() {
+  const cfgFile = await getFile('config.json', { root: true });
+  return cfgFile ? JSON.parse(cfgFile.content) : null;
 }

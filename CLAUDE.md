@@ -1,7 +1,7 @@
 # Pacing App — CLAUDE.md
 
 Application web PWA mobile-first pour gérer des plans de préparation sportive.  
-Utilisateur unique, protégée par mot de passe (171225). Données stockées sur GitHub via API.
+Multi-utilisateur : une seule app, un dossier de données par personne, le mot de passe désigne l'utilisateur. Données stockées sur GitHub via API.
 
 ## Stack
 
@@ -85,7 +85,7 @@ pacing-app/
 
 Menu du bas commun (mobile) / sidebar (desktop) à 4 sections racines : **Accueil** (`/`), **Courses** (`/courses`), **Entraînement** (`/routine`), **Réglages** (`/settings`). Un seul menu/tab-bar visible à la fois : les sections avec leurs propres sous-onglets (`/event/:slug/*`, `/routine/*`) remplacent le menu global par leur propre barre — cohérent avec le pattern déjà utilisé par `event.js`.
 
-**Accueil (`home.js`)** : générique — séance du jour (tous plans confondus, courses puis plan général) + carte(s) "course en préparation" **uniquement si** une course a un plan actif dont la période (`planStart`→`raceDate`) couvre aujourd'hui. Sinon rien d'autre. La liste complète des événements vit dans `/courses`.
+**Accueil (`home.js`)** : contextuel — séance du jour (tous plans confondus), puis ce qu'on prépare en ce moment : la carte « Course en préparation » si une course a un plan actif couvrant aujourd'hui, **sinon** la carte « Entraînement en cours » du plan général (semaine, séances faites, phase, prochaine séance — `getRoutineProgress`). Jamais les deux : le plan général est en pause pendant une prépa. La liste complète des événements vit dans `/courses`. Sur desktop, la sidebar a une rubrique « Entraînement » avant « Mes courses ».
 
 **Plan général vs course** : un seul plan général évolutif (`routine/`), bien séparé des courses (jamais dans `events/index.json`). Quand une course a un plan actif qui chevauche une semaine du plan général, cette semaine est marquée "en pause" (grisée, actions désactivées) dans `plan-view.js` — on ne suit jamais deux plans en parallèle. `js/utils/routine-overlap.js` calcule ce chevauchement ; `js/utils/today-session.js` centralise la détection de la séance du jour en respectant cette règle.
 
@@ -103,8 +103,10 @@ GitHub repo
   └── state.json            → sessions cochées (lu au boot, écrit en temps réel) — état du plan général sous la clé interne "__routine__"
 ```
 
-**Auth** : PAT GitHub chiffré AES-GCM (PBKDF2, mot de passe `171225`) stocké dans `config.json` du repo (`encryptedToken`). Jamais en clair dans le repo ni dans localStorage.  
-**Session app** : `sessionStorage.pacing_auth = '1'` après saisie du mot de passe. PAT déchiffré stocké dans `sessionStorage('pacing_pat')` pour la durée de la session.  
+**Auth** : PAT GitHub chiffré AES-GCM (PBKDF2) dans `config.json`. Plus de mot de passe en dur : `config.json` liste les utilisateurs (`users: [{ name, dataPath, encryptedToken }]`), chacun avec le PAT chiffré par **son** mot de passe ; à la connexion, `findUserByPassword` (utils/users.js) essaie chaque entrée, celle qui se déchiffre désigne l'utilisateur. Le format historique (un seul `encryptedToken`, données à la racine) reste lu, et `encryptedToken` au premier niveau est conservé pour le premier utilisateur. Jamais en clair dans le repo ni dans localStorage.  
+**Données par utilisateur** : `dataPath` = `''` pour le premier (données à la racine, comme avant), `users/<prenom>` pour les suivants. `configure({ …, dataPath })` préfixe toutes les lectures/écritures de `github-api.js` ; seul `config.json` s'adresse à la racine (`{ root: true }`).  
+**Ajout d'un utilisateur** : Réglages → Compte → « Ajouter un utilisateur » (`addUser` dans store.js) : crée `users/<prenom>/` (events/index.json vide, state.json, athlete.json) puis l'entrée dans `config.json`, avec le PAT de la session courante chiffré par le nouveau mot de passe (chiffres uniquement, ≥ 6 : l'écran de connexion montre le pavé numérique). Un mot de passe déjà pris est refusé. Connexion possible après redéploiement de GitHub Pages (config.json est servi par le site). **Limite** : si le PAT est renouvelé, `setup.html` ne régénère que l'entrée historique — les autres utilisateurs devront être recréés (leurs mots de passe ne sont connus que d'eux).  
+**Session app** : `sessionStorage` (`pacing_auth`, `pacing_pat`, `pacing_data_path`, `pacing_user`) pour la durée de la session ; « Se déconnecter » dans Réglages la vide.  
 **Nouveau device** : aucune config à faire — le PAT est dans `config.json` (repo public), déchiffré automatiquement au login.  
 **`setup.html`** : page standalone pour générer un nouveau `config.json` (nouveau PAT ou changement de repo).
 

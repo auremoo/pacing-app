@@ -1,5 +1,6 @@
 // Pacing App — Auteur : Aurélien Moote - Moo - 2026 — Licence MIT
 import { isAuthenticated, mount as mountLock } from './views/lock.js';
+import { getSession } from './utils/users.js';
 import { mount as mountHome }                  from './views/home.js';
 import { mount as mountCourses }               from './views/courses.js';
 import { mount as mountEvent }                 from './views/event.js';
@@ -13,7 +14,6 @@ import { showToast as _showToast }             from './toast.js';
 import { mountSidebar }                        from './views/sidebar.js';
 
 const app = document.getElementById('app');
-const PAT_KEY = 'pacing_pat';
 
 // ── Toast ─────────────────────────────────────────────────────────
 
@@ -62,12 +62,13 @@ async function boot() {
     return;
   }
 
-  // On page refresh: token is in sessionStorage, config coords in config.json
-  const token = sessionStorage.getItem(PAT_KEY);
+  // On page refresh: token et dossier de données de l'utilisateur sont en
+  // sessionStorage, les coordonnées du dépôt dans config.json
+  const { token, dataPath } = getSession();
   if (token) {
     try {
       const cfg = await fetch('./config.json').then(r => r.json());
-      configure({ token, owner: cfg.owner, repo: cfg.repo, branch: cfg.branch || 'main' });
+      configure({ token, owner: cfg.owner, repo: cfg.repo, branch: cfg.branch || 'main', dataPath });
     } catch { /* will fail at initStore with a clear error */ }
   }
 

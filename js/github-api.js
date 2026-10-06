@@ -2,8 +2,18 @@ const BASE = 'https://api.github.com';
 
 let _config = null;
 
-export function configure({ token, owner, repo, branch = 'main' }) {
-  _config = { token, owner, repo, branch };
+// dataPath : dossier des données de l'utilisateur connecté dans le dépôt.
+// '' pour le premier utilisateur (données à la racine, comme avant le
+// multi-utilisateur), 'users/<prenom>' pour les suivants. Toutes les lectures
+// et écritures de données passent par ce préfixe ; seul config.json, partagé,
+// s'adresse à la racine avec { root: true }.
+export function configure({ token, owner, repo, branch = 'main', dataPath = '' }) {
+  _config = { token, owner, repo, branch, dataPath: dataPath.replace(/^\/+|\/+$/g, '') };
+}
+
+function fullPath(path, root) {
+  const { dataPath } = getConfig();
+  return root || !dataPath ? path : `${dataPath}/${path}`;
 }
 
 function getConfig() {
@@ -24,8 +34,9 @@ function apiUrl(path) {
   return `${BASE}/repos/${owner}/${repo}/contents/${path}`;
 }
 
-export async function getFile(path, { rawBase64 = false } = {}) {
+export async function getFile(path, { rawBase64 = false, root = false } = {}) {
   const { branch } = getConfig();
+  path = fullPath(path, root);
   const url = `${apiUrl(path)}?ref=${branch}&_t=${Date.now()}`;
   const res = await fetch(url, { headers: headers() });
   if (!res.ok) {
@@ -54,8 +65,9 @@ export async function getFile(path, { rawBase64 = false } = {}) {
   };
 }
 
-export async function putFile(path, content, sha, { alreadyBase64 = false, commitMessage = null } = {}) {
+export async function putFile(path, content, sha, { alreadyBase64 = false, commitMessage = null, root = false } = {}) {
   const { branch } = getConfig();
+  path = fullPath(path, root);
   const body = {
     message: commitMessage || `pacing-app: update ${path}`,
     content: alreadyBase64 ? content : encodeBase64(content),

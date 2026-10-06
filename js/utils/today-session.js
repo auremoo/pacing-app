@@ -3,10 +3,10 @@
 // Utilisé par l'accueil (mobile) et la sidebar (desktop) pour rester cohérents.
 
 import { getEventsIndex, getEventMeta, getActivePlan, getDateOverrides, getWeekMetaOverrides,
-         getRoutineMeta, ROUTINE_SLUG, getTypeOverrides } from '../store.js';
+         getRoutineMeta, ROUTINE_SLUG, getTypeOverrides, getAllSessionStates } from '../store.js';
 import { isRaceDone } from './race-status.js';
 import { typeName } from './session-types.js';
-import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides } from './plan-overrides.js';
+import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from './plan-overrides.js';
 import { computeEventRanges, computePausedWeeks } from './routine-overlap.js';
 
 // { slug, eventName, session, kind: 'event' | 'routine' } | null
@@ -69,4 +69,48 @@ export function todaySessionTitle(session) {
   return session.plannedType
     ? `${typeName(session.type)} — à la place de « ${session.title} »`
     : session.title;
+}
+
+// Où en est le plan général : semaine en cours, séances faites, prochaine
+// séance. null quand il n'y a rien à montrer — pas de plan, plan terminé, ou
+// semaine en pause parce qu'une préparation de course a pris le relais.
+// Sert à l'accueil contextuel : la course quand on en prépare une, sinon
+// l'entraînement.
+export function getRoutineProgress(todayStr) {
+  if (!getRoutineMeta()?.activeVersion) return null;
+  const plan = getActivePlan(ROUTINE_SLUG);
+  if (!plan?.weeks?.length) return null;
+
+  const effPlan = applyTypeOverrides(
+    applyWeekMetaOverrides(
+      applyDateOverrides(plan, getDateOverrides(ROUTINE_SLUG)),
+      getWeekMetaOverrides(ROUTINE_SLUG)
+    ),
+    getTypeOverrides(ROUTINE_SLUG)
+  );
+
+  const all = effPlan.weeks.flatMap(w => w.sessions);
+  const lastDate = all.reduce((m, s) => (s.date > m ? s.date : m), '');
+  const firstDate = all.reduce((m, s) => (!m || s.date < m ? s.date : m), '');
+  if (!lastDate || todayStr > lastDate || todayStr < firstDate) return null;
+
+  const weekNum = getCurrentWeekNum(effPlan, todayStr);
+  const week = effPlan.weeks.find(w => w.number === weekNum);
+  if (!week) return null;
+
+  const paused = computePausedWeeks(effPlan, computeEventRanges(getEventsIndex(), getEventMeta));
+  if (paused.has(weekNum)) return null;
+
+  const states   = getAllSessionStates(ROUTINE_SLUG);
+  const training = week.sessions.filter(s => s.type !== 'rest');
+  const done     = training.filter(s => states[s.id]?.completed).length;
+
+  // La séance du jour a déjà sa carte : la « prochaine » commence demain.
+  const next = all
+    .filter(s => s.type !== 'rest' && s.date > todayStr && !states[s.id]?.completed && !states[s.id]?.skipped)
+    .sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+
+  const phase = (effPlan.phases || []).find(p => p.weeks.includes(week.number)) || null;
+
+  return { week, weekCount: effPlan.weeks.length, done, total: training.length, next, phase };
 }

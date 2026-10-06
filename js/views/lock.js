@@ -1,14 +1,8 @@
 import { configure } from '../github-api.js';
-import { decryptToken } from '../utils/crypto.js';
 import { renderMarkdown } from '../utils/markdown.js';
+import { findUserByPassword, saveSession } from '../utils/users.js';
 
-const PASSWORD = '171225';
-const SESSION_KEY = 'pacing_auth';
-const PAT_KEY = 'pacing_pat';
-
-export function isAuthenticated() {
-  return sessionStorage.getItem(SESSION_KEY) === '1';
-}
+export { isAuthenticated } from '../utils/users.js';
 
 export function mount(container, onUnlock) {
   container.innerHTML = `
@@ -86,17 +80,11 @@ export function mount(container, onUnlock) {
   readmeClose.addEventListener('click', closeReadme);
   readmeOverlay.addEventListener('click', closeReadme);
 
+  // Le mot de passe désigne l'utilisateur : chaque entrée de config.json porte
+  // le token chiffré par le mot de passe de son propriétaire.
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const pwd = input.value;
-
-    if (pwd !== PASSWORD) {
-      error.textContent = 'Mot de passe incorrect.';
-      input.value = '';
-      input.focus();
-      setTimeout(() => { error.textContent = ''; }, 2500);
-      return;
-    }
 
     btn.disabled = true;
     btn.textContent = 'Connexion…';
@@ -106,11 +94,14 @@ export function mount(container, onUnlock) {
       const res = await fetch(`./config.json?_t=${Date.now()}`);
       if (!res.ok) throw new Error('config.json introuvable — ouvre setup.html.');
       const cfg = await res.json();
-      if (!cfg.encryptedToken) throw new Error('Token non configuré — ouvre setup.html d\'abord.');
-      const token = await decryptToken(cfg.encryptedToken, pwd);
-      configure({ token, owner: cfg.owner, repo: cfg.repo, branch: cfg.branch || 'main' });
-      sessionStorage.setItem(PAT_KEY, token);
-      sessionStorage.setItem(SESSION_KEY, '1');
+      if (!cfg.encryptedToken && !cfg.users?.length) throw new Error('Token non configuré — ouvre setup.html d\'abord.');
+
+      const found = await findUserByPassword(cfg, pwd);
+      if (!found) throw new Error('Mot de passe incorrect.');
+
+      configure({ token: found.token, owner: cfg.owner, repo: cfg.repo,
+                  branch: cfg.branch || 'main', dataPath: found.user.dataPath });
+      saveSession(found.token, found.user);
       onUnlock();
     } catch (err) {
       error.textContent = err.message;
