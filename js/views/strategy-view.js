@@ -2,6 +2,7 @@
 // séance d'entraînement du plan traitée, course exclue). Génère le bilan
 // consolidé + le prompt d'analyse, puis accueille la réponse de l'IA.
 
+import { withFileDeliverable } from '../utils/prompt-output.js';
 import { getEventMeta, getAthleteProfile, getCourseFile,
          savePrepReport, saveRaceStrategy, getRaceStrategy } from '../store.js';
 import { showToast } from '../app.js';
@@ -127,7 +128,8 @@ async function generate(container, slug) {
     const report = buildPrepReportMarkdown(slug, history);
     await savePrepReport(slug, report);
 
-    const prompt = buildStrategyPrompt(slug, history, getAthleteProfile(), kms, gpxTotals);
+    const prompt = withFileDeliverable(buildStrategyPrompt(slug, history, getAthleteProfile(), kms, gpxTotals),
+      `strategie-${slug}.md`, `# Stratégie de course — ${getEventMeta(slug).name}`);
     status.textContent = `Bilan enregistré dans events/${slug}/bilan.md`;
     showToast('Bilan généré', 'success');
 

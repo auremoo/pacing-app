@@ -62,6 +62,7 @@ pacing-app/
 │       ├── race-status.js          # Séance de course d'un événement + isRaceDone (course courue ?)
 │       ├── session-types.js        # Types de séance : pastille + nom (types du plan + activités concrètes)
 │       ├── prompt-modal.js         # Modale "copier un prompt" partagée (versions + stratégie)
+│       ├── prompt-output.js        # Consigne « livrable : un fichier .md » ajoutée aux prompts à importer
 │       ├── sports.js               # Mes sports (athlete.json) : ce que l'app montre selon les sports
 │       ├── body.js                 # Suivi du poids : évolution, objectif, courbe SVG, section de prompt
 │       ├── routine-context.js      # Plan général → prompts : activités récurrentes, historique récent, objectifs perso
@@ -166,6 +167,8 @@ Le format template que Claude génère est décrit en détail dans [docs/CLAUDE_
 **Manuellement** : Créer `events/{slug}/meta.json`, ajouter l'entrée dans `events/index.json`, pusher sur GitHub.
 
 ## Importer / Modifier un plan
+
+**Livrable demandé** : les 5 prompts dont la réponse s'importe (plan initial et révision d'une course, du plan général, stratégie de course) passent par `withFileDeliverable` (`js/utils/prompt-output.js`) : annonce en tête et consigne détaillée en toute fin — un fichier `.md` téléchargeable au nom donné (`plan-<slug>-vN.md`, `plan-general-vN.md`, `strategie-<slug>.md`), contenu seul et complet, commençant par la première ligne attendue ; à défaut, un seul bloc de code markdown. Un nouveau prompt à importer doit y passer aussi.
 
 1. Dans l'app → événement → onglet Versions :
    - Sans plan : "Générer le prompt de plan initial" → copier → Claude → obtenir .md → importer

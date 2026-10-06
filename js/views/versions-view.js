@@ -4,6 +4,7 @@ import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { openPromptModal } from '../utils/prompt-modal.js';
+import { withFileDeliverable } from '../utils/prompt-output.js';
 import { skipReasonLabel } from '../utils/skip-reasons.js';
 import { buildRoutineSectionForRace } from '../utils/routine-context.js';
 import { doesGym } from '../utils/sports.js';
@@ -122,7 +123,7 @@ function showInitialPromptModal(container, slug) {
   const meta    = getEventMeta(slug);
   const athlete = getAthleteProfile();
 
-  const prompt = buildInitialPrompt(meta, athlete);
+  const prompt = withFileDeliverable(buildInitialPrompt(meta, athlete), `plan-${meta.slug}-v1.md`, `# PLAN_v1 — ${meta.name}`);
   openPromptModal('Prompt de plan initial', prompt);
 }
 
@@ -291,7 +292,10 @@ function showExportModal(container, slug) {
   }
 
   const effPlan = applyWeekMetaOverrides(applyDateOverrides(plan, dateOverrides), weekMetaOverrides);
-  const prompt = buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides);
+  const next   = (meta.activeVersion || 1) + 1;
+  const prompt = withFileDeliverable(
+    buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides),
+    `plan-${meta.slug}-v${next}.md`, `# PLAN_v${next} — ${meta.name}`);
   openPromptModal('Prompt de révision', prompt);
 }
 

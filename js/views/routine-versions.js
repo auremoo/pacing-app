@@ -5,6 +5,7 @@ import { showToast, navigate } from '../app.js';
 import { today } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { typeName } from '../utils/session-types.js';
+import { withFileDeliverable } from '../utils/prompt-output.js';
 import { getTargets, formatTargets, targetText } from '../utils/routine-context.js';
 import { doesRun, doesGym, sportsSummary } from '../utils/sports.js';
 import { bodyPromptSection } from '../utils/body.js';
@@ -139,7 +140,7 @@ async function handleImport(container, file) {
 function showInitialPromptModal() {
   const meta    = getRoutineMeta();
   const athlete = getAthleteProfile();
-  const prompt  = buildInitialPrompt(meta, athlete);
+  const prompt  = withFileDeliverable(buildInitialPrompt(meta, athlete), 'plan-general-v1.md', '# PLAN_GENERAL_v1');
   openPromptModal('Prompt de plan initial', prompt);
 }
 
@@ -290,7 +291,9 @@ function showExportModal() {
     applyWeekMetaOverrides(applyDateOverrides(plan, dateOverrides), weekMetaOverrides),
     getTypeOverrides(ROUTINE_SLUG)
   );
-  const prompt  = buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides);
+  const next    = (meta.activeVersion || 1) + 1;
+  const prompt  = withFileDeliverable(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides),
+    `plan-general-v${next}.md`, `# PLAN_GENERAL_v${next}`);
   openPromptModal('Prompt de révision', prompt);
 }
 
