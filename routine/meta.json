@@ -11,5 +11,23 @@
       "importedAt": "2026-09-08T10:58:10.843Z",
       "label": "Bloc fond polyvalent 2026-2027"
     }
+  ],
+  "targets": [
+    {
+      "kind": "chrono",
+      "measure": "pace",
+      "what": "5",
+      "value": "4,40",
+      "by": "",
+      "achieved": false
+    },
+    {
+      "kind": "chrono",
+      "measure": "time",
+      "what": "10",
+      "value": "54",
+      "by": "",
+      "achieved": false
+    }
   ]
 }
