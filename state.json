@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-06T05:53:42.215Z",
+  "lastUpdated": "2026-10-06T15:31:18.344Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -766,18 +766,35 @@
     },
     "marathon-alpes-bsm": {},
     "__routine__": {
-      "s04-mon": {
+      "_history": {
+        "v1": {
+          "s04-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-05T17:37:28.672Z",
+            "version": 1
+          },
+          "_overrides": {
+            "_dateOverrides": {
+              "s04-thu": "2026-10-07",
+              "s04-wed": "2026-10-08"
+            },
+            "_typeOverrides": {
+              "s04-mon": "badminton"
+            }
+          }
+        }
+      },
+      "_planVersion": 2,
+      "s01-mon": {
         "completed": true,
         "skipped": false,
         "completedAt": "2026-10-05T17:37:28.672Z",
-        "version": 1
-      },
-      "_typeOverrides": {
-        "s04-mon": "badminton"
-      },
-      "_dateOverrides": {
-        "s04-thu": "2026-10-07",
-        "s04-wed": "2026-10-08"
+        "version": 2,
+        "carriedFrom": {
+          "v": 1,
+          "id": "s04-mon"
+        }
       }
     }
   }
