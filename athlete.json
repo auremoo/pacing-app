@@ -10,6 +10,6 @@
   "sports": [
     "running"
   ],
-  "trackWeight": true,
+  "trackWeight": false,
   "otherSports": "Badminton"
 }
