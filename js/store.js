@@ -2,7 +2,7 @@ import { getFile, putFile } from './github-api.js';
 import { parsePlan } from './parser.js';
 import { showToast } from './toast.js';
 import { stripReasonLines } from './utils/skip-reasons.js';
-import { buildConfigWithUser, getSession } from './utils/users.js';
+import { buildConfigWithUser, buildConfigWithInvite, getSession } from './utils/users.js';
 
 // ── In-memory state ───────────────────────────────────────────────
 
@@ -243,12 +243,27 @@ export async function saveSessionNote(slug, sessionId, note) {
   scheduleSyncState();
 }
 
+// Envoie tout de suite ce qui attend encore dans le délai de regroupement.
+// Indispensable avant de quitter la session : « Se déconnecter » recharge la
+// page, et une coche ou la fermeture du tutoriel faites juste avant étaient
+// perdues avec le minuteur.
+export async function flushSync() {
+  // Boucle : un envoi déjà en cours se reprogramme au lieu de partir, il faut
+  // donc attendre qu'il finisse puis envoyer ce qu'il a laissé en attente.
+  for (let i = 0; i < 100; i++) {
+    if (_syncing)   { await new Promise(r => setTimeout(r, 50)); continue; }
+    if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; await syncState(); continue; }
+    return;
+  }
+}
+
 function scheduleSyncState() {
   if (_syncTimer) clearTimeout(_syncTimer);
   _syncTimer = setTimeout(syncState, 600);
 }
 
 async function syncState() {
+  _syncTimer = null;   // le minuteur a joué (ou flushSync l'a devancé)
   if (_syncing) { scheduleSyncState(); return; }
   _syncing = true;
   try {
@@ -523,8 +538,10 @@ export function completeOnboarding() {
 // la config : si l'écriture s'interrompt, on a au pire un dossier orphelin,
 // jamais un utilisateur qui pointe vers des fichiers absents.
 
-export async function addUser({ name, password, currentName }) {
-  const { token } = getSession();
+// token : celui de la session quand un utilisateur connecté ajoute quelqu'un
+// depuis Réglages ; celui déchiffré par le code d'invitation quand une personne
+// crée son compte depuis l'écran de connexion.
+export async function addUser({ name, password, currentName, token = getSession().token }) {
   if (!token) throw new Error('Session expirée, reconnecte-toi.');
 
   const cfgFile = await getFile('config.json', { root: true });
@@ -548,6 +565,18 @@ export async function addUser({ name, password, currentName }) {
   await putFile('config.json', JSON.stringify(config, null, 2), cfgFile.sha,
                 { root: true, commitMessage: `pacing-app: ajoute l'utilisateur ${name}` });
   return user;
+}
+
+export async function setInviteCode({ code, currentName }) {
+  const { token } = getSession();
+  if (!token) throw new Error('Session expirée, reconnecte-toi.');
+  const cfgFile = await getFile('config.json', { root: true });
+  if (!cfgFile) throw new Error('config.json introuvable dans le dépôt.');
+  const config = await buildConfigWithInvite(JSON.parse(cfgFile.content), { code, token, currentName });
+  await putFile('config.json', JSON.stringify(config, null, 2), cfgFile.sha, {
+    root: true,
+    commitMessage: code ? 'pacing-app: nouveau code d\'invitation' : 'pacing-app: inscriptions fermées',
+  });
 }
 
 export async function getUsersConfig() {

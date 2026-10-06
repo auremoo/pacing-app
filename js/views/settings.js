@@ -1,6 +1,6 @@
 import { showToast } from '../app.js';
-import { getAthleteProfile, saveAthleteProfile, addUser, getUsersConfig } from '../store.js';
-import { getSession, clearSession, listUsers } from '../utils/users.js';
+import { getAthleteProfile, saveAthleteProfile, addUser, getUsersConfig, setInviteCode, flushSync } from '../store.js';
+import { getSession, clearSession, listUsers, hasInvite } from '../utils/users.js';
 import { openOnboarding } from './onboarding.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 
@@ -115,6 +115,29 @@ function render(container) {
             <button class="btn btn--primary" id="add-user-save" style="flex:1">Créer</button>
             <button class="btn btn--secondary" id="add-user-cancel" style="flex:1">Annuler</button>
           </div>
+        </div>
+        <div class="list-row" id="invite-btn" style="cursor:pointer">
+          <div class="list-row__content">
+            <div class="list-row__title" style="color:var(--ios-blue)">Code d'invitation</div>
+            <div class="list-row__subtitle" id="invite-status">Permet à quelqu'un de créer son compte depuis l'écran de connexion</div>
+          </div>
+        </div>
+        <div id="invite-form" hidden style="padding:var(--space-3) var(--space-4)">
+          <div class="form-field" id="f-invite-name-field" hidden>
+            <label class="form-label">Ton prénom</label>
+            <input class="form-input" id="f-invite-name" type="text" placeholder="Pour te distinguer des personnes invitées">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Nouveau code (6 caractères minimum)</label>
+            <input class="form-input" id="f-invite-code" type="text" autocomplete="off" autocapitalize="off">
+          </div>
+          <div class="type-picker__hint" style="padding:0 0 var(--space-2)">Donne-le aux personnes à inviter. Il remplace l'ancien code, qui cesse de fonctionner.</div>
+          <div id="invite-error" style="color:var(--ios-red);font-size:14px;margin-bottom:var(--space-2)"></div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+            <button class="btn btn--primary" id="invite-save" style="flex:1">Enregistrer</button>
+            <button class="btn btn--secondary" id="invite-cancel" style="flex:1">Annuler</button>
+          </div>
+          <button class="btn btn--ghost btn--full" id="invite-close" style="margin-top:var(--space-2);color:var(--ios-red)" hidden>Fermer les inscriptions</button>
         </div>
         <div class="list-row" id="replay-onboarding-btn" style="cursor:pointer">
           <div class="list-row__content">
@@ -234,13 +257,70 @@ function wireAccount(container) {
     }
   });
 
+  wireInvite(container);
+
   container.querySelector('#replay-onboarding-btn').addEventListener('click', () => {
     openOnboarding({ name: getSession().name });
   });
 
-  container.querySelector('#logout-btn').addEventListener('click', () => {
+  container.querySelector('#logout-btn').addEventListener('click', async () => {
+    try { await flushSync(); } catch { /* on se déconnecte quand même */ }
     clearSession();
     location.hash = '#/';
     location.reload();
   });
+}
+
+// ── Code d'invitation ─────────────────────────────────────────────
+
+function wireInvite(container) {
+  const form   = container.querySelector('#invite-form');
+  const status = container.querySelector('#invite-status');
+  const error  = container.querySelector('#invite-error');
+  const save   = container.querySelector('#invite-save');
+  const closeB = container.querySelector('#invite-close');
+
+  const refresh = async () => {
+    try {
+      const cfg = await getUsersConfig();
+      const active = hasInvite(cfg);
+      status.textContent = active
+        ? `Actif depuis le ${new Date(cfg.invite.createdAt).toLocaleDateString('fr-FR')} — les inscriptions sont ouvertes`
+        : 'Aucun — personne ne peut créer de compte depuis l\'écran de connexion';
+      closeB.hidden = !active;
+      const users = listUsers(cfg);
+      container.querySelector('#f-invite-name-field').hidden = !(users.length === 1 && !users[0].name);
+    } catch { /* l'état reste celui affiché */ }
+  };
+  refresh();
+
+  container.querySelector('#invite-btn').addEventListener('click', () => { form.hidden = false; });
+  container.querySelector('#invite-cancel').addEventListener('click', () => { form.hidden = true; error.textContent = ''; });
+
+  const apply = async (code, btn, label) => {
+    error.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement…';
+    try {
+      await setInviteCode({ code, currentName: container.querySelector('#f-invite-name').value.trim() });
+      form.hidden = true;
+      container.querySelector('#f-invite-code').value = '';
+      // config.json est servi par GitHub Pages : le code n'est utilisable
+      // qu'une fois le site republié.
+      showToast(code ? 'Code enregistré — utilisable d\'ici une à deux minutes' : 'Inscriptions fermées', 'success');
+      await refresh();
+    } catch (err) {
+      error.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  };
+
+  save.addEventListener('click', () => {
+    const code = container.querySelector('#f-invite-code').value.trim();
+    if (code.length < 6) { error.textContent = 'Le code doit faire au moins 6 caractères.'; return; }
+    apply(code, save, 'Enregistrer');
+  });
+  closeB.addEventListener('click', () => apply(null, closeB, 'Fermer les inscriptions'));
 }

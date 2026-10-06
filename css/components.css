@@ -475,6 +475,23 @@
   gap: var(--space-3);
 }
 
+/* display:flex ci-dessus l'emporterait sur l'attribut hidden : les deux
+   formulaires (connexion, inscription) s'afficheraient ensemble. */
+.lock-screen__form[hidden] { display: none; }
+
+.lock-screen__switch {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: var(--space-2);
+}
+.lock-screen__switch strong { color: var(--ios-blue); font-weight: 600; }
+
+.lock-screen__hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
 .lock-screen__error {
   font-size: 14px;
   color: var(--ios-red);

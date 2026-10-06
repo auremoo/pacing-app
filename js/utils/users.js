@@ -70,13 +70,25 @@ export function slugifyName(name) {
 // Construit la nouvelle config sans rien écrire : l'appelant s'occupe des
 // fichiers. currentName ne sert qu'à nommer le premier utilisateur quand la
 // config est encore au format historique.
+// Passe une config historique (un seul encryptedToken) au format liste, en
+// nommant le premier utilisateur. Sans effet sur une config déjà en liste.
+function withNamedUsers(cfg, currentName) {
+  const users = listUsers(cfg).map(u => ({ ...u }));
+  if (users.length === 1 && !users[0].name) users[0].name = currentName || 'Utilisateur 1';
+  return { ...cfg, users };
+}
+
 export async function buildConfigWithUser(cfg, { name, password, token, currentName }) {
   if (await findUserByPassword(cfg, password)) {
     throw new Error('Ce mot de passe est déjà utilisé par un autre utilisateur.');
   }
+  // Le code d'invitation est connu de toutes les personnes invitées : s'en
+  // servir comme mot de passe leur ouvrirait ce compte.
+  if (await tokenFromInvite(cfg, password)) {
+    throw new Error('Ton mot de passe doit être différent du code d\'invitation.');
+  }
 
-  const users = listUsers(cfg).map(u => ({ ...u }));
-  if (users.length === 1 && !users[0].name) users[0].name = currentName || 'Utilisateur 1';
+  const { users } = withNamedUsers(cfg, currentName);
 
   if (users.some(u => (u.name || '').toLowerCase() === name.toLowerCase())) {
     throw new Error(`Il existe déjà un utilisateur « ${name} ».`);
@@ -87,4 +99,36 @@ export async function buildConfigWithUser(cfg, { name, password, token, currentN
 
   const user = { name, dataPath, encryptedToken: await encryptToken(token, password) };
   return { config: { ...cfg, users: [...users, user] }, user };
+}
+
+// ── Code d'invitation ─────────────────────────────────────────────────
+// Créer un compte depuis l'écran de connexion demande d'écrire dans le dépôt,
+// donc le token, alors que personne n'est connecté. Une inscription libre
+// rendrait ce token récupérable par quiconque visite l'URL publique — avec les
+// droits d'écriture sur le dépôt, donc sur le code même de l'app publiée par
+// GitHub Pages. Le token est donc aussi chiffré par un code d'invitation que
+// l'on communique aux personnes à inviter, et qu'on peut changer ou retirer.
+// Format : config.invite = { encryptedToken, createdAt }
+
+export function hasInvite(cfg) {
+  return !!cfg?.invite?.encryptedToken;
+}
+
+export async function tokenFromInvite(cfg, code) {
+  if (!hasInvite(cfg) || !code) return null;
+  try { return await decryptToken(cfg.invite.encryptedToken, code); }
+  catch { return null; }
+}
+
+// code null ou vide : retire l'invitation (plus d'inscription possible)
+export async function buildConfigWithInvite(cfg, { code, token, currentName }) {
+  const config = withNamedUsers(cfg, currentName);
+  if (!code) {
+    const { invite, ...rest } = config;
+    return rest;
+  }
+  if (await findUserByPassword(cfg, code)) {
+    throw new Error('Ce code est le mot de passe d\'un utilisateur : choisis-en un autre, sinon les personnes invitées pourraient se connecter à ce compte.');
+  }
+  return { ...config, invite: { encryptedToken: await encryptToken(token, code), createdAt: new Date().toISOString() } };
 }

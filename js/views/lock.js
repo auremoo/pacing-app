@@ -1,6 +1,7 @@
 import { configure } from '../github-api.js';
 import { renderMarkdown } from '../utils/markdown.js';
-import { findUserByPassword, saveSession } from '../utils/users.js';
+import { findUserByPassword, saveSession, hasInvite, tokenFromInvite } from '../utils/users.js';
+import { addUser } from '../store.js';
 
 export { isAuthenticated } from '../utils/users.js';
 
@@ -25,10 +26,26 @@ export function mount(container, onUnlock) {
         />
         <div class="lock-screen__error" id="lock-error"></div>
         <button type="submit" class="btn btn--primary btn--full" id="lock-btn">Entrer</button>
+        <button type="button" class="lock-screen__switch" id="show-signup">Pas encore de compte ? <strong>Créer un compte</strong></button>
       </form>
+
+      <!-- Inscription : nécessite un code d'invitation, seul moyen d'obtenir le
+           token sans être connecté (voir utils/users.js). -->
+      <form class="lock-screen__form" id="signup-form" autocomplete="off" hidden>
+        <input type="text" class="input-field" id="su-name" placeholder="Ton prénom" autocomplete="given-name">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd"
+               placeholder="Mot de passe (6 chiffres min.)" autocomplete="new-password">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd2"
+               placeholder="Confirme le mot de passe" autocomplete="new-password">
+        <input type="password" class="input-field" id="su-code" placeholder="Code d'invitation" autocomplete="off">
+        <div class="lock-screen__hint">Le code d'invitation t'est donné par une personne qui utilise déjà l'app.</div>
+        <div class="lock-screen__error" id="signup-error"></div>
+        <button type="submit" class="btn btn--primary btn--full" id="signup-btn">Créer mon compte</button>
+        <button type="button" class="lock-screen__switch" id="show-login">J'ai déjà un compte · <strong>Se connecter</strong></button>
+      </form>
+
       <div class="lock-screen__footer">
-        Cette application est personnelle et n'est pas ouverte au public.<br>
-        Une version multi-utilisateurs est en cours de développement.
+        Cette application est privée : on y entre avec son mot de passe, ou sur invitation.
         <a href="#" class="lock-screen__readme-link" id="lock-readme-link">En savoir plus →</a>
       </div>
     </div>
@@ -79,6 +96,62 @@ export function mount(container, onUnlock) {
   readmeLink.addEventListener('click', openReadme);
   readmeClose.addEventListener('click', closeReadme);
   readmeOverlay.addEventListener('click', closeReadme);
+
+  // ── Bascule connexion / inscription ──────────────────────────────
+  const signupForm = container.querySelector('#signup-form');
+  container.querySelector('#show-signup').addEventListener('click', () => {
+    form.hidden = true;
+    signupForm.hidden = false;
+    container.querySelector('#su-name').focus();
+  });
+  container.querySelector('#show-login').addEventListener('click', () => {
+    signupForm.hidden = true;
+    form.hidden = false;
+    input.focus();
+  });
+
+  // ── Inscription avec code d'invitation ───────────────────────────
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const sErr = container.querySelector('#signup-error');
+    const sBtn = container.querySelector('#signup-btn');
+    const name = container.querySelector('#su-name').value.trim();
+    const pwd  = container.querySelector('#su-pwd').value;
+    const pwd2 = container.querySelector('#su-pwd2').value;
+    const code = container.querySelector('#su-code').value;
+
+    sErr.textContent = '';
+    if (!name)                    { sErr.textContent = 'Indique ton prénom.'; return; }
+    // Chiffres uniquement : l'écran de connexion affiche le pavé numérique.
+    if (!/^[0-9]{6,}$/.test(pwd)) { sErr.textContent = 'Le mot de passe doit faire au moins 6 chiffres.'; return; }
+    if (pwd !== pwd2)             { sErr.textContent = 'Les deux mots de passe ne correspondent pas.'; return; }
+    if (!code)                    { sErr.textContent = 'Il faut un code d\'invitation.'; return; }
+
+    sBtn.disabled = true;
+    sBtn.textContent = 'Création du compte…';
+    try {
+      const res = await fetch(`./config.json?_t=${Date.now()}`);
+      if (!res.ok) throw new Error('config.json introuvable.');
+      const cfg = await res.json();
+      if (!hasInvite(cfg)) throw new Error('Les inscriptions ne sont pas ouvertes : demande un code d\'invitation à une personne qui utilise l\'app.');
+      const token = await tokenFromInvite(cfg, code);
+      if (!token) throw new Error('Code d\'invitation incorrect.');
+
+      const repo = { token, owner: cfg.owner, repo: cfg.repo, branch: cfg.branch || 'main' };
+      configure(repo);
+      const user = await addUser({ name, password: pwd, token });
+
+      // Connecté tout de suite, sans attendre que GitHub Pages republie
+      // config.json : on connaît déjà son token et son dossier.
+      configure({ ...repo, dataPath: user.dataPath });
+      saveSession(token, user);
+      onUnlock();
+    } catch (err) {
+      sErr.textContent = err.message;
+      sBtn.disabled = false;
+      sBtn.textContent = 'Créer mon compte';
+    }
+  });
 
   // Le mot de passe désigne l'utilisateur : chaque entrée de config.json porte
   // le token chiffré par le mot de passe de son propriétaire.
