@@ -384,7 +384,7 @@ ${swappedWeekNums.length ? `\n**Semaines dont le contenu (décharge/phase/volume
 ${buildAdditionalContext(meta)}
 ${routineSection(todayStr, '##', { withRecent: false })}
 ## Bilan au ${todayStr}
-- Plan semaine ${currentWeekNum} / ${plan.weeks.length} (${weeksLeft} semaines restantes dont la semaine en cours)
+- Plan semaine ${currentWeekNum} / ${plan.weeks[plan.weeks.length - 1]?.number || plan.weeks.length} (${weeksLeft} semaines restantes dont la semaine en cours)
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}
 ${manualChangesSection}
 ## Détail semaine par semaine

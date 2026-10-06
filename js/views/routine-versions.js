@@ -333,7 +333,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 - Objectifs de ce bloc : ${meta.goals || 'Non renseigné'}
 ${targetsSection(meta, '##')}
 ## Bilan au ${todayStr}
-- Plan semaine ${currentWeekNum} / ${plan.weeks.length}
+- Plan semaine ${currentWeekNum} / ${plan.weeks[plan.weeks.length - 1]?.number || plan.weeks.length}
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}
 
 ## Détail semaine par semaine (historique tous types de séances confondus)
