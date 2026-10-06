@@ -2481,3 +2481,62 @@ select.form-input {
   transition: width var(--duration-fast, .15s), background var(--duration-fast, .15s);
 }
 .onboarding__dot--active { width: 22px; border-radius: 4px; background: var(--ios-blue); }
+
+/* Liste compacte des champs du profil : libellé à gauche, exemple à droite */
+.onb-card--compact .onb-field--row {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 6px var(--space-4);
+}
+.onb-card--compact .onb-field--row span {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+.onb-card--compact .onb-field--row em {
+  font-size: 13px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Encart « remplis d'abord, génère ensuite » */
+.onb-callout {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 149, 0, 0.12);
+  border-left: 3px solid var(--ios-orange, #FF9500);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+.onb-callout strong { display: block; margin-bottom: 2px; }
+
+/* Champs de la fiche course, regroupés */
+.onb-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.onb-group {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  font-size: 15px;
+}
+.onb-group__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--ios-blue);
+}

@@ -13,6 +13,8 @@
 import { navigate } from '../app.js';
 
 const STEP = (n, html) => `<li class="onb-steps__item"><span class="onb-steps__num">${n}</span><span>${html}</span></li>`;
+const FIELD = (label, example) => `<div class="onb-field onb-field--row"><span>${label}</span><em>${example}</em></div>`;
+const GROUP = (label, items) => `<div class="onb-group"><span class="onb-group__label">${label}</span><span>${items}</span></div>`;
 const PATH = parts => `<div class="onb-path">${parts.map(p => `<span>${p}</span>`).join('<span class="onb-path__sep">›</span>')}</div>`;
 
 function pages(name) {
@@ -23,21 +25,25 @@ function pages(name) {
       body: `
         <p>Pacing App suit tes plans d'entraînement et de préparation de course.</p>
         <p>Les plans sont écrits par <strong>Claude</strong> à partir de ton profil. Toi, tu coches au jour le jour ce que tu fais, et l'app garde l'historique pour ajuster la suite.</p>
-        <p class="onb-muted">Quelques pages pour tout mettre en place — glisse ou touche « Suivant ».</p>`,
+        <p class="onb-muted">Quelques pages pour tout mettre en place — glisse ou touche «&nbsp;Suivant&nbsp;».</p>`,
     },
     {
       icon: '🏃',
       title: '1. Ton profil',
       body: `
         ${PATH(['Réglages'])}
-        <p>Commence par là : c'est ce que Claude lit pour adapter tes plans.</p>
-        <div class="onb-card">
-          <div class="onb-field"><span>Niveau et expérience</span><em>Je cours depuis 2 ans…</em></div>
-          <div class="onb-field"><span>Performances récentes</span><em>10 km en 55 min</em></div>
-          <div class="onb-field"><span>Volume actuel</span><em>20 km/sem, 3 séances</em></div>
-          <div class="onb-field"><span>Pathologies</span><em>Genou gauche fragile</em></div>
+        <p>Commence par là : Claude le lit pour adapter <strong>tous</strong> tes plans.</p>
+        <div class="onb-card onb-card--compact">
+          ${FIELD('Niveau et expérience', 'intermédiaire, 2 ans de course')}
+          ${FIELD('Performances récentes', '10 km en 55 min')}
+          ${FIELD('Volume actuel', '25 km/sem, 3 séances')}
+          ${FIELD('Jours disponibles', 'mardi, jeudi, dimanche')}
+          ${FIELD('Équipements', 'piste, vélo')}
+          ${FIELD('Terrain local', 'parc plat, collines à 10 min')}
+          ${FIELD('Pathologies', 'genou gauche fragile')}
+          ${FIELD('Objectifs secondaires', 'perdre 3 kg')}
         </div>
-        <p class="onb-muted">Plus c'est précis, plus les plans te ressemblent. Pense à « Enregistrer » en haut à droite.</p>`,
+        <p class="onb-muted">Plus c'est précis, mieux c'est. «&nbsp;Enregistrer&nbsp;» est en haut à droite.</p>`,
     },
     {
       icon: '🔁',
@@ -48,7 +54,7 @@ function pages(name) {
         <ol class="onb-steps">
           ${STEP(1, '<strong>Activités récurrentes</strong> : ce que tu fais déjà (badminton le lundi, vélo…)')}
           ${STEP(2, '<strong>Ce que tu veux travailler</strong> : endurance, vitesse, reprise…')}
-          ${STEP(3, '<strong>Début et durée</strong> du bloc, puis « Enregistrer »')}
+          ${STEP(3, '<strong>Début et durée</strong> du bloc, puis «&nbsp;Enregistrer&nbsp;»')}
         </ol>`,
     },
     {
@@ -62,20 +68,37 @@ function pages(name) {
           ${STEP(3, 'Enregistre le fichier <strong>.md</strong> qu\'il te renvoie')}
           ${STEP(4, 'Reviens ici : <strong>+ Importer une nouvelle version</strong>')}
         </ol>
-        <p class="onb-muted">Le prompt contient déjà ton profil et ton contexte : tu n'as rien à réécrire.</p>`,
+        <div class="onb-callout">
+          <strong>Remplis d'abord, génère ensuite.</strong>
+          Le prompt est construit quand tu touches le bouton : un champ vide y devient «&nbsp;[à&nbsp;compléter]&nbsp;» et Claude travaille avec des trous. Modifié un champ après coup ? Regénère le prompt.
+        </div>`,
     },
     {
       icon: '🏁',
-      title: '4. Préparer une course',
+      title: '4. Créer une course',
       body: `
         ${PATH(['Courses', '+ Créer un événement'])}
-        <p>Date, distance, dénivelé, objectif… puis, dans l'onglet <strong>Versions</strong> de la course, le même principe : prompt → Claude → import.</p>
-        <p>Tu peux aussi importer le <strong>GPX</strong> du parcours dans l'onglet <strong>Parcours</strong> pour voir le profil.</p>
+        <p>La fiche de la course, que Claude lira en plus de ton profil :</p>
+        <div class="onb-groups">
+          ${GROUP('La course', 'nom, date, lieu, type et distance exacte, dénivelé, description du parcours')}
+          ${GROUP('Tes objectifs', 'objectif temps et fourchette réaliste')}
+          ${GROUP('Le plan', 'date de début (un lundi) et durée en semaines')}
+        </div>
+        <p class="onb-muted">La description du parcours («&nbsp;montée au km 14&nbsp;») et la fourchette réaliste aident Claude à doser l'effort : ne les saute pas.</p>`,
+    },
+    {
+      icon: '🗺️',
+      title: '5. Son plan et son parcours',
+      body: `
+        ${PATH(['La course', 'Versions'])}
+        <p>Même principe que pour l'entraînement : <strong>✦ Générer le prompt de plan initial</strong> → Claude → <strong>+ Importer une nouvelle version</strong>. Là aussi, fiche complète d'abord.</p>
+        ${PATH(['La course', 'Parcours'])}
+        <p>Importe le <strong>GPX</strong> pour voir le profil du parcours, et corrige les infos de la course avec «&nbsp;Modifier ces infos&nbsp;».</p>
         <p class="onb-muted">Pendant une préparation, ton entraînement général se met en pause : on ne suit jamais deux plans à la fois.</p>`,
     },
     {
       icon: '✓',
-      title: '5. Au quotidien',
+      title: '6. Au quotidien',
       body: `
         <p>L'accueil te montre la séance du jour. Dans le plan :</p>
         <div class="onb-demo" aria-hidden="true">
@@ -93,7 +116,7 @@ function pages(name) {
     },
     {
       icon: '📈',
-      title: '6. Faire évoluer le plan',
+      title: '7. Faire évoluer le plan',
       body: `
         ${PATH(['Versions', '✦ Générer un prompt de révision'])}
         <p>Quand la vie s'en mêle, Claude reprend ce que tu as <strong>vraiment</strong> fait et réajuste les semaines suivantes.</p>
@@ -157,7 +180,7 @@ export function openOnboarding({ name = '', onDone = () => {} } = {}) {
     current = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
     dots.forEach((d, i) => d.classList.toggle('onboarding__dot--active', i === current));
     prev.style.visibility = current === 0 ? 'hidden' : 'visible';
-    // Sur la dernière page, les deux boutons d'action prennent le relais de « Suivant ».
+    // Sur la dernière page, les deux boutons d'action prennent le relais de «&nbsp;Suivant&nbsp;».
     next.style.visibility = current === last ? 'hidden' : 'visible';
     overlay.querySelector('#onb-final').hidden = current !== last;
   };
