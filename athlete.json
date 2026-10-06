@@ -10,5 +10,6 @@
   "sports": [
     "running"
   ],
-  "trackWeight": true
+  "trackWeight": true,
+  "otherSports": ""
 }
