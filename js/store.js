@@ -2,6 +2,8 @@ import { getFile, putFile } from './github-api.js';
 import { parsePlan } from './parser.js';
 import { showToast } from './toast.js';
 import { stripReasonLines } from './utils/skip-reasons.js';
+import { applyDateOverrides, applyTypeOverrides } from './utils/plan-overrides.js';
+import { typeName } from './utils/session-types.js';
 import { buildConfigWithUser, buildConfigWithInvite, getSession } from './utils/users.js';
 
 // ── In-memory state ───────────────────────────────────────────────
@@ -73,6 +75,8 @@ export async function initStore() {
   // Pre-load plan général (routine), s'il existe déjà
   const routineMeta = await loadEventMeta(ROUTINE_SLUG);
   if (routineMeta?.activeVersion) await ensurePlanLoaded(ROUTINE_SLUG, routineMeta.activeVersion);
+
+  await repairUnmigratedStates();
 }
 
 // ── Events ────────────────────────────────────────────────────────
@@ -321,11 +325,122 @@ export async function importPlanVersion(slug, mdContent, label) {
   if (!_plans[slug]) _plans[slug] = {};
   _plans[slug][nextV] = parsed;
 
+  // Coches et réglages de l'ancienne version : archivés, et reportés par date
+  // sur les séances de la nouvelle (voir migrateStateToVersion).
+  if (meta.activeVersion) {
+    await ensurePlanLoaded(slug, meta.activeVersion).catch(() => null);
+    migrateStateToVersion(slug, meta.activeVersion, nextV);
+  } else {
+    stampPlanVersion(slug, nextV);
+  }
+
   // Update index entry
   const idx = _eventsIndex.find(e => e.slug === slug);
   if (idx) idx.activeVersion = nextV;
 
   return nextV;
+}
+
+// ── Changement de version : report des coches ─────────────────────────
+// Les états de séance sont rangés par id (`s04-mon`), et un id n'a de sens que
+// dans SA version : une v2 qui repart à S01 le 5 octobre donne `s01-mon` à la
+// séance que la v1 appelait `s04-mon`, et `s04-mon` y désigne le 26 octobre.
+// Sans migration, la coche d'hier sautait trois semaines plus loin et les
+// déplacements faits sur la v1 s'appliquaient à d'autres séances de la v2.
+//
+// À l'import d'une version :
+//  - tout l'état de l'ancienne (coches, notes, déplacements, échanges de
+//    semaines, activités changées) est archivé tel quel dans
+//    `_history.v{N}` — le bilan de fin de prépa le relit avec sa version ;
+//  - chaque séance de la nouvelle version qui tombe le même jour qu'une séance
+//    déjà traitée (cochée, manquée ou annotée) reprend son état, marqué
+//    `carriedFrom: { v, id }` pour ne pas la compter deux fois ; une activité
+//    changée suit si elle diffère du type prévu par la nouvelle version ;
+//  - les déplacements et échanges ne sont pas reportés : ils décrivaient
+//    l'ancien plan, la nouvelle version a sa propre organisation.
+// `_planVersion` mémorise la version à laquelle l'état correspond.
+
+const OVERRIDE_KEYS = ['_dateOverrides', '_weekMetaOverrides', '_typeOverrides'];
+
+function stampPlanVersion(slug, v) {
+  if (!_state.events[slug]) _state.events[slug] = {};
+  _state.events[slug]._planVersion = v;
+  scheduleSyncState();
+}
+
+function migrateStateToVersion(slug, fromV, toV) {
+  const ev = _state.events[slug] || {};
+  const history = { ...(ev._history || {}) };
+  const archive = (v) => (history[`v${v}`] = { ...(history[`v${v}`] || {}) });
+
+  // 1. Archive : chaque état sous sa propre version, les réglages sous fromV.
+  const live = Object.entries(ev).filter(([k]) => !k.startsWith('_'));
+  for (const [id, st] of live) archive(st?.version ?? fromV)[id] = st;
+  const overrides = {};
+  for (const k of OVERRIDE_KEYS) if (ev[k] && Object.keys(ev[k]).length) overrides[k] = ev[k];
+  if (Object.keys(overrides).length) archive(fromV)._overrides = overrides;
+
+  // 2. Report par date sur la nouvelle version.
+  const next = { _history: history, _planVersion: toV };
+  const oldPlan = _plans[slug]?.[fromV];
+  const newPlan = _plans[slug]?.[toV];
+  if (oldPlan && newPlan) {
+    const oldEff = applyTypeOverrides(applyDateOverrides(oldPlan, ev._dateOverrides || {}), ev._typeOverrides || {});
+    const treated = new Map();     // date → séances de l'ancienne version ayant un état
+    for (const s of oldEff.weeks.flatMap(w => w.sessions)) {
+      const st = ev[s.id];
+      if (!st || !(st.completed || st.skipped || st.note)) continue;
+      if (!treated.has(s.date)) treated.set(s.date, []);
+      treated.get(s.date).push(s);
+    }
+    for (const s of newPlan.weeks.flatMap(w => w.sessions)) {
+      const pool = treated.get(s.date);
+      if (!pool?.length) continue;
+      const i = Math.max(0, pool.findIndex(o => o.type === s.type || o.plannedType === s.type));
+      const [old] = pool.splice(i, 1);
+      const st = ev[old.id];
+      next[s.id] = { ...st, version: toV, carriedFrom: st.carriedFrom || { v: st.version ?? fromV, id: old.id } };
+      // L'activité changée suit, sauf si la nouvelle version la prévoit déjà
+      // (« Badminton » en cross dans une v2 qui a lu le bilan).
+      const changed = ev._typeOverrides?.[old.id];
+      const planned = changed && (changed === s.type || s.title.toLowerCase().includes(typeName(changed).toLowerCase()));
+      if (changed && !planned) (next._typeOverrides ||= {})[s.id] = changed;
+    }
+  }
+  // 3. Retour sur une version déjà suivie (Versions → la réactiver) : ses
+  //    propres réglages et coches reviennent, les reports ci-dessus priment.
+  const own = history[`v${toV}`];
+  if (own) {
+    for (const [k, val] of Object.entries(own._overrides || {})) next[k] = { ...val, ...(next[k] || {}) };
+    for (const [id, st] of Object.entries(own)) {
+      if (!id.startsWith('_') && !next[id]) next[id] = st;
+    }
+  }
+  if (next._typeOverrides && !Object.keys(next._typeOverrides).length) delete next._typeOverrides;
+  _state.events[slug] = next;
+  scheduleSyncState();
+}
+
+// Réparation des états importés avant cette migration : des coches portent une
+// version antérieure à la version active et rien n'indique que l'état a été
+// migré. Cas réel : plan général passé en v2 le 06/10/2026. Les réglages
+// (déplacements…) sont attribués à l'ancienne version : ils ont forcément été
+// faits avant l'import.
+async function repairUnmigratedStates() {
+  const slugs = [..._eventsIndex.map(e => e.slug), ROUTINE_SLUG];
+  for (const slug of slugs) {
+    const ev = _state.events?.[slug];
+    const active = _eventMetas[slug]?.activeVersion;
+    if (!ev || !active || ev._planVersion != null) continue;
+    const older = Object.entries(ev)
+      .filter(([k, st]) => !k.startsWith('_') && typeof st?.version === 'number' && st.version < active)
+      .map(([, st]) => st.version);
+    if (!older.length) continue;
+    const fromV = Math.max(...older);
+    await ensurePlanLoaded(slug, fromV).catch(() => null);
+    await ensurePlanLoaded(slug, active).catch(() => null);
+    migrateStateToVersion(slug, fromV, active);
+  }
 }
 
 export async function setActiveVersion(slug, v) {
@@ -338,6 +453,10 @@ export async function setActiveVersion(slug, v) {
   const idx = _eventsIndex.find(e => e.slug === slug);
   if (idx) idx.activeVersion = v;
   await ensurePlanLoaded(slug, v);
+  if (meta.activeVersion && meta.activeVersion !== v) {
+    await ensurePlanLoaded(slug, meta.activeVersion).catch(() => null);
+    migrateStateToVersion(slug, meta.activeVersion, v);
+  }
 }
 
 // ── Athlete profile ───────────────────────────────────────────────

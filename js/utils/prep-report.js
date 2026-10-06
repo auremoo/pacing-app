@@ -84,16 +84,35 @@ export function buildConsolidatedHistory(slug) {
   const todayStr   = today();
 
   const sessions = [];
-  const seen     = new Set();
+  const seen     = new Set();   // ids du plan actif déjà traités
+  const done     = new Set();   // « version:id » d'origine déjà comptés
+
+  // États à relire : ceux du plan actif, puis ceux archivés à chaque changement
+  // de version (_history.v{N}, voir migrateStateToVersion dans store.js). Une
+  // séance reportée sur la nouvelle version (carriedFrom) est comptée une seule
+  // fois, sous sa séance d'origine, avec l'état le plus récent.
+  const history = states._history || {};
+  const archivedDates = v => history[`v${v}`]?._overrides?._dateOverrides || {};
+  const records = Object.entries(states)
+    .filter(([id]) => !id.startsWith('_'))
+    .map(([id, st]) => ({ id, st, live: true }));
+  for (const [key, entries] of Object.entries(history)) {
+    const v = parseInt(key.slice(1));
+    for (const [id, st] of Object.entries(entries || {})) {
+      if (!id.startsWith('_')) records.push({ id, st, live: false, archivedV: v });
+    }
+  }
 
   // 1. Tout ce qui a été traité (coché ou manqué), rattaché à sa version
-  for (const [id, st] of Object.entries(states)) {
-    if (id.startsWith('_')) continue;               // _dateOverrides, _weekMeta…
+  for (const { id: rawId, st, live, archivedV } of records) {
     if (!st?.completed && !st?.skipped) continue;
 
+    const origin   = st.carriedFrom || null;
+    const id       = origin ? origin.id : rawId;
     const stamp    = st.completedAt || st.skippedAt || '';
-    const inferred = st.version == null;
-    let version    = st.version ?? versionInForceAt(meta, stamp);
+    const inferred = !origin && st.version == null;
+    let version    = origin ? origin.v : (st.version ?? archivedV ?? versionInForceAt(meta, stamp));
+    if (live) seen.add(rawId);
     let session    = version != null ? findSessionInVersion(slug, version, id) : null;
 
     // L'id n'existe pas dans cette version (structure de semaine différente) :
@@ -106,11 +125,16 @@ export function buildConsolidatedHistory(slug) {
     }
     if (!session) continue;                          // séance d'un plan supprimé
     if (session.type === 'rest') continue;           // le repos n'apprend rien sur la prépa
+    const key = `${version}:${id}`;
+    if (done.has(key)) continue;                     // déjà compté (l'état vivant passe en premier)
+    done.add(key);
 
-    seen.add(id);
+    // Date effective : déplacements de SA version (archivés), sauf pour un
+    // état vivant non reporté, qui suit les déplacements actuels.
+    const moved = (live && !origin) ? overrides : archivedDates(version);
     sessions.push({
       ...session,
-      date:   overrides[id] || session.date,
+      date:   moved[id] || session.date,
       status: st.completed ? 'done' : 'skipped',
       note:   stripReasonLines(st.note),
       skipReason: st.skipReason || null,
