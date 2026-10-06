@@ -6,7 +6,10 @@
 //   main sur une journée du plan général. Sans elles, un footing remplacé par
 //   du vélo ou du badminton tomberait sous « CROSS » et ne se distinguerait pas.
 
-export const PLAN_TYPES     = ['easy', 'long', 'intervals', 'tempo', 'hills', 'race', 'strength', 'cross', 'rest'];
+// Course à pied puis salle : un plan peut mélanger les deux familles.
+export const RUN_TYPES      = ['easy', 'long', 'intervals', 'tempo', 'hills', 'race'];
+export const GYM_TYPES      = ['gym', 'cardio', 'hiit', 'mobility', 'class'];
+export const PLAN_TYPES     = [...RUN_TYPES, 'strength', ...GYM_TYPES, 'cross', 'rest'];
 export const ACTIVITY_TYPES = ['bike', 'badminton', 'swim', 'hike', 'other'];
 
 export const TYPE_INFO = {
@@ -19,6 +22,11 @@ export const TYPE_INFO = {
   race:      { badge: 'RACE',  name: 'Course / Compétition' },
   strength:  { badge: 'PPG',   name: 'PPG / Renforcement' },
   cross:     { badge: 'CROSS', name: 'Cross-training' },
+  gym:       { badge: 'MUSCU', name: 'Musculation' },
+  cardio:    { badge: 'CARDIO', name: 'Cardio' },
+  hiit:      { badge: 'HIIT',  name: 'HIIT / circuit' },
+  mobility:  { badge: 'MOBI',  name: 'Mobilité / étirements' },
+  class:     { badge: 'COURS', name: 'Cours collectif' },
   bike:      { badge: 'VÉLO',  name: 'Vélo' },
   badminton: { badge: 'BAD',   name: 'Badminton' },
   swim:      { badge: 'NAGE',  name: 'Natation' },

@@ -4,7 +4,8 @@ import { navigate, showToast } from '../app.js';
 import { formatDate } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { applyDateOverrides, applyTypeOverrides } from '../utils/plan-overrides.js';
-import { PLAN_TYPES, ACTIVITY_TYPES, typeBadge, typeName, sessionTitle } from '../utils/session-types.js';
+import { PLAN_TYPES, RUN_TYPES, GYM_TYPES, ACTIVITY_TYPES, typeBadge, typeName, sessionTitle } from '../utils/session-types.js';
+import { doesRun, doesGym } from '../utils/sports.js';
 import { syncEventClosure } from './event-closure.js';
 
 export function mount(container, slug, sessionId) {
@@ -139,6 +140,14 @@ function renderDescription(desc) {
 // de la journée. Mise à jour sur place, sans remonter la vue : une note en
 // cours de saisie dans le champ ne doit pas être perdue.
 
+// Types proposés : ceux des sports de l'utilisateur (pas de « Côtes » pour qui
+// ne court pas, pas de « HIIT » pour qui ne va pas en salle), plus toujours le
+// type prévu et le type actuel.
+function pickableTypes(current, planned) {
+  const hidden = new Set([...(doesRun() ? [] : RUN_TYPES), ...(doesGym() ? [] : GYM_TYPES)]);
+  return PLAN_TYPES.filter(t => !hidden.has(t) || t === current || t === planned);
+}
+
 function renderTypePicker(current, planned) {
   const chip = t => `
     <button class="type-chip ${t === current ? 'type-chip--active' : ''}" data-type-pick="${t}" aria-pressed="${t === current}">
@@ -150,7 +159,7 @@ function renderTypePicker(current, planned) {
     <div class="type-picker">
       <div class="type-picker__hint">Change l'activité si tu as fait autre chose que prévu : la pastille de la liste suivra.</div>
       <div class="type-picker__group">${ACTIVITY_TYPES.map(chip).join('')}</div>
-      <div class="type-picker__group">${PLAN_TYPES.map(chip).join('')}</div>
+      <div class="type-picker__group">${pickableTypes(current, planned).map(chip).join('')}</div>
     </div>`;
 }
 

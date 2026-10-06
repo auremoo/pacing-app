@@ -6,7 +6,7 @@ import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { sessionTitle } from '../utils/session-types.js';
-import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum } from '../utils/plan-overrides.js';
+import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum, weekVolumeLabel } from '../utils/plan-overrides.js';
 import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
 import { syncEventClosure } from './event-closure.js';
 
@@ -255,7 +255,7 @@ function showSwapWeekModal(weekNum, effPlan, slug, container) {
 
   const weekLabel = w => {
     const ph   = effPlan.phases.find(p => p.id === w.phaseId);
-    const tags = [ph?.name, w.isDecharge ? 'Décharge' : null, `${w.targetVolumeKm}km`]
+    const tags = [ph?.name, w.isDecharge ? 'Décharge' : null, weekVolumeLabel(w)]
       .filter(Boolean).join(' · ');
     return `S${String(w.number).padStart(2, '0')} — ${w.dateRange} · ${tags}`;
   };
@@ -468,7 +468,7 @@ function renderWeekCard(week, currentWeekNum, states, plan, overrides, pausedByR
         <span class="week-card__phase-dot" style="background:var(--phase-${phaseColor})"></span>
         <div class="week-card__info">
           <div class="week-card__title">S${String(week.number).padStart(2, '0')} ${badge}</div>
-          <div class="week-card__dates">${week.dateRange} · ${week.targetVolumeKm} km</div>
+          <div class="week-card__dates">${week.dateRange}${weekVolumeLabel(week) ? ` · ${weekVolumeLabel(week).replace(/</g, '&lt;')}` : ''}</div>
         </div>
         <div class="week-card__right">
           <button class="week-swapbtn" data-week-swap="${week.number}" title="Échanger avec une autre semaine">

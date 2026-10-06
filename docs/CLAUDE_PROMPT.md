@@ -106,7 +106,7 @@ Couleurs disponibles : gray, blue, indigo, orange, red, green, teal, purple
 |---|---|---|---|---|
 | {Lundi/Mardi/…} | {YYYY-MM-DD} | {type} | {Titre court} | {Description détaillée de la séance} |
 
-Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
+Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross, gym, cardio, hiit, mobility, class
 
 {Répéter pour toutes les semaines du plan}
 

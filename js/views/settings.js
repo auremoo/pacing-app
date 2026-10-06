@@ -2,6 +2,7 @@ import { showToast } from '../app.js';
 import { getAthleteProfile, saveAthleteProfile, addUser, getUsersConfig, setInviteCode, flushSync } from '../store.js';
 import { getSession, clearSession, listUsers, hasInvite } from '../utils/users.js';
 import { openOnboarding } from './onboarding.js';
+import { SPORTS, getSports, doesRun } from '../utils/sports.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 
 export function mount(container) {
@@ -10,6 +11,8 @@ export function mount(container) {
 
 function render(container) {
   const p = getAthleteProfile();
+  const sports = getSports(p);
+  const ph = placeholders(p);
 
   container.innerHTML = `
     <div class="nav-bar">
@@ -20,18 +23,43 @@ function render(container) {
     <div id="tab-content" class="scroll-view" style="padding-bottom:calc(var(--tab-bar-height) + var(--safe-bottom))">
     <div class="form-page-body">
 
+      <p class="section-header">Mes sports</p>
+      <div class="card-group" style="margin:0 var(--space-4) var(--space-2)">
+        ${SPORTS.map(s => `
+        <label class="list-row sport-row">
+          <div class="list-row__content">
+            <div class="list-row__title">${s.label}</div>
+            <div class="list-row__subtitle">${s.hint}</div>
+          </div>
+          <input type="checkbox" class="ios-switch" data-sport="${s.id}" ${sports.includes(s.id) ? 'checked' : ''}>
+        </label>`).join('')}
+        <div class="form-field">
+          <label class="form-label">Autres sports</label>
+          <input class="form-input" id="f-other-sports" type="text"
+            placeholder="Ex : badminton, yoga, natation" value="${esc(p.otherSports || '')}">
+        </div>
+        <label class="list-row sport-row">
+          <div class="list-row__content">
+            <div class="list-row__title">Suivre mon poids</div>
+            <div class="list-row__subtitle">Pesées et courbe dans Entraînement → Suivi, transmises à l'IA</div>
+          </div>
+          <input type="checkbox" class="ios-switch" id="f-track-weight" ${p.trackWeight ? 'checked' : ''}>
+        </label>
+      </div>
+      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">L'app n'affiche que ce qui sert à tes sports : sans course à pied, pas d'onglet Courses ni de km.</p>
+
       <p class="section-header">Niveau & Expérience</p>
       <div class="card-group" style="margin:0 var(--space-4) var(--space-4)">
         <div class="form-field">
           <label class="form-label">Niveau et expérience</label>
           <input class="form-input" id="f-level" type="text"
-            placeholder="Ex : intermédiaire, 2 ans de course régulière"
+            placeholder="${ph.level}"
             value="${esc(p.level || '')}">
         </div>
         <div class="form-field">
           <label class="form-label">Meilleures performances récentes</label>
           <textarea class="form-input form-textarea" id="f-perfs" rows="3"
-            placeholder="Ex : 2h05'22&quot; semi des Alpes 2026-05-17 | 51'10 sur 10K">${esc(p.perfs || '')}</textarea>
+            placeholder="${ph.perfs}">${esc(p.perfs || '')}</textarea>
         </div>
       </div>
 
@@ -40,25 +68,25 @@ function render(container) {
         <div class="form-field">
           <label class="form-label">Volume hebdomadaire actuel</label>
           <input class="form-input" id="f-volume" type="text"
-            placeholder="Ex : 25-35 km/semaine, 3 séances"
+            placeholder="${ph.volume}"
             value="${esc(p.volume || '')}">
         </div>
         <div class="form-field">
           <label class="form-label">Jours disponibles</label>
           <input class="form-input" id="f-days" type="text"
-            placeholder="Ex : mardi, jeudi, dimanche + 1-2 cross-training"
+            placeholder="${ph.days}"
             value="${esc(p.days || '')}">
         </div>
         <div class="form-field">
           <label class="form-label">Accès équipements</label>
           <input class="form-input" id="f-equipment" type="text"
-            placeholder="Ex : piste à 5 km, vélo, pas de rameur"
+            placeholder="${ph.equipment}"
             value="${esc(p.equipment || '')}">
         </div>
         <div class="form-field">
-          <label class="form-label">Terrain local</label>
+          <label class="form-label">${doesRun(p) ? 'Terrain local' : "Lieu d'entraînement"}</label>
           <input class="form-input" id="f-terrain" type="text"
-            placeholder="Ex : Marseille — massif de l'Étoile accessible"
+            placeholder="${ph.terrain}"
             value="${esc(p.terrain || '')}">
         </div>
       </div>
@@ -73,7 +101,7 @@ function render(container) {
         <div class="form-field">
           <label class="form-label">Objectifs secondaires</label>
           <input class="form-input" id="f-goals" type="text"
-            placeholder="Ex : perdre 3 kg, améliorer VMA"
+            placeholder="${ph.goals}"
             value="${esc(p.goals || '')}">
         </div>
       </div>
@@ -174,6 +202,24 @@ function render(container) {
 
   wireAccount(container);
 
+  // Les interrupteurs s'enregistrent tout de suite, comme sur iOS : le menu du
+  // bas (onglet Courses) suit sans passer par « Enregistrer ».
+  container.querySelectorAll('.ios-switch').forEach(sw => sw.addEventListener('change', async () => {
+    const updates = {
+      sports:      [...container.querySelectorAll('[data-sport]')].filter(c => c.checked).map(c => c.dataset.sport),
+      trackWeight: container.querySelector('#f-track-weight').checked,
+    };
+    try {
+      await saveAthleteProfile({ ...getAthleteProfile(), ...updates });
+      const bar = container.querySelector('.global-tab-bar');
+      if (bar) { bar.outerHTML = renderGlobalTabBar('settings'); attachGlobalTabBar(container); }
+      window.dispatchEvent(new CustomEvent('pacing:profile-changed'));
+    } catch (err) {
+      sw.checked = !sw.checked;
+      showToast('Erreur : ' + err.message, 'error');
+    }
+  }));
+
   container.querySelector('#save-btn').addEventListener('click', async () => {
     const btn = container.querySelector('#save-btn');
     btn.disabled = true;
@@ -186,16 +232,47 @@ function render(container) {
       terrain:     container.querySelector('#f-terrain').value.trim(),
       pathologies: container.querySelector('#f-pathologies').value.trim(),
       goals:       container.querySelector('#f-goals').value.trim(),
+      sports:      [...container.querySelectorAll('[data-sport]')].filter(c => c.checked).map(c => c.dataset.sport),
+      otherSports: container.querySelector('#f-other-sports').value.trim(),
+      trackWeight: container.querySelector('#f-track-weight').checked,
     };
     try {
-      await saveAthleteProfile(profile);
+      await saveAthleteProfile({ ...getAthleteProfile(), ...profile });
       showToast('Profil enregistré', 'success');
+      // Les sports changent le menu, les exemples des champs et la barre latérale.
+      render(container);
+      window.dispatchEvent(new CustomEvent('pacing:profile-changed'));
     } catch (err) {
       showToast('Erreur : ' + err.message, 'error');
     } finally {
       btn.disabled = false;
     }
   });
+}
+
+// Exemples des champs selon les sports : une personne qui ne fait que de la
+// salle ne doit pas lire « 25-35 km/semaine ».
+function placeholders(p) {
+  const run = doesRun(p);
+  const gym = getSports(p).includes('gym');
+  if (gym && !run) return {
+    level: 'Ex : débutante, salle 2x/semaine depuis 6 mois',
+    perfs: 'Ex : squat 50 kg × 8 | 20 min de vélo elliptique sans pause',
+    volume: 'Ex : 3 séances de 1h par semaine',
+    days: 'Ex : lundi, mercredi, samedi matin',
+    equipment: 'Ex : salle complète (machines, haltères, tapis), cours collectifs',
+    terrain: 'Ex : Basic-Fit à 10 min, parfois à la maison',
+    goals: 'Ex : perdre 4 kg, prendre du muscle sur le haut du corps',
+  };
+  return {
+    level: run && gym ? 'Ex : intermédiaire, 2 ans de course + salle 1x/semaine' : 'Ex : intermédiaire, 2 ans de course régulière',
+    perfs: 'Ex : 2h05\'22&quot; semi des Alpes 2026-05-17 | 51\'10 sur 10K',
+    volume: run && gym ? 'Ex : 25 km/semaine en 3 sorties + 1 séance de muscu' : 'Ex : 25-35 km/semaine, 3 séances',
+    days: 'Ex : mardi, jeudi, dimanche + 1-2 cross-training',
+    equipment: 'Ex : piste à 5 km, vélo, pas de rameur',
+    terrain: 'Ex : Marseille — massif de l\'Étoile accessible',
+    goals: 'Ex : perdre 3 kg, améliorer VMA',
+  };
 }
 
 function esc(str) {

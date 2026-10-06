@@ -53,9 +53,18 @@ export function applyWeekMetaOverrides(plan, metaOverrides) {
     ...plan,
     weeks: plan.weeks.map(w => {
       const ov = metaOverrides[w.number];
-      return ov ? { ...w, ...ov } : w;
+      if (!ov) return w;
+      // Échange antérieur à volumeLabel : on le reconstruit depuis les km échangés.
+      const volumeLabel = ov.volumeLabel ?? (ov.targetVolumeKm != null ? `${ov.targetVolumeKm} km` : w.volumeLabel);
+      return { ...w, ...ov, volumeLabel };
     }),
   };
+}
+
+// Volume affiché d'une semaine : « 12 km », « 4 séances »… ou rien.
+export function weekVolumeLabel(w) {
+  if (w.volumeLabel != null) return w.volumeLabel;
+  return w.targetVolumeKm ? `${w.targetVolumeKm} km` : '';
 }
 
 export function getWeekMonday(dateStr) {

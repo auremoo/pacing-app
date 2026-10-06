@@ -4,6 +4,8 @@ import { findTodaySession, getActiveRacePreps, todaySessionTitle, getRoutineProg
 import { typeBadge } from '../utils/session-types.js';
 import { renderEventCard } from './courses.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
+import { tracksWeight } from '../utils/sports.js';
+import { latestEntry, weightChange, fmtDelta, fmtKg, weightTarget } from '../utils/body.js';
 
 export function mount(container) {
   const todayStr = today();
@@ -29,6 +31,7 @@ export function mount(container) {
           <p class="section-header">Entraînement en cours</p>
           ${renderRoutineCard(routine)}
         ` : ''}
+        ${tracksWeight() ? renderWeightCard() : ''}
         <div style="height:var(--space-8)"></div>
       </div>
     </div>
@@ -42,6 +45,7 @@ export function mount(container) {
   });
 
   container.querySelector('#routine-card')?.addEventListener('click', () => navigate('/routine'));
+  container.querySelector('#weight-card')?.addEventListener('click', () => navigate('/routine/body'));
 
   if (todaySession) {
     container.querySelector('#today-card')?.addEventListener('click', () => {
@@ -101,4 +105,33 @@ function renderRoutineCard({ week, done, total, next, phase }) {
       </div>
     </div>
   `;
+}
+
+// Poids : dernière pesée, évolution sur 4 semaines, objectif. Sans pesée, la
+// carte invite à en saisir une.
+function renderWeightCard() {
+  const last = latestEntry();
+  const c4 = weightChange(28);
+  const target = weightTarget();
+  return `
+    <p class="section-header">Poids</p>
+    <div class="event-card" id="weight-card">
+      ${last ? `
+      <div class="event-card__meta" style="margin-top:0">
+        <div class="event-card__meta-item">
+          <span class="event-card__meta-label">Dernière pesée</span>
+          <span class="event-card__meta-value">${fmtKg(last.weight)} · ${formatDateShort(last.date)}</span>
+        </div>
+        <div class="event-card__meta-item">
+          <span class="event-card__meta-label">4 semaines</span>
+          <span class="event-card__meta-value">${c4 ? fmtDelta(c4.delta) : '—'}</span>
+        </div>
+        ${target != null ? `<div class="event-card__meta-item">
+          <span class="event-card__meta-label">Objectif</span>
+          <span class="event-card__meta-value">${fmtKg(target)}</span>
+        </div>` : ''}
+      </div>` : `
+      <div class="event-card__title">Aucune pesée pour l'instant</div>
+      <div class="event-card__subtitle">Touche pour enregistrer la première</div>`}
+    </div>`;
 }

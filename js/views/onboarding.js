@@ -23,7 +23,7 @@ function pages(name) {
       icon: '👋',
       title: name ? `Bienvenue, ${esc(name)}` : 'Bienvenue',
       body: `
-        <p>Pacing App suit tes plans d'entraînement et de préparation de course.</p>
+        <p>Pacing App suit tes plans d'entraînement — course à pied, salle, ou un mélange — et tes préparations de course.</p>
         <p>Les plans sont écrits par <strong>Claude</strong> à partir de ton profil. Toi, tu coches au jour le jour ce que tu fais, et l'app garde l'historique pour ajuster la suite.</p>
         <p class="onb-muted">Quelques pages pour tout mettre en place — glisse ou touche «&nbsp;Suivant&nbsp;».</p>`,
     },
@@ -32,7 +32,7 @@ function pages(name) {
       title: '1. Ton profil',
       body: `
         ${PATH(['Réglages'])}
-        <p>Commence par là : Claude le lit pour adapter <strong>tous</strong> tes plans.</p>
+        <p>Claude le lit pour adapter <strong>tous</strong> tes plans. En haut, <strong>Mes sports</strong> : l'app n'affiche que ce qui te sert. Plus c'est précis, mieux c'est.</p>
         <div class="onb-card onb-card--compact">
           ${FIELD('Niveau et expérience', 'intermédiaire, 2 ans de course')}
           ${FIELD('Performances récentes', '10 km en 55 min')}
@@ -43,7 +43,7 @@ function pages(name) {
           ${FIELD('Pathologies', 'genou gauche fragile')}
           ${FIELD('Objectifs secondaires', 'perdre 3 kg')}
         </div>
-        <p class="onb-muted">Plus c'est précis, mieux c'est. «&nbsp;Enregistrer&nbsp;» est en haut à droite.</p>`,
+        <p class="onb-muted">«&nbsp;Enregistrer&nbsp;» en haut à droite.</p>`,
     },
     {
       icon: '🔁',
@@ -54,7 +54,7 @@ function pages(name) {
         <ol class="onb-steps">
           ${STEP(1, '<strong>Activités récurrentes</strong> : ce que tu fais déjà (badminton le lundi, vélo…)')}
           ${STEP(2, '<strong>Ce que tu veux travailler</strong> : endurance, vitesse, reprise…')}
-          ${STEP(3, '<strong>Objectifs chrono perso</strong> (facultatif) : un record visé, ex. 5 km en 24\'30, avec ou sans échéance')}
+          ${STEP(3, '<strong>Objectifs perso</strong> (facultatif) : un chrono (5 km en 24\'30), une charge (squat 60 kg), un poids…')}
           ${STEP(4, '<strong>Début et durée</strong> du bloc, puis «&nbsp;Enregistrer&nbsp;»')}
         </ol>`,
     },
@@ -76,7 +76,7 @@ function pages(name) {
     },
     {
       icon: '🏁',
-      title: '4. Créer une course',
+      title: '4. Si tu cours : une course',
       body: `
         ${PATH(['Courses', '+ Créer un événement'])}
         <p>La fiche de la course, que Claude lira en plus de ton profil :</p>
@@ -113,7 +113,7 @@ function pages(name) {
           ${STEP('✕', '<strong>Manquée</strong>, avec la raison (vacances, maladie…)')}
           ${STEP('✎', 'Une <strong>note</strong> seulement si tu t\'écartes du prévu')}
         </ol>
-        <p class="onb-muted">Fait du vélo à la place ? Touche la séance → <strong>Activité réalisée</strong>.</p>`,
+        <p class="onb-muted">Fait du vélo à la place ? Touche la séance → <strong>Activité réalisée</strong>. Tes pesées : <strong>Entraînement → Suivi</strong>.</p>`,
     },
     {
       icon: '📈',

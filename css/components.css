@@ -1121,6 +1121,11 @@
 .type-race { background: var(--type-race); }
 .type-strength { background: var(--type-strength); }
 .type-cross { background: var(--type-cross); }
+.type-gym { background: var(--type-gym); }
+.type-cardio { background: var(--type-cardio); }
+.type-hiit { background: var(--type-hiit); }
+.type-mobility { background: var(--type-mobility); }
+.type-class { background: var(--type-class); }
 .type-bike { background: var(--type-bike); }
 .type-badminton { background: var(--type-badminton); }
 .type-swim { background: var(--type-swim); }
@@ -2571,7 +2576,8 @@ select.form-input {
 
 /* ─── Objectifs chrono perso (plan général → Contexte) ─────────── */
 .target-row__head { display: flex; align-items: center; gap: var(--space-2); }
-.target-row__head .target-distance { flex: 1; font-weight: 600; }
+.target-row__head .target-kind { flex: 1; font-weight: 600; }
+.target-row__wide { grid-column: 1 / -1; }
 .target-remove {
   flex: none; width: 32px; height: 32px; border-radius: 50%;
   color: var(--text-secondary); font-size: 14px;
@@ -2586,3 +2592,44 @@ select.form-input {
   margin-top: var(--space-2); font-size: 15px; color: var(--text-secondary);
 }
 .target-row__done input { -webkit-appearance: checkbox; appearance: auto; width: 18px; height: 18px; margin: 0; accent-color: var(--ios-green); }
+
+/* ─── Interrupteur iOS (Réglages → Mes sports) ─────────────────── */
+.sport-row { cursor: pointer; }
+.ios-switch {
+  -webkit-appearance: none; appearance: none;
+  flex: none; position: relative;
+  width: 51px; height: 31px; border-radius: 16px;
+  background: var(--gray-4, #D1D1D6);
+  transition: background var(--duration-fast, .2s);
+  cursor: pointer;
+}
+.ios-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 27px; height: 27px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2);
+  transition: transform var(--duration-fast, .2s);
+}
+.ios-switch:checked { background: var(--ios-green); }
+.ios-switch:checked::after { transform: translateX(20px); }
+
+/* ─── Suivi du poids (Entraînement → Suivi) ───────────────────── */
+.body-summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: var(--space-2);
+  margin: 0 var(--space-4) var(--space-4);
+}
+.body-summary__item {
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--bg-card); border-radius: var(--radius-md); padding: var(--space-3);
+}
+.body-summary__label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--text-secondary); }
+.body-summary__value { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.body-summary__sub { font-size: 12px; color: var(--text-tertiary); }
+.weight-chart { display: block; width: 100%; height: auto; }
+.weight-chart__grid { stroke: var(--separator); stroke-width: 1; }
+.weight-chart__line { fill: none; stroke: var(--ios-blue); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.weight-chart__dot { fill: var(--ios-blue); }
+.weight-chart__target { stroke: var(--ios-green); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.weight-chart__label { font-size: 10px; fill: var(--text-secondary); }
+.weight-chart__label--target { fill: var(--ios-green); }
+.sport-row .list-row__subtitle { white-space: normal; overflow: visible; text-overflow: clip; }
+.sport-row .list-row__content { min-width: 0; padding-right: var(--space-3); }

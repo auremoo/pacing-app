@@ -37,7 +37,7 @@ const ROUTES = [
   { re: /^\/event\/([\w-]+)\/(plan|course|versions|infos|strategy)$/, fn: (m) => mountEvent(app, m[1], m[2]) },
   { re: /^\/event\/([\w-]+)\/session\/([\w-]+)$/, fn: (m) => mountSession(app, m[1], m[2]) },
   { re: /^\/routine$/, fn: () => mountRoutine(app, 'plan') },
-  { re: /^\/routine\/(plan|settings|versions)$/, fn: (m) => mountRoutine(app, m[1]) },
+  { re: /^\/routine\/(plan|body|settings|versions)$/, fn: (m) => mountRoutine(app, m[1]) },
   { re: /^\/routine\/session\/([\w-]+)$/, fn: (m) => mountSession(app, ROUTINE_SLUG, m[1]) },
 ];
 
@@ -89,6 +89,8 @@ async function boot() {
   }
 
   window.addEventListener('hashchange', () => route());
+  // Réglages → Mes sports change ce que montre la barre latérale.
+  window.addEventListener('pacing:profile-changed', () => mountSidebar(document.getElementById('sidebar')));
   await route();
 
   // Première connexion d'un utilisateur ajouté : tutoriel de prise en main.

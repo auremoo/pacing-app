@@ -5,9 +5,11 @@
 // les activités fixes de l'athlète (club, badminton…), sinon elles disparaissent
 // du planning. Il a aussi intérêt à savoir ce que l'athlète faisait juste avant.
 //
-// Objectifs chrono perso (meta.targets du plan général) : des envies de record
-// hors course officielle (« 5 km en 24'30 un de ces jours »). Liste de
-// { distance, time, by, achieved } ; by (échéance) et achieved sont facultatifs.
+// Objectifs perso (meta.targets du plan général) : des envies hors course
+// officielle — un chrono (« 5 km en 24'30 »), une charge (« squat 60 kg »), un
+// poids (« 58 kg »), ou autre chose. Liste de { kind, what, value, by, achieved } ;
+// by (échéance) et achieved sont facultatifs. Les premiers objectifs, purement
+// chrono, étaient stockés { distance, time } : normalizeTarget les relit.
 
 import { getRoutineMeta, getActivePlan, getAllSessionStates, getDateOverrides,
          getWeekMetaOverrides, getTypeOverrides, ROUTINE_SLUG } from '../store.js';
@@ -17,8 +19,39 @@ import { typeName } from './session-types.js';
 
 export const TARGET_DISTANCES = ['5 km', '10 km', 'Semi-marathon', 'Marathon'];
 
+// what / value : libellé et exemple des deux champs ; null = champ absent.
+export const TARGET_KINDS = {
+  chrono: { label: 'Chrono', what: 'Distance', whatPh: 'ex : 5 km', value: 'Temps visé',   valuePh: "ex : 24'30" },
+  force:  { label: 'Force',  what: 'Exercice', whatPh: 'ex : Squat', value: 'Charge visée', valuePh: 'ex : 60 kg × 5' },
+  poids:  { label: 'Poids',  what: null,       whatPh: '',           value: 'Poids visé',   valuePh: 'ex : 58 kg' },
+  autre:  { label: 'Autre',  what: 'Objectif', whatPh: "ex : 10 pompes d'affilée", value: null, valuePh: '' },
+};
+
+export function normalizeTarget(t) {
+  if (!t) return null;
+  if (t.kind) return { kind: t.kind, what: t.what || '', value: t.value || '', by: t.by || '', achieved: !!t.achieved };
+  return { kind: 'chrono', what: t.distance || '', value: t.time || '', by: t.by || '', achieved: !!t.achieved };
+}
+
+// Les champs que le type d'objectif demande sont tous remplis.
+export function isTargetComplete(t) {
+  const k = TARGET_KINDS[t.kind];
+  if (!k) return false;
+  return (!k.what || !!t.what.trim()) && (!k.value || !!t.value.trim());
+}
+
+export function targetText(t) {
+  const what = t.what.trim(), value = t.value.trim();
+  switch (t.kind) {
+    case 'chrono': return `${what} en ${value}`;
+    case 'force':  return `${what} : ${value}`;
+    case 'poids':  return `Atteindre ${value}`;
+    default:       return what;
+  }
+}
+
 export function getTargets(meta = getRoutineMeta()) {
-  return (meta?.targets || []).filter(t => t && (t.distance || '').trim() && (t.time || '').trim());
+  return (meta?.targets || []).map(normalizeTarget).filter(t => t && isTargetComplete(t));
 }
 
 // Une ligne par objectif, pour les prompts.
@@ -26,7 +59,7 @@ export function formatTargets(targets) {
   return targets.map(t => {
     const by = t.by ? ` — d'ici le ${formatDateLong(t.by)}` : ' — sans échéance';
     const done = t.achieved ? ' (✓ déjà atteint)' : '';
-    return `- ${t.distance.trim()} en ${t.time.trim()}${by}${done}`;
+    return `- [${TARGET_KINDS[t.kind].label}] ${targetText(t)}${by}${done}`;
   }).join('\n');
 }
 
@@ -79,6 +112,6 @@ export function buildRoutineSectionForRace(todayStr, { withRecent = true } = {})
   const parts = [];
   if (context) parts.push(`**Activités récurrentes à conserver :**\n${context}\n\nCes activités continuent pendant la préparation : intègre-les comme des séances du plan (type \`cross\` en général, ou le type qui correspond), aux jours où elles ont lieu, et compte leur charge dans la semaine (pas de séance dure la veille ou le lendemain d'une activité intense, récupération suffisante). Le plan général est mis en pause pendant la préparation : si elles ne figurent pas dans ton plan, elles disparaissent de mon planning.`);
   if (recent) parts.push(`**Ce que je faisais ces dernières semaines (plan général) :**\n${recent}`);
-  if (targets.length) parts.push(`**Objectifs chrono personnels (hors course officielle, pour information) :**\n${formatTargets(targets)}\n\nLa course reste la priorité. Si la préparation s'y prête, tu peux placer un test chronométré sur l'une de ces distances, sans nuire à la course.`);
+  if (targets.length) parts.push(`**Objectifs personnels (hors course officielle, pour information) :**\n${formatTargets(targets)}\n\nLa course reste la priorité. Si la préparation s'y prête, tu peux les servir au passage (un test chronométré, le renforcement qui va avec), sans nuire à la course.`);
   return parts.join('\n\n');
 }

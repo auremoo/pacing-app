@@ -2,6 +2,8 @@
 // Sur desktop, la sidebar persistante joue déjà ce rôle : .global-tab-bar
 // est masqué via CSS (voir components.css).
 
+import { showsCourses } from '../utils/sports.js';
+
 const TABS = [
   { id: 'home',     label: 'Accueil',      path: '/',        icon: 'home'     },
   { id: 'routine',  label: 'Entraînement', path: '/routine', icon: 'routine'  },
@@ -12,7 +14,7 @@ const TABS = [
 export function renderGlobalTabBar(activeId) {
   return `
     <nav class="global-tab-bar">
-      ${TABS.map(t => `
+      ${TABS.filter(t => t.id !== 'courses' || showsCourses()).map(t => `
         <button class="tab-item ${t.id === activeId ? 'tab-item--active' : ''}" data-gtab="${t.path}">
           ${icon(t.icon)}
           <span>${t.label}</span>

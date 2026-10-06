@@ -2,7 +2,8 @@ import { showToast, navigate } from '../app.js';
 import { getRoutineMeta, saveRoutineSettings } from '../store.js';
 import { today, addDays, weeksBetween } from '../utils/dates.js';
 import { getWeekMonday } from '../utils/plan-overrides.js';
-import { TARGET_DISTANCES } from '../utils/routine-context.js';
+import { TARGET_DISTANCES, TARGET_KINDS, normalizeTarget, isTargetComplete } from '../utils/routine-context.js';
+import { doesRun, doesGym } from '../utils/sports.js';
 
 export function mount(container) {
   render(container);
@@ -40,14 +41,14 @@ function render(container) {
         </div>
       </div>
 
-      <p class="section-header">Objectifs chrono perso</p>
+      <p class="section-header">Objectifs perso</p>
       <div class="card-group" style="margin:0 var(--space-4) var(--space-2)" id="targets-list">
-        ${(meta.targets || []).map(targetRow).join('')}
+        ${(meta.targets || []).map(normalizeTarget).filter(Boolean).map(targetRow).join('')}
       </div>
       <div style="padding:0 var(--space-4) var(--space-1)">
-        <button class="btn btn--ghost btn--full" id="add-target-btn" type="button">+ Ajouter un objectif chrono</button>
+        <button class="btn btn--ghost btn--full" id="add-target-btn" type="button">+ Ajouter un objectif</button>
       </div>
-      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Un record que tu aimerais battre un jour, hors course officielle (ex : 5 km en 24'30). Le plan prévoira des séances et des tests pour y arriver. Modifiable à tout moment : la prochaine version du plan en tiendra compte.</p>
+      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Ce que tu aimerais atteindre, hors course officielle : un chrono (5 km en 24'30), une charge (squat 60 kg), un poids, ou autre chose. Le plan prévoira les séances et les tests qui y mènent. Modifiable à tout moment : la prochaine version du plan en tiendra compte.</p>
       <datalist id="target-distances">${TARGET_DISTANCES.map(d => `<option value="${esc(d)}">`).join('')}</datalist>
 
       <p class="section-header">Paramètres du bloc</p>
@@ -114,9 +115,18 @@ function render(container) {
   const syncTargetsVisibility = () => { targetsList.hidden = !targetsList.children.length; };
   syncTargetsVisibility();
   container.querySelector('#add-target-btn').addEventListener('click', () => {
-    targetsList.insertAdjacentHTML('beforeend', targetRow({}));
+    const kind = doesRun() ? 'chrono' : doesGym() ? 'force' : 'poids';
+    targetsList.insertAdjacentHTML('beforeend', targetRow({ kind, what: '', value: '', by: '', achieved: false }));
     syncTargetsVisibility();
-    targetsList.lastElementChild.querySelector('.target-distance').focus();
+    targetsList.lastElementChild.querySelector('.target-what, .target-value')?.focus();
+  });
+  // Changer le type d'objectif change les champs ; échéance et « atteint » restent.
+  targetsList.addEventListener('change', e => {
+    const sel = e.target.closest('.target-kind');
+    if (!sel) return;
+    const row = sel.closest('.target-row');
+    const t = { ...readRow(row), kind: sel.value, what: '', value: '' };
+    row.outerHTML = targetRow(t);
   });
   targetsList.addEventListener('click', e => {
     const del = e.target.closest('.target-remove');
@@ -138,10 +148,10 @@ function render(container) {
       targets:    readTargets(targetsList),
     };
     // Une ligne restée vide est ignorée ; à moitié remplie, on prévient.
-    const incomplete = [...targetsList.querySelectorAll('.target-row')].some(row =>
-      !row.querySelector('.target-distance').value.trim() !== !row.querySelector('.target-time').value.trim());
+    const incomplete = [...targetsList.querySelectorAll('.target-row')].map(readRow)
+      .some(t => (t.what || t.value) && !isTargetComplete(t));
     if (incomplete) {
-      showToast('Objectif chrono incomplet : indique la distance et le temps (ou supprime-le)', 'error');
+      showToast('Objectif incomplet : remplis ses champs (ou supprime-le)', 'error');
       btn.disabled = false;
       return;
     }
@@ -157,33 +167,43 @@ function render(container) {
   });
 }
 
-// Un objectif chrono : distance (liste ou libre), temps visé, échéance
-// facultative, case « atteint ».
+// Un objectif : type (chrono, force, poids, autre), un ou deux champs selon le
+// type, échéance facultative, case « atteint ».
 function targetRow(t) {
+  const k = TARGET_KINDS[t.kind] || TARGET_KINDS.autre;
   return `
     <div class="form-field target-row">
       <div class="target-row__head">
-        <input class="form-input target-distance" list="target-distances" placeholder="Distance (ex : 5 km)" value="${esc(t.distance || '')}">
+        <select class="form-input target-kind" aria-label="Type d'objectif">
+          ${Object.entries(TARGET_KINDS).map(([id, kk]) => `<option value="${id}" ${id === t.kind ? 'selected' : ''}>${kk.label}</option>`).join('')}
+        </select>
         <button class="target-remove" type="button" aria-label="Supprimer cet objectif">✕</button>
       </div>
       <div class="target-row__grid">
-        <label><span class="form-label">Temps visé</span>
-          <input class="form-input target-time" placeholder="ex : 24'30" value="${esc(t.time || '')}"></label>
+        ${k.what ? `<label${k.value ? '' : ' class="target-row__wide"'}><span class="form-label">${k.what}</span>
+          <input class="form-input target-what" ${t.kind === 'chrono' ? 'list="target-distances"' : ''} placeholder="${esc(k.whatPh)}" value="${esc(t.what)}"></label>` : ''}
+        ${k.value ? `<label><span class="form-label">${k.value}</span>
+          <input class="form-input target-value" placeholder="${esc(k.valuePh)}" value="${esc(t.value)}"></label>` : ''}
         <label><span class="form-label">D'ici le (facultatif)</span>
-          <input class="form-input target-by" type="date" value="${esc(t.by || '')}"></label>
+          <input class="form-input target-by" type="date" value="${esc(t.by)}"></label>
       </div>
       <label class="target-row__done"><input type="checkbox" class="target-achieved" ${t.achieved ? 'checked' : ''}> Atteint</label>
     </div>`;
 }
 
-// Lignes complètes seulement (distance + temps) ; une ligne vide est ignorée.
-function readTargets(list) {
-  return [...list.querySelectorAll('.target-row')].map(row => ({
-    distance: row.querySelector('.target-distance').value.trim(),
-    time:     row.querySelector('.target-time').value.trim(),
+function readRow(row) {
+  return {
+    kind:     row.querySelector('.target-kind').value,
+    what:     row.querySelector('.target-what')?.value.trim() || '',
+    value:    row.querySelector('.target-value')?.value.trim() || '',
     by:       row.querySelector('.target-by').value || '',
     achieved: row.querySelector('.target-achieved').checked,
-  })).filter(t => t.distance && t.time);
+  };
+}
+
+// Lignes complètes seulement ; une ligne vide est ignorée.
+function readTargets(list) {
+  return [...list.querySelectorAll('.target-row')].map(readRow).filter(isTargetComplete);
 }
 
 function syncEndFromWeeks(startInput, weeksInput, endInput) {

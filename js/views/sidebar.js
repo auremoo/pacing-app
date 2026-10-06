@@ -4,12 +4,14 @@ import { today, isPast } from '../utils/dates.js';
 import { findTodaySession, todaySessionTitle, getRoutineProgress } from '../utils/today-session.js';
 import { isRaceDone } from '../utils/race-status.js';
 import { computeCompletion } from './courses.js';
+import { showsCourses } from '../utils/sports.js';
 
 export function mountSidebar(container, activeSlug = null) {
   if (!container) return;
   const events = getEventsIndex();
   const todayStr = today();
   const todaySession = findTodaySession(todayStr);
+  const courses = showsCourses();
 
   container.innerHTML = `
     <div class="sb-header">
@@ -32,16 +34,17 @@ export function mountSidebar(container, activeSlug = null) {
       ${renderRoutineItem(getRoutineProgress(todayStr))}
     </nav>
 
+    ${courses ? `
     <div class="sb-section-label">Mes courses</div>
     <nav class="sb-nav">
       ${events.map(e => renderEventItem(e, activeSlug === e.slug)).join('')}
-    </nav>
+    </nav>` : ''}
 
     <div class="sb-footer">
-      <button class="sb-nav-item" id="sb-new-event">
+      ${courses ? `<button class="sb-nav-item" id="sb-new-event">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         Nouvel événement
-      </button>
+      </button>` : ''}
       <button class="sb-nav-item" id="sb-home">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
         Accueil

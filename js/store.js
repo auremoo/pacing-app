@@ -16,6 +16,7 @@ let _syncTimer   = null;
 let _syncing     = false;
 let _athlete     = {};       // athlete profile
 let _athleteSha  = null;
+let _body        = { entries: [] };  // pesées (body.json)
 
 // ── Plan général (routine, hors courses) ────────────────────────────
 // Pseudo-slug interne : mêmes fonctions meta/plan/état que les événements,
@@ -51,6 +52,13 @@ export async function initStore() {
   if (athleteFile) {
     _athleteSha = athleteFile.sha;
     _athlete = JSON.parse(athleteFile.content);
+  }
+
+  // Pesées : body.json n'existe qu'une fois la première pesée enregistrée.
+  const bodyFile = await getFile('body.json');
+  if (bodyFile) {
+    try { _body = JSON.parse(bodyFile.content); } catch { /* fichier abîmé : on repart de zéro */ }
+    if (!Array.isArray(_body.entries)) _body.entries = [];
   }
 
   // Pre-load all event metas
@@ -229,6 +237,7 @@ export async function swapWeeks(slug, sessionsA, mondayA, sessionsB, mondayB, me
     isDecharge:      w.isDecharge      ?? false,
     phaseId:         w.phaseId         ?? null,
     targetVolumeKm:  w.targetVolumeKm  ?? 0,
+    volumeLabel:     w.volumeLabel     ?? '',
     note:            w.note            ?? '',
   });
   _state.events[slug]._weekMetaOverrides[metaA.number] = pickMeta(metaB);
@@ -339,6 +348,30 @@ export async function saveAthleteProfile(profile) {
   const newSha = await putFile('athlete.json', JSON.stringify(profile, null, 2), _athleteSha || null);
   _athleteSha = newSha;
   _athlete = profile;
+}
+
+// ── Suivi du poids (body.json) ────────────────────────────────────
+// { entries: [{ date: 'YYYY-MM-DD', weight: 62.4, waist: 71 | null }] }, triées
+// par date, une pesée par jour au plus (en saisir une autre le même jour la
+// remplace). Écrit tout de suite, sans regroupement : c'est rare et ponctuel.
+
+export function getBodyEntries() { return _body.entries; }
+
+async function writeBody(entries) {
+  const current = await getFile('body.json');
+  const next = { entries: entries.slice().sort((a, b) => a.date.localeCompare(b.date)) };
+  await putFile('body.json', JSON.stringify(next, null, 2), current?.sha || null);
+  _body = next;
+}
+
+export async function saveBodyEntry({ date, weight, waist = null }) {
+  if (!date || !(weight > 0)) throw new Error('Pesée incomplète');
+  const entry = { date, weight: Math.round(weight * 10) / 10, waist: waist > 0 ? Math.round(waist * 10) / 10 : null };
+  await writeBody([..._body.entries.filter(e => e.date !== date), entry]);
+}
+
+export async function deleteBodyEntry(date) {
+  await writeBody(_body.entries.filter(e => e.date !== date));
 }
 
 // ── Create event ──────────────────────────────────────────────────

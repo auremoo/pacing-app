@@ -6,6 +6,7 @@ import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '.
 import { openPromptModal } from '../utils/prompt-modal.js';
 import { skipReasonLabel } from '../utils/skip-reasons.js';
 import { buildRoutineSectionForRace } from '../utils/routine-context.js';
+import { doesGym } from '../utils/sports.js';
 
 export function mount(container, slug) {
   render(container, slug);
@@ -146,6 +147,11 @@ function buildAdditionalContext(meta) {
 
 // Activités récurrentes, historique récent et objectifs perso du plan général,
 // mis en pause pendant la préparation : voir utils/routine-context.js.
+// Pour qui va aussi en salle, la prépa peut garder de vraies séances de muscu.
+function gymTypesNote() {
+  return doesGym() ? ', gym (musculation en salle), cardio, hiit, mobility (mobilité / étirements), class (cours collectif)' : '';
+}
+
 function routineSection(todayStr, level, opts) {
   const body = buildRoutineSectionForRace(todayStr, opts);
   return body ? `\n${level} Entraînement général en cours\n\n${body}\n` : '';
@@ -236,7 +242,7 @@ Couleurs disponibles : gray, blue, indigo, orange, red, green, teal, purple
 |---|---|---|---|---|
 | {Lundi/Mardi/…} | {YYYY-MM-DD} | {type} | {Titre court} | {Description détaillée} |
 
-Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
+Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross${gymTypesNote()}
 
 {Répéter pour toutes les semaines}
 
@@ -464,7 +470,7 @@ generated: ${todayStr}
 [nutrition mise à jour]
 \`\`\`
 
-Types de séance valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
+Types de séance valides : rest, easy, long, intervals, tempo, hills, race, strength, cross${gymTypesNote()}
 IDs de session : s{NN}-{daycode} (ex: s01-mon, s03-thu)
 `;
 }

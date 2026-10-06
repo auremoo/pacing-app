@@ -5,7 +5,9 @@ import { showToast, navigate } from '../app.js';
 import { today } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { typeName } from '../utils/session-types.js';
-import { getTargets, formatTargets } from '../utils/routine-context.js';
+import { getTargets, formatTargets, targetText } from '../utils/routine-context.js';
+import { doesRun, doesGym, sportsSummary } from '../utils/sports.js';
+import { bodyPromptSection } from '../utils/body.js';
 
 export function mount(container) {
   render(container);
@@ -146,34 +148,58 @@ function showInitialPromptModal() {
 function targetsHint(meta) {
   const targets = getTargets(meta);
   const list = targets.length
-    ? targets.map(t => `${escHtml(t.distance)} en ${escHtml(t.time)}${t.achieved ? ' ✓' : ''}`).join(' · ')
+    ? targets.map(t => `${escHtml(targetText(t))}${t.achieved ? ' ✓' : ''}`).join(' · ')
     : 'aucun';
   return `<p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-3)">
-      Objectifs chrono repris dans le prompt : ${list}.
+      Objectifs perso repris dans le prompt : ${list}.
       <button class="targets-hint__edit" type="button" style="color:var(--ios-blue)">Modifier dans Contexte</button>
     </p>`;
 }
 
-// Objectifs chrono perso : des records visés hors course officielle. Le plan
-// doit y mener (séances spécifiques) et prévoir quand les tenter.
+// Objectifs perso : ce que je vise hors course officielle. Le plan doit y mener
+// et prévoir quand les tester ; la consigne dépend du type d'objectif.
 function targetsSection(meta, level) {
   const targets = getTargets(meta);
   if (!targets.length) return '';
+  const kinds = new Set(targets.filter(t => !t.achieved).map(t => t.kind));
+  const rules = [
+    kinds.has('chrono') && `- **Chrono** : prévois les séances qui y mènent et place un test chronométré (type \`race\`, titre du type « Test 5 km ») au moment où je peux raisonnablement le réussir, en arrivant reposé (pas de séance dure les 2 jours avant).`,
+    kinds.has('force')  && `- **Force** : progression de charge sur l'exercice visé (et ses exercices d'assistance), puis un test (type \`gym\`, titre du type « Test squat »), en arrivant reposé.`,
+    kinds.has('poids')  && `- **Poids** : organise l'entraînement pour y contribuer (perte : volume d'activité et maintien de la masse musculaire ; prise de masse : priorité à la musculation, cardio modéré) et donne dans la SYNTHESE quelques repères généraux de nutrition, sans régime strict. Rythme raisonnable, pas de promesse irréaliste.`,
+    kinds.has('autre')  && `- **Autre** : prévois les séances qui y mènent et, si ça se mesure, un moment pour le tester.`,
+  ].filter(Boolean).join('\n');
   return `
-${level} Objectifs chrono personnels
+${level} Objectifs personnels
 
 ${formatTargets(targets)}
 
-Ce ne sont pas des courses officielles : ce sont des records que je veux battre seul, à l'entraînement. Pour chaque objectif non atteint, prévois les séances qui y mènent et place un **test chronométré** (type \`race\`, titre du type « Test 5 km ») au moment où je peux raisonnablement le réussir — avant l'échéance s'il y en a une, en arrivant reposé (pas de séance dure les 2 jours avant). Si un objectif te paraît irréaliste dans le délai, dis-le dans la SYNTHESE et propose un palier intermédiaire. Un objectif déjà atteint sert de repère pour mes allures.
+Ce ne sont pas des courses ou des compétitions officielles : ce sont des objectifs que je veux atteindre à l'entraînement.
+${rules}
+Respecte les échéances quand il y en a. Si un objectif te paraît irréaliste dans le délai, dis-le dans la SYNTHESE et propose un palier intermédiaire. Un objectif déjà atteint sert de repère (allures, charges).
 
 `;
+}
+
+// Types valides et consignes de description selon mes sports : pas de côtes ni
+// d'allures pour qui ne court pas, pas de types salle pour qui n'y va pas.
+function sessionRules(meta) {
+  const run = doesRun(), gym = doesGym();
+  const chronoTarget = getTargets(meta).some(t => t.kind === 'chrono' && !t.achieved);
+  const lines = ['Types de séance valides :'];
+  if (run) lines.push('- course à pied : `easy` (endurance), `long` (sortie longue), `intervals` (fractionné), `tempo` (seuil), `hills` (côtes), `race` (course ou test chronométré)');
+  else if (chronoTarget) lines.push('- `race` : test chronométré');
+  if (gym) lines.push('- salle : `gym` (musculation), `cardio` (cardio continu : tapis, vélo, elliptique, rameur), `hiit` (HIIT / circuit), `mobility` (mobilité, étirements, yoga), `class` (cours collectif)');
+  lines.push('- toujours : `strength` (renforcement / PPG, au poids du corps ou petit matériel), `cross` (autre sport : badminton, vélo, natation… — mes activités récurrentes en général), `rest` (repos)');
+  lines.push('Colonne {volume} de chaque semaine : en km si la semaine comporte de la course à pied (ex : `18km`), sinon le nombre de séances (ex : `4 séances`) ou la durée totale (ex : `3h30`).');
+  if (gym) lines.push('Pour une séance de musculation, la description liste les exercices avec séries × répétitions, charge (ou RPE) et temps de repos — ex : « Squat 4×8 à 40 kg, repos 2 min ; Fentes 3×10 par jambe… ». Varie les groupes musculaires sur la semaine et prévois une progression des charges.');
+  return lines.join('\n');
 }
 
 function buildInitialPrompt(meta, athlete) {
   const todayStr = today();
   const a = athlete || {};
 
-  return `Tu es un coach expert en préparation physique tous sports. Génère un plan d'entraînement générique complet et personnalisé, qui n'est PAS lié à une course spécifique — c'est un plan de fond qui intègre mes activités récurrentes actuelles et fait progresser des qualités précises (ex : fractionné, sprint, endurance) sur plusieurs semaines.
+  return `Tu es un coach expert en préparation physique tous sports. Génère un plan d'entraînement générique complet et personnalisé, qui n'est PAS lié à une course spécifique — c'est un plan de fond qui intègre mes activités récurrentes actuelles et fait progresser des qualités précises (endurance, vitesse, force, composition corporelle…) sur plusieurs semaines.
 
 ### Profil athlète
 
@@ -184,6 +210,7 @@ function buildInitialPrompt(meta, athlete) {
 - Accès équipements : ${a.equipment || '[à compléter]'}
 - Terrain local : ${a.terrain || '[à compléter]'}
 - Pathologies / points de vigilance : ${a.pathologies || 'Aucun'}
+- Sports pratiqués : ${sportsSummary(a)}
 - Objectifs secondaires : ${a.goals || 'Aucun'}
 
 ### Activités actuelles et récurrentes
@@ -194,7 +221,7 @@ ${meta.context || '[à compléter — ex : Badminton le mercredi soir, 1x/semain
 
 ${meta.goals || '[à compléter — ex : 2 séances de fractionné/sprint en plus par semaine]'}
 
-${targetsSection(meta, '###')}### Paramètres du bloc
+${targetsSection(meta, '###')}${bodyPromptSection('###')}### Paramètres du bloc
 
 - Date de début du plan : ${meta.startDate || '[à compléter — toujours un lundi]'}
 - Durée souhaitée du bloc : ${meta.blockWeeks ? meta.blockWeeks + ' semaines' : '[à compléter]'}
@@ -224,12 +251,10 @@ generated: ${todayStr}
 
 ## SEMAINES
 
-### S{NN} | {date début}-{date fin} {mois} {année} | {phase-id} | {volume}km | {note courte}
+### S{NN} | {date début}-{date fin} {mois} {année} | {phase-id} | {volume} | {note courte}
 | Jour | Date | Type | Titre | Description |
 |---|---|---|---|---|
 | {Lundi/Mardi/…} | {YYYY-MM-DD} | {type} | {Titre court} | {Description détaillée} |
-
-Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
 
 {Répéter pour toutes les semaines}
 
@@ -239,9 +264,9 @@ Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
 
 **Règles importantes :**
 - Calcule les dates exactes à partir de \`plan_start\` (toujours un lundi)
-- Chaque séance a une description détaillée avec allures/durées/répétitions précises
+- Chaque séance a une description détaillée avec intensités (allures, charges), durées et répétitions précises
+${sessionRules(meta)}
 - N'inclus que les jours avec séances (pas les jours vides)
-- Pour PPG : type = \`strength\`, pour une activité récurrente type badminton/vélo/natation : type = \`cross\`
 `;
 }
 
@@ -325,13 +350,14 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 - Équipements : ${a.equipment || 'Non renseigné'}
 - Terrain local : ${a.terrain || 'Non renseigné'}
 - Pathologies : ${a.pathologies || 'Aucune'}
+- Sports pratiqués : ${sportsSummary(a)}
 - Objectifs secondaires : ${a.goals || 'Aucun'}
 
 ## Contexte du plan général
 
 - Activités récurrentes déclarées : ${meta.context || 'Non renseigné'}
 - Objectifs de ce bloc : ${meta.goals || 'Non renseigné'}
-${targetsSection(meta, '##')}
+${targetsSection(meta, '##')}${bodyPromptSection('##')}
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks[plan.weeks.length - 1]?.number || plan.weeks.length}
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}
@@ -371,7 +397,7 @@ generated: ${todayStr}
 
 ## SEMAINES
 
-### S{NN} | {date début}-{date fin} {mois} {année} | {phase-id} | {volume}km | {note}
+### S{NN} | {date début}-{date fin} {mois} {année} | {phase-id} | {volume} | {note}
 | Jour | Date | Type | Titre | Description |
 |---|---|---|---|---|
 
@@ -379,7 +405,7 @@ generated: ${todayStr}
 [bilan du bloc précédent, ajustements pour le nouveau bloc]
 \`\`\`
 
-Types de séance valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
+${sessionRules(meta)}
 (Dans le bilan, les types bike, badminton, swim, hike et other désignent des activités que l'athlète a faites à la place de la séance prévue. Ne les utilise pas dans le plan généré : une séance de vélo ou de badminton s'écrit \`cross\`.)
 IDs de session : s{NN}-{daycode} (ex: s01-mon, s03-thu)
 `;

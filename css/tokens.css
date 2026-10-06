@@ -29,6 +29,12 @@
   --type-race: #FF3B30;
   --type-strength: #5856D6;
   --type-cross: #30B0C7;
+  /* Salle */
+  --type-gym: #8E44AD;
+  --type-cardio: #E8436E;
+  --type-hiit: #C0392B;
+  --type-mobility: #16A085;
+  --type-class: #D35400;
   /* Activités concrètes (remplacements sur le plan général uniquement) */
   --type-bike: #FF2D55;
   --type-badminton: #D99A00;

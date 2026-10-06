@@ -1,6 +1,6 @@
-import { TYPE_INFO } from './utils/session-types.js';
+import { TYPE_INFO, PLAN_TYPES } from './utils/session-types.js';
 
-const SESSION_TYPES = new Set(['rest','easy','long','intervals','tempo','hills','race','strength','cross']);
+const SESSION_TYPES = new Set(PLAN_TYPES);
 const DAY_CODE = { lundi:'mon', mardi:'tue', mercredi:'wed', jeudi:'thu', vendredi:'fri', samedi:'sat', dimanche:'sun' };
 
 export function parsePlan(markdown) {
@@ -120,7 +120,10 @@ function parseWeeks(content) {
 
     const dateRange   = hParts[1];
     const phaseId     = hParts[2];
-    const volStr      = hParts[3].replace(/km/i, '').trim();
+    // Volume libre : « 12km » (course), « 4 séances », « 3h30 »… Un nombre seul
+    // vaut des km, comme avant. targetVolumeKm reste 0 hors km.
+    const volRaw      = hParts[3].trim();
+    const kmMatch     = volRaw.match(/^(\d+(?:[.,]\d+)?)\s*(?:km)?$/i);
     const note        = hParts[4];
     const isDecharge  = /d.charge/i.test(note);
 
@@ -130,7 +133,8 @@ function parseWeeks(content) {
       number: weekNum,
       dateRange,
       phaseId,
-      targetVolumeKm: parseFloat(volStr) || 0,
+      targetVolumeKm: kmMatch ? parseFloat(kmMatch[1].replace(',', '.')) : 0,
+      volumeLabel:    kmMatch ? `${kmMatch[1]} km` : (volRaw === '-' ? '' : volRaw),
       note,
       isDecharge,
       sessions
