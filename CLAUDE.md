@@ -33,7 +33,7 @@ pacing-app/
 │   │   ├── lock.js                 # Écran password + déchiffrement PAT
 │   │   ├── home.js                 # Accueil générique : séance du jour + course en préparation (si active)
 │   │   ├── courses.js              # Liste des événements + bouton Créer (route /courses)
-│   │   ├── global-nav.js           # Menu du bas commun (Accueil/Courses/Entraînement/Réglages), mobile only
+│   │   ├── global-nav.js           # Menu du bas commun (Accueil/Entraînement/Courses/Réglages), mobile only
 │   │   ├── sidebar.js              # Sidebar desktop (événements, séance du jour, nouvel événement)
 │   │   ├── event.js                # Container événement (onglets)
 │   │   ├── plan-view.js            # Plan semaines/séances + checkboxes + état manquée (skipped) — réutilisé par routine.js
@@ -44,6 +44,7 @@ pacing-app/
 │   │   ├── gpx-modal.js            # Profil altimétrique plein écran (pivoté en paysage sur mobile)
 │   │   ├── event-closure.js        # Clôture d'un événement quand la séance de course est cochée
 │   │   ├── race-result-modal.js    # Saisie du résultat proposée juste après la clôture
+│   │   ├── onboarding.js           # Tutoriel de prise en main (pages à faire défiler)
 │   │   ├── session-view.js         # Détail d'une séance + note (courses et plan général)
 │   │   ├── settings.js             # Formulaire profil athlète (stocké dans athlete.json), route /settings
 │   │   ├── new-event.js            # Formulaire création d'un nouvel événement
@@ -83,7 +84,7 @@ pacing-app/
 
 ## Navigation
 
-Menu du bas commun (mobile) / sidebar (desktop) à 4 sections racines : **Accueil** (`/`), **Courses** (`/courses`), **Entraînement** (`/routine`), **Réglages** (`/settings`). Un seul menu/tab-bar visible à la fois : les sections avec leurs propres sous-onglets (`/event/:slug/*`, `/routine/*`) remplacent le menu global par leur propre barre — cohérent avec le pattern déjà utilisé par `event.js`.
+Menu du bas commun (mobile) / sidebar (desktop) à 4 sections racines : **Accueil** (`/`), **Entraînement** (`/routine`), **Courses** (`/courses`), **Réglages** (`/settings`). Un seul menu/tab-bar visible à la fois : les sections avec leurs propres sous-onglets (`/event/:slug/*`, `/routine/*`) remplacent le menu global par leur propre barre — cohérent avec le pattern déjà utilisé par `event.js`.
 
 **Accueil (`home.js`)** : contextuel — séance du jour (tous plans confondus), puis ce qu'on prépare en ce moment : la carte « Course en préparation » si une course a un plan actif couvrant aujourd'hui, **sinon** la carte « Entraînement en cours » du plan général (semaine, séances faites, phase, prochaine séance — `getRoutineProgress`). Jamais les deux : le plan général est en pause pendant une prépa. La liste complète des événements vit dans `/courses`. Sur desktop, la sidebar a une rubrique « Entraînement » avant « Mes courses ».
 
@@ -106,6 +107,7 @@ GitHub repo
 **Auth** : PAT GitHub chiffré AES-GCM (PBKDF2) dans `config.json`. Plus de mot de passe en dur : `config.json` liste les utilisateurs (`users: [{ name, dataPath, encryptedToken }]`), chacun avec le PAT chiffré par **son** mot de passe ; à la connexion, `findUserByPassword` (utils/users.js) essaie chaque entrée, celle qui se déchiffre désigne l'utilisateur. Le format historique (un seul `encryptedToken`, données à la racine) reste lu, et `encryptedToken` au premier niveau est conservé pour le premier utilisateur. Jamais en clair dans le repo ni dans localStorage.  
 **Données par utilisateur** : `dataPath` = `''` pour le premier (données à la racine, comme avant), `users/<prenom>` pour les suivants. `configure({ …, dataPath })` préfixe toutes les lectures/écritures de `github-api.js` ; seul `config.json` s'adresse à la racine (`{ root: true }`).  
 **Ajout d'un utilisateur** : Réglages → Compte → « Ajouter un utilisateur » (`addUser` dans store.js) : crée `users/<prenom>/` (events/index.json vide, state.json, athlete.json) puis l'entrée dans `config.json`, avec le PAT de la session courante chiffré par le nouveau mot de passe (chiffres uniquement, ≥ 6 : l'écran de connexion montre le pavé numérique). Un mot de passe déjà pris est refusé. Connexion possible après redéploiement de GitHub Pages (config.json est servi par le site). **Limite** : si le PAT est renouvelé, `setup.html` ne régénère que l'entrée historique — les autres utilisateurs devront être recréés (leurs mots de passe ne sont connus que d'eux).  
+**Tutoriel de prise en main** (`onboarding.js`) : 7 pages à faire glisser (défilement horizontal natif en `scroll-snap`, piloté aussi par Suivant, les points et les flèches du clavier) — profil, entraînement général, prompt → Claude → import, course, usage quotidien, révisions. S'ouvre à la première connexion d'un utilisateur **ajouté** : `addUser` pose `onboardingPending: true` dans son `state.json`, retiré à la fermeture (`completeOnboarding`). Jamais d'office pour le premier utilisateur. Rejouable depuis Réglages → « Revoir le tutoriel ». Les boutons de la dernière page vivent dans la barre du bas, hors de la zone qui défile, pour ne jamais être rognés sur petit écran. Le texte décrit les vrais noms d'écrans et de boutons : à mettre à jour si on les renomme.  
 **Session app** : `sessionStorage` (`pacing_auth`, `pacing_pat`, `pacing_data_path`, `pacing_user`) pour la durée de la session ; « Se déconnecter » dans Réglages la vide.  
 **Nouveau device** : aucune config à faire — le PAT est dans `config.json` (repo public), déchiffré automatiquement au login.  
 **`setup.html`** : page standalone pour générer un nouveau `config.json` (nouveau PAT ou changement de repo).

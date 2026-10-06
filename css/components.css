@@ -2277,3 +2277,207 @@ select.form-input {
   margin-right: 2px;
 }
 .week-swapbtn:active { opacity: 0.5; }
+
+/* ─── Tutoriel de prise en main ───────────────────────────────── */
+
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-grouped);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.onboarding__top {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-4) 0;
+  flex-shrink: 0;
+}
+.onboarding__skip {
+  font-size: 16px;
+  color: var(--ios-blue);
+  padding: var(--space-2);
+}
+
+/* Défilement horizontal natif, une page par cran */
+.onboarding__track {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.onboarding__track::-webkit-scrollbar { display: none; }
+
+/* Chaque page fait exactement la largeur de l'écran (sinon le défilement
+   cran par cran se décale) ; le contenu est recentré par le padding sur les
+   grands écrans. */
+.onboarding__page {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  overflow-y: auto;
+  padding: var(--space-4) max(var(--space-6), calc(50% - 280px)) var(--space-6);
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding__icon {
+  font-size: 56px;
+  line-height: 1;
+  margin: var(--space-4) 0 var(--space-4);
+  text-align: center;
+}
+.onboarding__title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  text-align: center;
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+}
+.onboarding__body {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.onboarding__body p { margin: 0; }
+.onb-muted { color: var(--text-secondary); font-size: 14px; }
+
+.onb-path {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-self: center;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;   /* reste net s'il passe sur deux lignes */
+  background: var(--bg-card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ios-blue);
+  box-shadow: var(--shadow-card);
+}
+.onb-path__sep { color: var(--text-tertiary); font-weight: 400; }
+
+.onb-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+}
+.onb-steps__item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+.onb-steps__num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ios-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onb-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.onb-field {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 0.5px solid var(--separator);
+}
+.onb-field:last-child { border-bottom: none; }
+.onb-field span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+}
+.onb-field em { font-style: normal; font-size: 15px; color: var(--text-tertiary); }
+
+.onb-demo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+}
+.onb-demo__text { flex: 1; font-size: 15px; }
+.onb-demo__text small { color: var(--text-secondary); font-size: 12px; }
+.onb-demo .skipbox { opacity: 1; }
+
+.onboarding__bottom {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) max(var(--space-4), calc(50% - 280px)) var(--space-4);
+}
+.onboarding__final {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.onboarding__final[hidden] { display: none; }
+.onboarding__navrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Écrans courts (iPhone SE, mini) : on resserre l'en-tête de page */
+@media (max-height: 700px) {
+  .onboarding__icon  { font-size: 40px; margin: var(--space-2) 0 var(--space-3); }
+  .onboarding__title { font-size: 22px; margin-bottom: var(--space-3); }
+  .onboarding__body  { font-size: 15px; gap: var(--space-2); }
+}
+.onboarding__nav {
+  min-width: 44px;
+  height: 44px;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ios-blue);
+}
+.onboarding__nav--next {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 0 var(--space-4);
+  border-radius: 999px;
+  background: var(--ios-blue);
+  color: #fff;
+}
+.onboarding__dots { display: flex; gap: 8px; }
+.onboarding__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray-3, #C7C7CC);
+  transition: width var(--duration-fast, .15s), background var(--duration-fast, .15s);
+}
+.onboarding__dot--active { width: 22px; border-radius: 4px; background: var(--ios-blue); }

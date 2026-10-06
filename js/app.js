@@ -8,7 +8,8 @@ import { mount as mountSession }               from './views/session-view.js';
 import { mount as mountSettings }             from './views/settings.js';
 import { mount as mountNewEvent }             from './views/new-event.js';
 import { mount as mountRoutine }              from './views/routine.js';
-import { initStore, ROUTINE_SLUG }             from './store.js';
+import { initStore, ROUTINE_SLUG, isOnboardingPending, completeOnboarding } from './store.js';
+import { openOnboarding }                      from './views/onboarding.js';
 import { configure }                           from './github-api.js';
 import { showToast as _showToast }             from './toast.js';
 import { mountSidebar }                        from './views/sidebar.js';
@@ -89,6 +90,11 @@ async function boot() {
 
   window.addEventListener('hashchange', () => route());
   await route();
+
+  // Première connexion d'un utilisateur ajouté : tutoriel de prise en main.
+  if (isOnboardingPending()) {
+    openOnboarding({ name: getSession().name, onDone: completeOnboarding });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', boot);

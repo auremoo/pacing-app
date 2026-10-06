@@ -502,6 +502,20 @@ export async function getRaceStrategy(slug) {
   return file?.content || null;
 }
 
+// ── Tutoriel de prise en main ────────────────────────────────────────
+// Montré une fois aux utilisateurs ajoutés (marqueur posé par addUser dans leur
+// state.json), jamais d'office au premier utilisateur, déjà installé.
+
+export function isOnboardingPending() {
+  return _state.onboardingPending === true;
+}
+
+export function completeOnboarding() {
+  if (!_state.onboardingPending) return;
+  delete _state.onboardingPending;
+  scheduleSyncState();
+}
+
 // ── Utilisateurs ────────────────────────────────────────────────────
 // Ajoute une personne : son dossier de données vierge (aucune course, pas de
 // plan général, profil vide) puis son entrée dans config.json, avec le token de
@@ -521,7 +535,8 @@ export async function addUser({ name, password, currentName }) {
 
   const starters = {
     'events/index.json': { events: [] },
-    'state.json':        { version: 2, events: {} },
+    // onboardingPending : le tutoriel s'ouvre à sa première connexion.
+    'state.json':        { version: 2, events: {}, onboardingPending: true },
     'athlete.json':      {},
   };
   for (const [file, content] of Object.entries(starters)) {

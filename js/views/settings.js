@@ -1,6 +1,7 @@
 import { showToast } from '../app.js';
 import { getAthleteProfile, saveAthleteProfile, addUser, getUsersConfig } from '../store.js';
 import { getSession, clearSession, listUsers } from '../utils/users.js';
+import { openOnboarding } from './onboarding.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 
 export function mount(container) {
@@ -115,6 +116,12 @@ function render(container) {
             <button class="btn btn--secondary" id="add-user-cancel" style="flex:1">Annuler</button>
           </div>
         </div>
+        <div class="list-row" id="replay-onboarding-btn" style="cursor:pointer">
+          <div class="list-row__content">
+            <div class="list-row__title" style="color:var(--ios-blue)">Revoir le tutoriel</div>
+            <div class="list-row__subtitle">Comment mettre en place profil, plans et courses</div>
+          </div>
+        </div>
         <div class="list-row" id="logout-btn" style="cursor:pointer">
           <div class="list-row__content">
             <div class="list-row__title" style="color:var(--ios-red)">Se déconnecter</div>
@@ -225,6 +232,10 @@ function wireAccount(container) {
       save.disabled = false;
       save.textContent = 'Créer';
     }
+  });
+
+  container.querySelector('#replay-onboarding-btn').addEventListener('click', () => {
+    openOnboarding({ name: getSession().name });
   });
 
   container.querySelector('#logout-btn').addEventListener('click', () => {

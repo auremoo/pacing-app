@@ -4,8 +4,8 @@
 
 const TABS = [
   { id: 'home',     label: 'Accueil',      path: '/',        icon: 'home'     },
-  { id: 'courses',  label: 'Courses',      path: '/courses', icon: 'courses'  },
   { id: 'routine',  label: 'Entraînement', path: '/routine', icon: 'routine'  },
+  { id: 'courses',  label: 'Courses',      path: '/courses', icon: 'courses'  },
   { id: 'settings', label: 'Réglages',     path: '/settings', icon: 'settings' },
 ];
 
