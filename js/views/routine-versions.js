@@ -157,6 +157,36 @@ function targetsHint(meta) {
     </p>`;
 }
 
+// Programmes ou conseils reçus (coach, ami, réseaux), collés tels quels dans
+// Contexte : une source d'inspiration, jamais un plan à recopier — ils sont
+// souvent écrits pour un autre rythme (4 séances quand on en fait 3).
+function referencesSection(meta, level) {
+  const text = (meta.references || '').trim();
+  if (!text) return '';
+  return `
+${level} Programmes et conseils qu'on m'a donnés (exemples, à adapter)
+
+${text}
+
+Ce sont des exemples, pas des consignes à suivre à la lettre. Inspire-t'en (choix des exercices, répartition des groupes musculaires) mais adapte-les à mon niveau, à mes jours disponibles, au nombre de séances visé — un programme pensé pour 4 séances doit être recombiné sur mes séances réelles, sans en perdre l'essentiel — et à mes points de vigilance. Dis dans la SYNTHESE ce que tu as repris et ce que tu as changé.
+
+`;
+}
+
+// Séances faites avant le tout premier plan : seul le plan initial en a besoin,
+// ensuite les coches de l'app racontent ce qui a été fait.
+function recentDoneSection(meta) {
+  const text = (meta.recentDone || '').trim();
+  if (!text) return '';
+  return `### Ce que j'ai déjà fait récemment
+
+${text}
+
+Tiens-en compte pour démarrer le plan : la première semaine doit enchaîner avec ces séances (récupération, pas les mêmes groupes musculaires le lendemain, séances déjà faites cette semaine à décompter).
+
+`;
+}
+
 // Objectifs perso : ce que je vise hors course officielle. Le plan doit y mener
 // et prévoir quand les tester ; la consigne dépend du type d'objectif.
 function targetsSection(meta, level) {
@@ -235,7 +265,7 @@ ${meta.context || '[à compléter — ex : Badminton le mercredi soir, 1x/semain
 
 ${meta.goals || '[à compléter — ex : 2 séances de fractionné/sprint en plus par semaine]'}
 
-${targetsSection(meta, '###')}${bodyPromptSection('###')}### Paramètres du bloc
+${referencesSection(meta, '###')}${recentDoneSection(meta)}${targetsSection(meta, '###')}${bodyPromptSection('###')}### Paramètres du bloc
 
 - Date de début du plan : ${meta.startDate || '[à compléter — toujours un lundi]'}
 - Durée souhaitée du bloc : ${meta.blockWeeks ? meta.blockWeeks + ' semaines' : '[à compléter]'}
@@ -373,7 +403,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 
 - Activités récurrentes déclarées : ${meta.context || 'Non renseigné'}
 - Objectifs de ce bloc : ${meta.goals || 'Non renseigné'}
-${targetsSection(meta, '##')}${bodyPromptSection('##')}
+${referencesSection(meta, '##')}${targetsSection(meta, '##')}${bodyPromptSection('##')}
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks[plan.weeks.length - 1]?.number || plan.weeks.length}
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}

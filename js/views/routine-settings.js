@@ -41,6 +41,26 @@ function render(container) {
         </div>
       </div>
 
+      <p class="section-header">Programmes et conseils reçus</p>
+      <div class="card-group" style="margin:0 var(--space-4) var(--space-2)">
+        <div class="form-field">
+          <label class="form-label">À coller tel quel (facultatif)</label>
+          <textarea class="form-input form-textarea" id="f-references" rows="6"
+            placeholder="Ex : un programme donné par un coach ou un ami — LEGDAY 1 : hip thrust 3x8, fentes 3x8…">${esc(meta.references || '')}</textarea>
+        </div>
+      </div>
+      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Un exemple, pas une consigne : l'IA s'en inspire et l'adapte à ton niveau, tes jours et ton nombre de séances (un programme sur 4 jours condensé en 3, par exemple).</p>
+
+      <p class="section-header">Déjà fait récemment</p>
+      <div class="card-group" style="margin:0 var(--space-4) var(--space-2)">
+        <div class="form-field">
+          <label class="form-label">Tes dernières séances (facultatif)</label>
+          <textarea class="form-input form-textarea" id="f-recent-done" rows="4"
+            placeholder="Ex : lundi badminton 1h30 ; mardi salle : hip thrust 3x8, leg curl 3x12, gainage">${esc(meta.recentDone || '')}</textarea>
+        </div>
+      </div>
+      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Utile avant le premier plan : l'IA en tient compte pour la première semaine. Ensuite, ce sont tes coches qui parlent.</p>
+
       <p class="section-header">Objectifs perso</p>
       <div class="card-group" style="margin:0 var(--space-4) var(--space-2)" id="targets-list">
         ${(meta.targets || []).map(normalizeTarget).filter(Boolean).map(targetRow).join('')}
@@ -145,6 +165,8 @@ function render(container) {
     const updates = {
       context:    container.querySelector('#f-context').value.trim(),
       goals:      container.querySelector('#f-goals').value.trim(),
+      references: container.querySelector('#f-references').value.trim(),
+      recentDone: container.querySelector('#f-recent-done').value.trim(),
       blockWeeks: parseInt(weeksInput.value) || 0,
       startDate:  startInput.value,
       targets:    readTargets(targetsList),

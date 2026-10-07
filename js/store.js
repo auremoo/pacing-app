@@ -605,6 +605,8 @@ export async function createRoutine(settings) {
     context: settings.context || '',
     goals: settings.goals || '',
     targets: settings.targets || [],
+    references: settings.references || '',
+    recentDone: settings.recentDone || '',
     blockWeeks: parseInt(settings.blockWeeks) || 0,
     startDate: settings.startDate || '',
     activeVersion: null,

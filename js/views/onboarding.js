@@ -53,7 +53,7 @@ function pages(name) {
         <p>Ton plan de tous les jours, quand tu ne prépares pas de course précise.</p>
         <ol class="onb-steps">
           ${STEP(1, '<strong>Activités récurrentes</strong> : ce que tu fais déjà (badminton le lundi, vélo…)')}
-          ${STEP(2, '<strong>Ce que tu veux travailler</strong> : endurance, vitesse, reprise…')}
+          ${STEP(2, '<strong>Ce que tu veux travailler</strong>, et un programme reçu à coller si tu en as un')}
           ${STEP(3, '<strong>Objectifs perso</strong> (facultatif) : un chrono (5 km en 24\'30) ou une allure (4\'40/km), une charge, un poids… Sans date, l\'IA choisit quand le tenter')}
           ${STEP(4, '<strong>Début et durée</strong> du bloc, puis «&nbsp;Enregistrer&nbsp;»')}
         </ol>`,
