@@ -2,5 +2,14 @@
   "sports": [
     "gym"
   ],
-  "trackWeight": false
+  "trackWeight": false,
+  "level": "Débutante en salle de sport (exercices à la maison avant)",
+  "perfs": "Séance 1 abdos-fessiers avec 5 machines fessiers et gainage abdos",
+  "volume": "2 à 3 séances idéalement et en plus, badminton une fois par semaine",
+  "days": "Mardi, mercredi, jeudi, vendredi",
+  "equipment": "Salle de sport très équipée (On Air Fitness)",
+  "terrain": "Lyon On Air Fitness Cordeliers",
+  "pathologies": "Légère scoliose et douleurs épaule droite mais à renforcer",
+  "goals": "Gagner en force jambes fessiers et haut du corps. Tonifier, galber et améliorer posture",
+  "otherSports": ""
 }
