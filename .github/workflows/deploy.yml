@@ -3,6 +3,18 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # Les données des utilisateurs (coches, profil, pesées, plans importés) sont
+    # lues et écrites par l'API GitHub, jamais via le site publié : les écrire ne
+    # doit pas redéployer. Sinon chaque coche lançait un déploiement, et ces
+    # déploiements s'embouteillaient (bloqués en « waiting », échecs sans tâche).
+    # config.json, lui, est servi par le site : il redéploie toujours.
+    paths-ignore:
+      - 'state.json'
+      - 'athlete.json'
+      - 'body.json'
+      - 'events/**'
+      - 'routine/**'
+      - 'users/**'
   workflow_dispatch:
 
 permissions:
