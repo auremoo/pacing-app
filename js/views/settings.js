@@ -2,7 +2,7 @@ import { showToast } from '../app.js';
 import { getAthleteProfile, saveAthleteProfile, addUser, getUsersConfig, setInviteCode, flushSync } from '../store.js';
 import { getSession, clearSession, listUsers, hasInvite } from '../utils/users.js';
 import { openOnboarding } from './onboarding.js';
-import { SPORTS, getSports, doesRun } from '../utils/sports.js';
+import { SPORTS, GYM_LEVELS, getSports, doesRun, gymLevel } from '../utils/sports.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 
 export function mount(container) {
@@ -32,7 +32,15 @@ function render(container) {
             <div class="list-row__subtitle">${s.hint}</div>
           </div>
           <input type="checkbox" class="ios-switch" data-sport="${s.id}" ${sports.includes(s.id) ? 'checked' : ''}>
-        </label>`).join('')}
+        </label>
+        ${s.id === 'gym' ? `
+        <div class="form-field" id="gym-level-field" ${sports.includes('gym') ? '' : 'hidden'}>
+          <label class="form-label" for="f-gym-level">Ton niveau en salle</label>
+          <select class="form-input" id="f-gym-level">
+            ${GYM_LEVELS.map(l => `<option value="${l.id}" ${l.id === gymLevel(p) ? 'selected' : ''}>${l.label}</option>`).join('')}
+          </select>
+          <div class="type-picker__hint" id="gym-level-hint" style="padding:var(--space-1) 0 0">${GYM_LEVELS.find(l => l.id === gymLevel(p)).hint}</div>
+        </div>` : ''}`).join('')}
         <div class="form-field">
           <label class="form-label">Autres sports</label>
           <input class="form-input" id="f-other-sports" type="text"
@@ -204,18 +212,25 @@ function render(container) {
 
   // Les interrupteurs s'enregistrent tout de suite, comme sur iOS : le menu du
   // bas (onglet Courses) suit sans passer par « Enregistrer ».
-  container.querySelectorAll('.ios-switch').forEach(sw => sw.addEventListener('change', async () => {
+  const levelField = container.querySelector('#gym-level-field');
+  const levelSelect = container.querySelector('#f-gym-level');
+  levelSelect.addEventListener('change', () => {
+    container.querySelector('#gym-level-hint').textContent = GYM_LEVELS.find(l => l.id === levelSelect.value).hint;
+  });
+  container.querySelectorAll('.ios-switch, #f-gym-level').forEach(sw => sw.addEventListener('change', async () => {
     const updates = {
       sports:      [...container.querySelectorAll('[data-sport]')].filter(c => c.checked).map(c => c.dataset.sport),
       trackWeight: container.querySelector('#f-track-weight').checked,
+      gymLevel:    levelSelect.value,
     };
+    levelField.hidden = !updates.sports.includes('gym');
     try {
       await saveAthleteProfile({ ...getAthleteProfile(), ...updates });
       const bar = container.querySelector('.global-tab-bar');
       if (bar) { bar.outerHTML = renderGlobalTabBar('settings'); attachGlobalTabBar(container); }
       window.dispatchEvent(new CustomEvent('pacing:profile-changed'));
     } catch (err) {
-      sw.checked = !sw.checked;
+      if (sw.type === 'checkbox') sw.checked = !sw.checked;
       showToast('Erreur : ' + err.message, 'error');
     }
   }));
@@ -235,6 +250,7 @@ function render(container) {
       sports:      [...container.querySelectorAll('[data-sport]')].filter(c => c.checked).map(c => c.dataset.sport),
       otherSports: container.querySelector('#f-other-sports').value.trim(),
       trackWeight: container.querySelector('#f-track-weight').checked,
+      gymLevel:    container.querySelector('#f-gym-level').value,
     };
     try {
       await saveAthleteProfile({ ...getAthleteProfile(), ...profile });

@@ -7,7 +7,7 @@ import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurr
 import { typeName } from '../utils/session-types.js';
 import { withFileDeliverable } from '../utils/prompt-output.js';
 import { getTargets, formatTargets, targetText } from '../utils/routine-context.js';
-import { doesRun, doesGym, sportsSummary } from '../utils/sports.js';
+import { doesRun, doesGym, gymLevel, GYM_LEVELS, sportsSummary } from '../utils/sports.js';
 import { bodyPromptSection } from '../utils/body.js';
 
 export function mount(container) {
@@ -165,6 +165,7 @@ function targetsSection(meta, level) {
   const kinds = new Set(targets.filter(t => !t.achieved).map(t => t.kind));
   const rules = [
     kinds.has('chrono') && `- **Chrono** : prévois les séances qui y mènent et place un test chronométré (type \`race\`, titre du type « Test 5 km ») au moment où je peux raisonnablement le réussir, en arrivant reposé (pas de séance dure les 2 jours avant).${targets.some(t => t.kind === 'chrono' && t.measure === 'pace' && !t.achieved) ? ` Pour un objectif d'allure, cale les allures des séances pour y arriver ; si la distance n'est pas précisée, choisis une distance de test pertinente et indique-la.` : ''}`,
+    kinds.has('renfo')  && `- **Renfo** : traduis chaque zone ou but en exercices adaptés à mon niveau et en progression ; donne-moi un repère simple pour voir mes progrès (ex : charge ou répétitions sur un exercice clé), noté dans la SYNTHESE.`,
     kinds.has('force')  && `- **Force** : progression de charge sur l'exercice visé (et ses exercices d'assistance), puis un test (type \`gym\`, titre du type « Test squat »), en arrivant reposé.`,
     kinds.has('poids')  && `- **Poids** : organise l'entraînement pour y contribuer (perte : volume d'activité et maintien de la masse musculaire ; prise de masse : priorité à la musculation, cardio modéré) et donne dans la SYNTHESE quelques repères généraux de nutrition, sans régime strict. Rythme raisonnable, pas de promesse irréaliste.`,
     kinds.has('autre')  && `- **Autre** : prévois les séances qui y mènent et, si ça se mesure, un moment pour le tester.`,
@@ -183,6 +184,18 @@ Respecte les échéances quand il y en a. **Sans échéance, c'est à toi de cho
 
 // Types valides et consignes de description selon mes sports : pas de côtes ni
 // d'allures pour qui ne court pas, pas de types salle pour qui n'y va pas.
+// Séances de salle selon le niveau déclaré dans Réglages → Mes sports.
+const GYM_RULES = {
+  beginner: `**Séances de salle — je débute et je ne connais pas les exercices.** C'est à toi de les choisir : je ne saurai pas quoi faire avec « travaille les jambes ». Pour chaque séance de musculation :
+- 4 à 6 exercices, de préférence sur machines guidées ou des mouvements simples, échauffement et retour au calme compris, 1h maximum ;
+- pour chaque exercice, dans la description : son nom courant (et le nom de la machine s'il y en a une), comment le faire en une phrase, l'erreur à éviter, séries × répétitions, temps de repos, et une charge de départ décrite simplement (« légère : tu dois pouvoir faire encore 2-3 répétitions à la fin de chaque série ») plutôt qu'en kilos ;
+- garde les mêmes exercices plusieurs semaines pour que je les apprenne, progression douce (répétitions puis charge) ;
+- tiens compte de mes pathologies / points de vigilance : écarte ou adapte les exercices à risque, et dis-le dans la description ;
+- ajoute dans la SYNTHESE un petit lexique des exercices du plan.`,
+  intermediate: 'Pour une séance de musculation, la description liste les exercices avec séries × répétitions, charge (ou RPE) et temps de repos — ex : « Squat 4×8 à 40 kg, repos 2 min ; Fentes 3×10 par jambe… ». Varie les groupes musculaires sur la semaine et prévois une progression des charges.',
+  advanced: 'Pour une séance de musculation, la description liste les exercices avec séries × répétitions, charge (kg, %1RM ou RPE), tempo si utile et temps de repos. Programmation structurée : répartition des groupes musculaires sur la semaine, progression des charges, décharge toutes les 4-6 semaines.',
+};
+
 function sessionRules(meta) {
   const run = doesRun(), gym = doesGym();
   const chronoTarget = getTargets(meta).some(t => t.kind === 'chrono' && !t.achieved);
@@ -192,7 +205,7 @@ function sessionRules(meta) {
   if (gym) lines.push('- salle : `gym` (musculation), `cardio` (cardio continu : tapis, vélo, elliptique, rameur), `hiit` (HIIT / circuit), `mobility` (mobilité, étirements, yoga), `class` (cours collectif)');
   lines.push('- toujours : `strength` (renforcement / PPG, au poids du corps ou petit matériel), `cross` (autre sport : badminton, vélo, natation… — mes activités récurrentes en général), `rest` (repos)');
   lines.push('Colonne {volume} de chaque semaine : en km si la semaine comporte de la course à pied (ex : `18km`), sinon le nombre de séances (ex : `4 séances`) ou la durée totale (ex : `3h30`).');
-  if (gym) lines.push('Pour une séance de musculation, la description liste les exercices avec séries × répétitions, charge (ou RPE) et temps de repos — ex : « Squat 4×8 à 40 kg, repos 2 min ; Fentes 3×10 par jambe… ». Varie les groupes musculaires sur la semaine et prévois une progression des charges.');
+  if (gym) lines.push(GYM_RULES[gymLevel()]);
   return lines.join('\n');
 }
 
@@ -211,7 +224,7 @@ function buildInitialPrompt(meta, athlete) {
 - Accès équipements : ${a.equipment || '[à compléter]'}
 - Terrain local : ${a.terrain || '[à compléter]'}
 - Pathologies / points de vigilance : ${a.pathologies || 'Aucun'}
-- Sports pratiqués : ${sportsSummary(a)}
+- Sports pratiqués : ${sportsSummary(a)}${doesGym(a) ? `\n- Niveau en salle : ${GYM_LEVELS.find(l => l.id === gymLevel(a)).label} — ${GYM_LEVELS.find(l => l.id === gymLevel(a)).hint}` : ''}
 - Objectifs secondaires : ${a.goals || 'Aucun'}
 
 ### Activités actuelles et récurrentes
@@ -353,7 +366,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 - Équipements : ${a.equipment || 'Non renseigné'}
 - Terrain local : ${a.terrain || 'Non renseigné'}
 - Pathologies : ${a.pathologies || 'Aucune'}
-- Sports pratiqués : ${sportsSummary(a)}
+- Sports pratiqués : ${sportsSummary(a)}${doesGym(a) ? `\n- Niveau en salle : ${GYM_LEVELS.find(l => l.id === gymLevel(a)).label} — ${GYM_LEVELS.find(l => l.id === gymLevel(a)).hint}` : ''}
 - Objectifs secondaires : ${a.goals || 'Aucun'}
 
 ## Contexte du plan général

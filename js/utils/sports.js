@@ -37,3 +37,20 @@ export function sportsSummary(profile = getAthleteProfile()) {
 export function showsCourses() {
   return doesRun() || getEventsIndex().length > 0;
 }
+
+// Niveau en salle (athlete.json → gymLevel), demandé seulement à qui va en salle.
+// Il règle ce que le plan explique et ce qu'on peut se fixer comme objectif :
+// - beginner : on ne connaît pas les exercices. Objectifs en mots simples
+//   (« fessiers et cuisses ») ; l'IA choisit les exercices et les explique.
+// - intermediate : vrais exercices, séries × répétitions × charges.
+// - advanced : idem, et objectifs « exercice + charge » qu'on se fixe soi-même.
+// Absent = débutant : c'est le cas de qui coche « Salle » sans y avoir réfléchi.
+export const GYM_LEVELS = [
+  { id: 'beginner',     label: 'Débutant·e',    hint: "Je n'y connais rien : l'IA choisit les exercices et les explique" },
+  { id: 'intermediate', label: 'Intermédiaire', hint: "Je connais les exercices de base : l'IA programme séries et charges" },
+  { id: 'advanced',     label: 'Confirmé·e',    hint: 'Je me fixe aussi mes propres objectifs de charge par exercice' },
+];
+
+export function gymLevel(profile = getAthleteProfile()) {
+  return GYM_LEVELS.some(l => l.id === profile?.gymLevel) ? profile.gymLevel : 'beginner';
+}

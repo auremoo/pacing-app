@@ -2,8 +2,8 @@ import { showToast, navigate } from '../app.js';
 import { getRoutineMeta, saveRoutineSettings } from '../store.js';
 import { today, addDays, weeksBetween } from '../utils/dates.js';
 import { getWeekMonday } from '../utils/plan-overrides.js';
-import { TARGET_DISTANCES, TARGET_KINDS, CHRONO_MEASURES, normalizeTarget, isTargetComplete } from '../utils/routine-context.js';
-import { doesRun, doesGym } from '../utils/sports.js';
+import { TARGET_DISTANCES, TARGET_KINDS, CHRONO_MEASURES, normalizeTarget, isTargetComplete, availableTargetKinds } from '../utils/routine-context.js';
+import { doesRun, doesGym, gymLevel } from '../utils/sports.js';
 
 export function mount(container) {
   render(container);
@@ -48,7 +48,7 @@ function render(container) {
       <div style="padding:0 var(--space-4) var(--space-1)">
         <button class="btn btn--ghost btn--full" id="add-target-btn" type="button">+ Ajouter un objectif</button>
       </div>
-      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Ce que tu aimerais atteindre, hors course officielle : un chrono (5 km en 24'30) ou une allure (4'40/km), une charge (squat 60 kg), un poids, ou autre chose. Le plan prévoira les séances et les tests qui y mènent ; sans date, c'est l'IA qui choisit quand, d'après ton niveau actuel. Modifiable à tout moment : la prochaine version du plan en tiendra compte.</p>
+      <p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-4)">Ce que tu aimerais atteindre, hors course officielle : un chrono (5 km en 24'30) ou une allure (4'40/km), une zone à renforcer (fessiers, posture), une charge (en niveau confirmé), un poids, ou autre chose. Le plan prévoira les séances et les tests qui y mènent ; sans date, c'est l'IA qui choisit quand, d'après ton niveau actuel. Modifiable à tout moment : la prochaine version du plan en tiendra compte.</p>
       <datalist id="target-distances">${TARGET_DISTANCES.map(d => `<option value="${esc(d)}">`).join('')}</datalist>
 
       <p class="section-header">Paramètres du bloc</p>
@@ -115,7 +115,7 @@ function render(container) {
   const syncTargetsVisibility = () => { targetsList.hidden = !targetsList.children.length; };
   syncTargetsVisibility();
   container.querySelector('#add-target-btn').addEventListener('click', () => {
-    const kind = doesRun() ? 'chrono' : doesGym() ? 'force' : 'poids';
+    const kind = doesRun() ? 'chrono' : doesGym() ? (gymLevel() === 'advanced' ? 'force' : 'renfo') : 'poids';
     targetsList.insertAdjacentHTML('beforeend', targetRow({ kind, measure: 'time', what: '', value: '', by: '', achieved: false }));
     syncTargetsVisibility();
     targetsList.lastElementChild.querySelector('.target-what, .target-value')?.focus();
@@ -180,7 +180,7 @@ function targetRow(t) {
     <div class="form-field target-row">
       <div class="target-row__head">
         <select class="form-input target-kind" aria-label="Type d'objectif">
-          ${Object.entries(TARGET_KINDS).map(([id, kk]) => `<option value="${id}" ${id === t.kind ? 'selected' : ''}>${kk.label}</option>`).join('')}
+          ${availableTargetKinds({ run: doesRun(), gym: doesGym(), level: gymLevel() }, t.kind).map(id => `<option value="${id}" ${id === t.kind ? 'selected' : ''}>${TARGET_KINDS[id].label}</option>`).join('')}
         </select>
         ${chrono ? `<select class="form-input target-measure" aria-label="Temps ou allure">
           ${Object.entries(CHRONO_MEASURES).map(([id, mm]) => `<option value="${id}" ${id === t.measure ? 'selected' : ''}>${mm.label}</option>`).join('')}

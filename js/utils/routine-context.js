@@ -23,6 +23,7 @@ export const TARGET_DISTANCES = ['5 km', '10 km', 'Semi-marathon', 'Marathon'];
 export const TARGET_KINDS = {
   chrono: { label: 'Chrono', what: 'Distance', whatPh: 'ex : 5 km', value: 'Temps visé',   valuePh: "ex : 24'30" },
   force:  { label: 'Force',  what: 'Exercice', whatPh: 'ex : Squat', value: 'Charge visée', valuePh: 'ex : 60 kg × 5' },
+  renfo:  { label: 'Renfo',  what: 'Zone ou but', whatPh: 'ex : fessiers et cuisses, posture', value: null, valuePh: '' },
   poids:  { label: 'Poids',  what: null,       whatPh: '',           value: 'Poids visé',   valuePh: 'ex : 58 kg' },
   autre:  { label: 'Autre',  what: 'Objectif', whatPh: "ex : 10 pompes d'affilée", value: null, valuePh: '' },
 };
@@ -62,6 +63,7 @@ export function targetText(t) {
       if (t.measure === 'pace') return what ? `${what} à ${withPaceUnit(value)}` : `Courir à ${withPaceUnit(value)} (distance à choisir)`;
       return `${what} en ${value}`;
     case 'force':  return `${what} : ${value}`;
+    case 'renfo':  return `Renforcer : ${what}`;
     case 'poids':  return `Atteindre ${value}`;
     default:       return what;
   }
@@ -131,4 +133,16 @@ export function buildRoutineSectionForRace(todayStr, { withRecent = true } = {})
   if (recent) parts.push(`**Ce que je faisais ces dernières semaines (plan général) :**\n${recent}`);
   if (targets.length) parts.push(`**Objectifs personnels (hors course officielle, pour information) :**\n${formatTargets(targets)}\n\nLa course reste la priorité. Si la préparation s'y prête, tu peux les servir au passage (un test chronométré, le renforcement qui va avec), sans nuire à la course.`);
   return parts.join('\n\n');
+}
+
+// Types d'objectif proposés dans le formulaire : chrono pour qui court, force
+// (exercice + charge) pour les confirmés en salle, renfo en mots simples pour
+// les autres. Un type déjà utilisé reste toujours proposé.
+export function availableTargetKinds({ run, gym, level }, current) {
+  return Object.keys(TARGET_KINDS).filter(k =>
+    k === current ||
+    (k === 'chrono' && run) ||
+    (k === 'force'  && gym && level === 'advanced') ||
+    (k === 'renfo'  && (gym || !run)) ||
+    k === 'poids' || k === 'autre');
 }
