@@ -1,4 +1,6 @@
 {
-  "sports": [],
+  "sports": [
+    "gym"
+  ],
   "trackWeight": false
 }
