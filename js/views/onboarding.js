@@ -120,7 +120,7 @@ function pages(name) {
       title: '7. Faire évoluer le plan',
       body: `
         ${PATH(['Versions', '✦ Générer un prompt de révision'])}
-        <p>Quand la vie s'en mêle, Claude reprend ce que tu as <strong>vraiment</strong> fait et réajuste les semaines suivantes.</p>
+        <p>Quand la vie s'en mêle, Claude reprend ce que tu as <strong>vraiment</strong> fait et réajuste la suite, avec tes <strong>réglages</strong> (plus de sorties longues…).</p>
         <p>En fin de préparation, l'onglet <strong>Stratégie</strong> de la course prépare ton plan de course. Et quand tu coches la course, l'app te propose de noter ton chrono.</p>
         <p class="onb-muted">Ce tutoriel reste disponible dans Réglages.</p>`,
       final: true,

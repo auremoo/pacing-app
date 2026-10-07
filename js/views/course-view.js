@@ -94,6 +94,7 @@ function renderGeneralInfo(meta) {
           ${meta?.planStart ? infoRow('Début du plan', meta.planStart) : ''}
           ${meta?.planWeeks ? infoRow('Durée du plan', `${meta.planWeeks} semaines`) : ''}
           ${meta?.additionalContext ? infoRow('Contexte supplémentaire', escHtml(meta.additionalContext)) : ''}
+          ${meta?.references ? infoRow('Programmes et conseils reçus', 'renseignés — repris dans les prompts') : ''}
           <div class="list-row" id="edit-general-btn" style="cursor:pointer">
             <div class="list-row__content">
               <div class="list-row__title" style="color:var(--ios-blue)">Modifier ces infos</div>
@@ -125,6 +126,10 @@ function renderGeneralInfo(meta) {
           <div class="form-group" style="margin-bottom:var(--space-3)">
             <label class="form-label">Contexte supplémentaire</label>
             <textarea class="textarea-field" id="edit-context" rows="3" placeholder="Ex : matériel GPS Garmin, préfère les côtes le weekend…">${escHtml(meta?.additionalContext || '')}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Programmes et conseils reçus</label>
+            <textarea class="textarea-field" id="edit-references" rows="4" placeholder="Ex : un plan donné par ton club ou un ami, à coller tel quel — l'IA s'en inspire et l'adapte">${escHtml(meta?.references || '')}</textarea>
           </div>
           <div style="display:flex;gap:var(--space-2)">
             <button class="btn btn--primary" id="save-general-btn" style="flex:1">Enregistrer</button>
@@ -171,6 +176,7 @@ function wireGeneralInfoEdit(container, slug) {
         planStart:          startInput.value,
         planWeeks:          parseInt(container.querySelector('#edit-planweeks').value) || 0,
         additionalContext:  container.querySelector('#edit-context').value.trim(),
+        references:         container.querySelector('#edit-references').value.trim(),
       });
       showToast('Infos mises à jour', 'success');
       await mount(container, slug);

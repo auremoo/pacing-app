@@ -1,11 +1,13 @@
 import { getRoutineMeta, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates,
          getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides, ROUTINE_SLUG,
-         getTypeOverrides } from '../store.js';
+         getTypeOverrides, saveTuningRequest } from '../store.js';
 import { showToast, navigate } from '../app.js';
 import { today } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { typeName } from '../utils/session-types.js';
 import { withFileDeliverable } from '../utils/prompt-output.js';
+import { referencesSection } from '../utils/references.js';
+import { openTuningModal, withTuning, tuningSummary } from '../utils/plan-tuning.js';
 import { getTargets, formatTargets, targetText } from '../utils/routine-context.js';
 import { doesRun, doesGym, gymLevel, GYM_LEVELS, sportsSummary } from '../utils/sports.js';
 import { bodyPromptSection } from '../utils/body.js';
@@ -84,12 +86,18 @@ function render(container) {
 
   container.querySelectorAll('.targets-hint__edit').forEach(b => b.addEventListener('click', () => navigate('/routine/settings')));
 
-  container.querySelector('#export-prompt-btn')?.addEventListener('click', () => {
-    showExportModal();
+  container.querySelector('#export-prompt-btn')?.addEventListener('click', async () => {
+    const tuning = await openTuningModal({ title: 'Réglages de la révision', isRevision: true });
+    if (!tuning) return;
+    saveTuningRequest(ROUTINE_SLUG, tuning).catch(() => {});
+    showExportModal(tuning);
   });
 
-  container.querySelector('#gen-initial-btn')?.addEventListener('click', () => {
-    showInitialPromptModal();
+  container.querySelector('#gen-initial-btn')?.addEventListener('click', async () => {
+    const tuning = await openTuningModal({ title: 'Réglages du plan', isRevision: false });
+    if (!tuning) return;
+    saveTuningRequest(ROUTINE_SLUG, tuning).catch(() => {});
+    showInitialPromptModal(tuning);
   });
 
   container.querySelectorAll('[data-set-active]').forEach(btn => {
@@ -137,10 +145,10 @@ async function handleImport(container, file) {
 
 // ── Prompt de plan initial ────────────────────────────────────────
 
-function showInitialPromptModal() {
+function showInitialPromptModal(tuning) {
   const meta    = getRoutineMeta();
   const athlete = getAthleteProfile();
-  const prompt  = withFileDeliverable(buildInitialPrompt(meta, athlete), 'plan-general-v1.md', '# PLAN_GENERAL_v1');
+  const prompt  = withFileDeliverable(withTuning(buildInitialPrompt(meta, athlete), tuning, false), 'plan-general-v1.md', '# PLAN_GENERAL_v1');
   openPromptModal('Prompt de plan initial', prompt);
 }
 
@@ -155,22 +163,6 @@ function targetsHint(meta) {
       Objectifs perso repris dans le prompt : ${list}.
       <button class="targets-hint__edit" type="button" style="color:var(--ios-blue)">Modifier dans Contexte</button>
     </p>`;
-}
-
-// Programmes ou conseils reçus (coach, ami, réseaux), collés tels quels dans
-// Contexte : une source d'inspiration, jamais un plan à recopier — ils sont
-// souvent écrits pour un autre rythme (4 séances quand on en fait 3).
-function referencesSection(meta, level) {
-  const text = (meta.references || '').trim();
-  if (!text) return '';
-  return `
-${level} Programmes et conseils qu'on m'a donnés (exemples, à adapter)
-
-${text}
-
-Ce sont des exemples, pas des consignes à suivre à la lettre. Inspire-t'en (choix des exercices, répartition des groupes musculaires) mais adapte-les à mon niveau, à mes jours disponibles, au nombre de séances visé — un programme pensé pour 4 séances doit être recombiné sur mes séances réelles, sans en perdre l'essentiel — et à mes points de vigilance. Dis dans la SYNTHESE ce que tu as repris et ce que tu as changé.
-
-`;
 }
 
 // Séances faites avant le tout premier plan : seul le plan initial en a besoin,
@@ -265,7 +257,7 @@ ${meta.context || '[à compléter — ex : Badminton le mercredi soir, 1x/semain
 
 ${meta.goals || '[à compléter — ex : 2 séances de fractionné/sprint en plus par semaine]'}
 
-${referencesSection(meta, '###')}${recentDoneSection(meta)}${targetsSection(meta, '###')}${bodyPromptSection('###')}### Paramètres du bloc
+${referencesSection(meta.references, '###')}${recentDoneSection(meta)}${targetsSection(meta, '###')}${bodyPromptSection('###')}### Paramètres du bloc
 
 - Date de début du plan : ${meta.startDate || '[à compléter — toujours un lundi]'}
 - Durée souhaitée du bloc : ${meta.blockWeeks ? meta.blockWeeks + ' semaines' : '[à compléter]'}
@@ -316,7 +308,7 @@ ${sessionRules(meta)}
 
 // ── Export prompt de révision ────────────────────────────────────
 
-function showExportModal() {
+function showExportModal(tuning) {
   const meta              = getRoutineMeta();
   const plan               = getActivePlan(ROUTINE_SLUG);
   const planRaw             = getActivePlanRaw(ROUTINE_SLUG);
@@ -335,7 +327,7 @@ function showExportModal() {
     getTypeOverrides(ROUTINE_SLUG)
   );
   const next    = (meta.activeVersion || 1) + 1;
-  const prompt  = withFileDeliverable(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides),
+  const prompt  = withFileDeliverable(withTuning(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides), tuning, true),
     `plan-general-v${next}.md`, `# PLAN_GENERAL_v${next}`);
   openPromptModal('Prompt de révision', prompt);
 }
@@ -403,7 +395,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 
 - Activités récurrentes déclarées : ${meta.context || 'Non renseigné'}
 - Objectifs de ce bloc : ${meta.goals || 'Non renseigné'}
-${referencesSection(meta, '##')}${targetsSection(meta, '##')}${bodyPromptSection('##')}
+${referencesSection(meta.references, '##')}${targetsSection(meta, '##')}${bodyPromptSection('##')}
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks[plan.weeks.length - 1]?.number || plan.weeks.length}
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}
@@ -513,6 +505,7 @@ function renderVersionCard(v, activeVersion) {
       <div class="version-card__info">
         <div class="version-card__title">${v.label || `Version ${v.v}`}</div>
         <div class="version-card__date">Importée le ${date}</div>
+        ${tuningSummary(v.tuning) ? `<div class="version-card__date">Demandé : ${escHtml(tuningSummary(v.tuning))}</div>` : ''}
       </div>
       ${isActive
         ? `<span class="version-card__active-label">Active</span>`

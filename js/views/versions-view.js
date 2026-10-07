@@ -1,10 +1,12 @@
-import { getEventMeta, getEventsIndex, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides } from '../store.js';
+import { getEventMeta, getEventsIndex, importPlanVersion, setActiveVersion, getActivePlan, getAllSessionStates, getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides, saveTuningRequest } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { parsePlan } from '../parser.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { openPromptModal } from '../utils/prompt-modal.js';
 import { withFileDeliverable } from '../utils/prompt-output.js';
+import { referencesSection } from '../utils/references.js';
+import { openTuningModal, withTuning, tuningSummary } from '../utils/plan-tuning.js';
 import { skipReasonLabel } from '../utils/skip-reasons.js';
 import { buildRoutineSectionForRace } from '../utils/routine-context.js';
 import { doesGym } from '../utils/sports.js';
@@ -66,12 +68,18 @@ function render(container, slug) {
     e.target.value = '';
   });
 
-  container.querySelector('#export-prompt-btn')?.addEventListener('click', () => {
-    showExportModal(container, slug);
+  container.querySelector('#export-prompt-btn')?.addEventListener('click', async () => {
+    const tuning = await openTuningModal({ title: 'Réglages de la révision', isRevision: true, race: true });
+    if (!tuning) return;
+    saveTuningRequest(slug, tuning).catch(() => {});
+    showExportModal(container, slug, tuning);
   });
 
-  container.querySelector('#gen-initial-btn')?.addEventListener('click', () => {
-    showInitialPromptModal(container, slug);
+  container.querySelector('#gen-initial-btn')?.addEventListener('click', async () => {
+    const tuning = await openTuningModal({ title: 'Réglages du plan', isRevision: false, race: true });
+    if (!tuning) return;
+    saveTuningRequest(slug, tuning).catch(() => {});
+    showInitialPromptModal(container, slug, tuning);
   });
 
   container.querySelectorAll('[data-set-active]').forEach(btn => {
@@ -119,11 +127,11 @@ async function handleImport(container, slug, file) {
 
 // ── Prompt de plan initial ────────────────────────────────────────
 
-function showInitialPromptModal(container, slug) {
+function showInitialPromptModal(container, slug, tuning) {
   const meta    = getEventMeta(slug);
   const athlete = getAthleteProfile();
 
-  const prompt = withFileDeliverable(buildInitialPrompt(meta, athlete), `plan-${meta.slug}-v1.md`, `# PLAN_v1 — ${meta.name}`);
+  const prompt = withFileDeliverable(withTuning(buildInitialPrompt(meta, athlete), tuning, false), `plan-${meta.slug}-v1.md`, `# PLAN_v1 — ${meta.name}`);
   openPromptModal('Prompt de plan initial', prompt);
 }
 
@@ -192,7 +200,7 @@ function buildInitialPrompt(meta, athlete) {
 ### Contexte supplémentaire
 
 ${buildAdditionalContext(meta)}
-${routineSection(todayStr, '###')}
+${routineSection(todayStr, '###')}${referencesSection(meta.references, '###')}
 ---
 
 **FORMAT DE SORTIE OBLIGATOIRE**
@@ -277,7 +285,7 @@ Types valides : rest, easy, long, intervals, tempo, hills, race, strength, cross
 
 // ── Export prompt de révision ────────────────────────────────────
 
-function showExportModal(container, slug) {
+function showExportModal(container, slug, tuning) {
   const meta         = getEventMeta(slug);
   const plan         = getActivePlan(slug);
   const planRaw      = getActivePlanRaw(slug);
@@ -294,7 +302,7 @@ function showExportModal(container, slug) {
   const effPlan = applyWeekMetaOverrides(applyDateOverrides(plan, dateOverrides), weekMetaOverrides);
   const next   = (meta.activeVersion || 1) + 1;
   const prompt = withFileDeliverable(
-    buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides),
+    withTuning(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides), tuning, true),
     `plan-${meta.slug}-v${next}.md`, `# PLAN_v${next} — ${meta.name}`);
   openPromptModal('Prompt de révision', prompt);
 }
@@ -392,7 +400,7 @@ ${swappedWeekNums.length ? `\n**Semaines dont le contenu (décharge/phase/volume
 
 ## Contexte supplémentaire
 ${buildAdditionalContext(meta)}
-${routineSection(todayStr, '##', { withRecent: false })}
+${routineSection(todayStr, '##', { withRecent: false })}${referencesSection(meta.references, '##')}
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks[plan.weeks.length - 1]?.number || plan.weeks.length} (${weeksLeft} semaines restantes dont la semaine en cours)
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}
@@ -492,6 +500,7 @@ function renderVersionCard(v, activeVersion) {
       <div class="version-card__info">
         <div class="version-card__title">${v.label || `Version ${v.v}`}</div>
         <div class="version-card__date">Importée le ${date}</div>
+        ${tuningSummary(v.tuning) ? `<div class="version-card__date">Demandé : ${tuningSummary(v.tuning).replace(/</g, '&lt;')}</div>` : ''}
       </div>
       ${isActive
         ? `<span class="version-card__active-label">Active</span>`

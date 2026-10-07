@@ -312,9 +312,11 @@ export async function importPlanVersion(slug, mdContent, label) {
     activeVersion: nextV,
     versions: [
       ...(meta.versions || []),
-      { v: nextV, file: filename, importedAt: new Date().toISOString(), label: label || `Version ${nextV}` }
+      { v: nextV, file: filename, importedAt: new Date().toISOString(), label: label || `Version ${nextV}`,
+        ...(meta.pendingTuning ? { tuning: meta.pendingTuning } : {}) }
     ]
   };
+  delete newMeta.pendingTuning;
 
   const metaFile = await getFile(metaPath(slug));
   await putFile(metaPath(slug), JSON.stringify(newMeta, null, 2), metaFile?.sha);
@@ -324,6 +326,10 @@ export async function importPlanVersion(slug, mdContent, label) {
   const parsed = parsePlan(mdContent);
   if (!_plans[slug]) _plans[slug] = {};
   _plans[slug][nextV] = parsed;
+  // Texte brut aussi : le prompt de révision le recopie. Sans lui, réviser
+  // juste après un import affichait « Plan non chargé » jusqu'au rechargement.
+  if (!_planRaw[slug]) _planRaw[slug] = {};
+  _planRaw[slug][nextV] = mdContent;
 
   // Coches et réglages de l'ancienne version : archivés, et reportés par date
   // sur les séances de la nouvelle (voir migrateStateToVersion).
@@ -441,6 +447,15 @@ async function repairUnmigratedStates() {
     await ensurePlanLoaded(slug, active).catch(() => null);
     migrateStateToVersion(slug, fromV, active);
   }
+}
+
+// Réglages choisis avant de générer un prompt (utils/plan-tuning.js) : gardés
+// jusqu'à l'import de la version qui en sort, puis recopiés sur elle.
+export async function saveTuningRequest(slug, tuning) {
+  const empty = !tuning || (!Object.keys(tuning.values || {}).length && !(tuning.note || '').trim());
+  const meta = getEventMeta(slug);
+  if (!meta || (empty && !meta.pendingTuning)) return;
+  await updateEventMeta(slug, { pendingTuning: empty ? null : { ...tuning, at: new Date().toISOString() } });
 }
 
 export async function setActiveVersion(slug, v) {
