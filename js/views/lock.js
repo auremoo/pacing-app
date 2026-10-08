@@ -21,16 +21,11 @@ export function mount(container, onUnlock) {
           <input type="text" class="input-field" id="lock-name" placeholder="Prénom"
                  autocomplete="username" autocapitalize="words" value="${escAttr(getLastName())}">
         </div>
-        <input
-          type="password"
-          inputmode="numeric"
-          pattern="[0-9]*"
-          class="input-field"
-          id="lock-input"
-          name="password"
-          placeholder="Mot de passe"
-          autocomplete="current-password"
-        />
+        <!-- Champ texte masqué plutôt que type="password" : iOS prenait l'écran pour
+             une création de compte et proposait un « mot de passe fort » à chaque
+             connexion. Chiffres seulement (data-pin), points à la place des chiffres
+             (classe pin-input, -webkit-text-security). -->
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-pin class="input-field pin-input" id="lock-input" placeholder="Mot de passe" />
         <div class="lock-screen__error" id="lock-error"></div>
         <button type="submit" class="btn btn--primary btn--full" id="lock-btn">Entrer</button>
         <button type="button" class="lock-screen__switch" id="show-signup">Pas encore de compte ? <strong>Créer un compte</strong></button>
@@ -104,6 +99,14 @@ export function mount(container, onUnlock) {
   };
   focusFirstEmpty();
   fillNameList(container).then(focusFirstEmpty);
+
+  // Mots de passe : chiffres seulement (le pavé numérique ne suffit pas, un
+  // collage ou un clavier physique passe autre chose).
+  container.addEventListener('input', (e) => {
+    if (!e.target.matches('[data-pin]')) return;
+    const digits = e.target.value.replace(/\D/g, '');
+    if (digits !== e.target.value) e.target.value = digits;
+  });
 
   // ── Bascule connexion / inscription ──────────────────────────────
   const signupForm = container.querySelector('#signup-form');
@@ -225,26 +228,17 @@ async function fillNameList(container) {
 
   const selected = (last && names.find(n => norm(n) === norm(last))) || '';
   container.querySelector('#lock-name-slot').innerHTML = `
-    <!-- Identifiant pour le trousseau d'Apple : une liste déroulante n'en est pas
-         un, et sans identifiant le formulaire passe pour une création de compte.
-         Invisible, tenu à jour avec le prénom choisi. -->
-    <input type="text" class="visually-hidden" id="lock-username" name="username" autocomplete="username"
-           tabindex="-1" aria-hidden="true" value="${escAttr(selected)}">
     <select class="input-field lock-screen__select" id="lock-name" autocomplete="off" required>
       <option value="" ${selected ? '' : 'selected'} disabled>Choisis ton prénom</option>
       ${names.map(n => `<option value="${escAttr(n)}" ${n === selected ? 'selected' : ''}>${escAttr(n)}</option>`).join('')}
     </select>`;
-  const select = container.querySelector('#lock-name');
-  select.addEventListener('change', () => { container.querySelector('#lock-username').value = select.value; });
 }
 
 const SIGNUP_FIELDS = `
       <input type="text" class="input-field" id="su-name" placeholder="Ton prénom" autocomplete="given-name">
-      <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd"
-             placeholder="Mot de passe (6 chiffres min.)" autocomplete="new-password">
-      <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd2"
-             placeholder="Confirme le mot de passe" autocomplete="new-password">
-      <input type="password" class="input-field" id="su-code" placeholder="Code d'invitation" autocomplete="off">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-pin class="input-field pin-input" id="su-pwd" placeholder="Mot de passe (6 chiffres min.)">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-pin class="input-field pin-input" id="su-pwd2" placeholder="Confirme le mot de passe">
+      <input type="text" class="input-field pin-input" id="su-code" placeholder="Code d'invitation" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div class="lock-screen__hint">Le code d'invitation t'est donné par une personne qui utilise déjà l'app.</div>
       <div class="lock-screen__error" id="signup-error"></div>
       <button type="submit" class="btn btn--primary btn--full" id="signup-btn">Créer mon compte</button>

@@ -140,11 +140,11 @@ function render(container) {
           </div>
           <div class="form-field">
             <label class="form-label">Son mot de passe (6 chiffres minimum)</label>
-            <input class="form-input" id="f-new-pwd" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
+            <input class="form-input pin-input" id="f-new-pwd" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-pin>
           </div>
           <div class="form-field">
             <label class="form-label">Confirmer le mot de passe</label>
-            <input class="form-input" id="f-new-pwd2" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
+            <input class="form-input pin-input" id="f-new-pwd2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-pin>
           </div>
           <div id="add-user-error" style="color:var(--ios-red);font-size:14px;margin-bottom:var(--space-2)"></div>
           <div style="display:flex;gap:var(--space-2)">
@@ -209,6 +209,13 @@ function render(container) {
   attachGlobalTabBar(container);
 
   wireAccount(container);
+
+  // Mots de passe à chiffres : champs texte masqués (voir lock.js), filtrés ici.
+  container.addEventListener('input', (e) => {
+    if (!e.target.matches('[data-pin]')) return;
+    const digits = e.target.value.replace(/\D/g, '');
+    if (digits !== e.target.value) e.target.value = digits;
+  });
 
   // Les interrupteurs s'enregistrent tout de suite, comme sur iOS : le menu du
   // bas (onglet Courses) suit sans passer par « Enregistrer ».
