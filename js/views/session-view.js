@@ -6,6 +6,7 @@ import { SESSION_LABELS } from '../parser.js';
 import { applyDateOverrides, applyTypeOverrides } from '../utils/plan-overrides.js';
 import { PLAN_TYPES, RUN_TYPES, GYM_TYPES, ACTIVITY_TYPES, typeBadge, typeName, sessionTitle } from '../utils/session-types.js';
 import { doesRun, doesGym } from '../utils/sports.js';
+import { renderSessionDescription } from '../utils/session-format.js';
 import { syncEventClosure } from './event-closure.js';
 
 export function mount(container, slug, sessionId) {
@@ -127,11 +128,9 @@ function updateCheckBtn(btn, completed) {
   btn.className = `btn btn--full session-detail__check-btn ${completed ? 'session-detail__check-btn--done' : 'btn--primary'}`;
 }
 
+// Échauffement, exercices en fiches, retour au calme : voir utils/session-format.js.
 function renderDescription(desc) {
-  if (!desc) return '';
-  return desc
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+  return renderSessionDescription(desc);
 }
 
 

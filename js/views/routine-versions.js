@@ -211,6 +211,7 @@ const GYM_RULES = {
   beginner: `**Séances de salle — je débute et je ne connais pas les exercices.** C'est à toi de les choisir : je ne saurai pas quoi faire avec « travaille les jambes ». Pour chaque séance de musculation :
 - 4 à 6 exercices, de préférence sur machines guidées ou des mouvements simples, échauffement et retour au calme compris, 1h maximum ;
 - pour chaque exercice, dans la description : son nom courant (et le nom de la machine s'il y en a une), comment le faire en une phrase, l'erreur à éviter, séries × répétitions, temps de repos, et une charge de départ décrite simplement (« légère : tu dois pouvoir faire encore 2-3 répétitions à la fin de chaque série ») plutôt qu'en kilos ;
+- écris la description toujours dans cet ordre, l'app la découpe en fiches à l'écran : « Échauffement … » puis les exercices numérotés « 1) Nom de l'exercice — comment le faire ; évite … . 3 × 12, repos 90 s, charge légère. 2) … », puis « Retour au calme … », et en dernier les consignes générales. Phrases courtes, mots simples, pas de jargon (ou expliqué) ;
 - garde les mêmes exercices plusieurs semaines pour que je les apprenne, progression douce (répétitions puis charge) ;
 - tiens compte de mes pathologies / points de vigilance : écarte ou adapte les exercices à risque, et dis-le dans la description ;
 - ajoute dans la SYNTHESE un petit lexique des exercices du plan.`,

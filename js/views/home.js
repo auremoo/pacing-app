@@ -5,6 +5,7 @@ import { typeBadge } from '../utils/session-types.js';
 import { renderEventCard } from './courses.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 import { tracksWeight } from '../utils/sports.js';
+import { sessionDescriptionSummary } from '../utils/session-format.js';
 import { latestEntry, weightChange, fmtDelta, fmtKg, weightTarget } from '../utils/body.js';
 
 export function mount(container) {
@@ -68,7 +69,7 @@ function renderTodayCard(todaySession) {
       <div class="today-card__label">Aujourd'hui</div>
       <div class="today-card__event">${eventName}</div>
       <div class="today-card__title">${todaySessionTitle(session)}</div>
-      <div class="today-card__desc">${session.description}</div>
+      <div class="today-card__desc">${sessionDescriptionSummary(session.description)}</div>
     </div>
   `;
 }
