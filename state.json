@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-08T09:23:05.187Z",
+  "lastUpdated": "2026-10-08T09:23:25.789Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -815,7 +815,8 @@
         "completed": true,
         "skipped": false,
         "completedAt": "2026-10-08T09:23:02.987Z",
-        "version": 2
+        "version": 2,
+        "note": "Oups 5,5km en 30min pile"
       }
     }
   }
