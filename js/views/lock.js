@@ -27,6 +27,7 @@ export function mount(container, onUnlock) {
           pattern="[0-9]*"
           class="input-field"
           id="lock-input"
+          name="password"
           placeholder="Mot de passe"
           autocomplete="current-password"
         />
@@ -37,18 +38,11 @@ export function mount(container, onUnlock) {
 
       <!-- Inscription : nécessite un code d'invitation, seul moyen d'obtenir le
            token sans être connecté (voir utils/users.js). -->
-      <form class="lock-screen__form" id="signup-form" autocomplete="off" hidden>
-        <input type="text" class="input-field" id="su-name" placeholder="Ton prénom" autocomplete="given-name">
-        <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd"
-               placeholder="Mot de passe (6 chiffres min.)" autocomplete="new-password">
-        <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd2"
-               placeholder="Confirme le mot de passe" autocomplete="new-password">
-        <input type="password" class="input-field" id="su-code" placeholder="Code d'invitation" autocomplete="off">
-        <div class="lock-screen__hint">Le code d'invitation t'est donné par une personne qui utilise déjà l'app.</div>
-        <div class="lock-screen__error" id="signup-error"></div>
-        <button type="submit" class="btn btn--primary btn--full" id="signup-btn">Créer mon compte</button>
-        <button type="button" class="lock-screen__switch" id="show-login">J'ai déjà un compte · <strong>Se connecter</strong></button>
-      </form>
+      <!-- Champs injectés seulement quand on touche « Créer un compte » (SIGNUP_FIELDS) :
+           présents d'office, leurs deux « nouveau mot de passe » faisaient prendre
+           l'écran de connexion pour une inscription par le trousseau d'Apple, qui
+           proposait un mot de passe fort à chaque connexion. -->
+      <form class="lock-screen__form" id="signup-form" autocomplete="off" hidden></form>
 
       <div class="lock-screen__footer">
         Cette application est privée : on y entre avec son prénom et son mot de passe, ou sur invitation.
@@ -115,11 +109,14 @@ export function mount(container, onUnlock) {
   const signupForm = container.querySelector('#signup-form');
   container.querySelector('#show-signup').addEventListener('click', () => {
     form.hidden = true;
+    signupForm.innerHTML = SIGNUP_FIELDS;
     signupForm.hidden = false;
     container.querySelector('#su-name').focus();
   });
-  container.querySelector('#show-login').addEventListener('click', () => {
+  signupForm.addEventListener('click', (e) => {
+    if (!e.target.closest('#show-login')) return;
     signupForm.hidden = true;
+    signupForm.innerHTML = '';
     form.hidden = false;
     input.focus();
   });
@@ -228,8 +225,27 @@ async function fillNameList(container) {
 
   const selected = (last && names.find(n => norm(n) === norm(last))) || '';
   container.querySelector('#lock-name-slot').innerHTML = `
-    <select class="input-field lock-screen__select" id="lock-name" autocomplete="username" required>
+    <!-- Identifiant pour le trousseau d'Apple : une liste déroulante n'en est pas
+         un, et sans identifiant le formulaire passe pour une création de compte.
+         Invisible, tenu à jour avec le prénom choisi. -->
+    <input type="text" class="visually-hidden" id="lock-username" name="username" autocomplete="username"
+           tabindex="-1" aria-hidden="true" value="${escAttr(selected)}">
+    <select class="input-field lock-screen__select" id="lock-name" autocomplete="off" required>
       <option value="" ${selected ? '' : 'selected'} disabled>Choisis ton prénom</option>
       ${names.map(n => `<option value="${escAttr(n)}" ${n === selected ? 'selected' : ''}>${escAttr(n)}</option>`).join('')}
     </select>`;
+  const select = container.querySelector('#lock-name');
+  select.addEventListener('change', () => { container.querySelector('#lock-username').value = select.value; });
 }
+
+const SIGNUP_FIELDS = `
+      <input type="text" class="input-field" id="su-name" placeholder="Ton prénom" autocomplete="given-name">
+      <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd"
+             placeholder="Mot de passe (6 chiffres min.)" autocomplete="new-password">
+      <input type="password" inputmode="numeric" pattern="[0-9]*" class="input-field" id="su-pwd2"
+             placeholder="Confirme le mot de passe" autocomplete="new-password">
+      <input type="password" class="input-field" id="su-code" placeholder="Code d'invitation" autocomplete="off">
+      <div class="lock-screen__hint">Le code d'invitation t'est donné par une personne qui utilise déjà l'app.</div>
+      <div class="lock-screen__error" id="signup-error"></div>
+      <button type="submit" class="btn btn--primary btn--full" id="signup-btn">Créer mon compte</button>
+      <button type="button" class="lock-screen__switch" id="show-login">J'ai déjà un compte · <strong>Se connecter</strong></button>`;
