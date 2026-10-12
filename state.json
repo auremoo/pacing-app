@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-12T14:14:36.594Z",
+  "lastUpdated": "2026-10-12T14:14:56.161Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -838,7 +838,8 @@
       },
       "_dateOverrides": {
         "s02-fri": "2026-10-13",
-        "s02-tue": "2026-10-16"
+        "s02-tue": "2026-10-16",
+        "s02-sun": "2026-10-17"
       },
       "_typeOverrides": {
         "s02-thu": "badminton"
