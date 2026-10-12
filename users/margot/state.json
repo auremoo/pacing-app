@@ -32,8 +32,17 @@
         "s02-mon": "2026-10-13",
         "s02-tue": "2026-10-14",
         "s02-wed": "2026-10-09"
+      },
+      "s01-fri": {
+        "skipped": true,
+        "completed": false,
+        "skippedAt": "2026-10-12T08:04:12.992Z",
+        "skipReason": "autre",
+        "version": 1,
+        "completedAt": null,
+        "note": "Autre"
       }
     }
   },
-  "lastUpdated": "2026-10-10T16:55:33.890Z"
+  "lastUpdated": "2026-10-12T08:04:13.995Z"
 }
