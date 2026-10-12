@@ -485,7 +485,9 @@ function renderWeekCard(week, currentWeekNum, states, plan, overrides, pausedByR
         </div>
       </div>
       <div class="week-card__sessions">
-        ${week.sessions.map(s => renderSessionItem(s, states[s.id] || {}, !!overrides[s.id])).join('')}
+        ${/* Les jours de repos ne s'affichent pas : un jour sans rien est déjà un
+             repos. Un repos remplacé par une activité (type changé) reste visible. */ ''}
+        ${week.sessions.filter(s => s.type !== 'rest').map(s => renderSessionItem(s, states[s.id] || {}, !!overrides[s.id])).join('')}
       </div>
     </div>
   `;
