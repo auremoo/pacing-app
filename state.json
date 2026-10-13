@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-13T13:42:06.932Z",
+  "lastUpdated": "2026-10-13T13:42:09.505Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -845,6 +845,12 @@
       },
       "_typeOverrides": {
         "s02-thu": "badminton"
+      },
+      "s02-mon": {
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-13T13:42:08.541Z",
+        "version": 2
       }
     }
   }
