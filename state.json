@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-14T08:27:51.112Z",
+  "lastUpdated": "2026-10-14T08:27:53.025Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -862,7 +862,11 @@
         "note": "Autre"
       },
       "s02-fri": {
-        "note": "5,23km à 5,44min/km en fractionné 1’ course, 45sec marche. 5min d’échauffement et 5min à la fin de course à 5,50min/km environ. "
+        "note": "5,23km à 5,44min/km en fractionné 1’ course, 45sec marche. 5min d’échauffement et 5min à la fin de course à 5,50min/km environ. ",
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-14T08:27:51.502Z",
+        "version": 2
       }
     }
   }
