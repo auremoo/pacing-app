@@ -4,7 +4,7 @@
   "targets": [],
   "blockWeeks": 18,
   "startDate": "2026-10-05",
-  "activeVersion": 2,
+  "activeVersion": 3,
   "versions": [
     {
       "v": 1,
@@ -22,6 +22,12 @@
         "note": "d’alléger un peu les séances abdos en ajoutant un peu plus de cardio à la limite mais faire tranquille en abdos au début et aussi parfois insérer l’escalier que je vois nul part",
         "at": "2026-10-15T09:03:37.017Z"
       }
+    },
+    {
+      "v": 3,
+      "file": "v3.md",
+      "importedAt": "2026-10-15T09:26:15.084Z",
+      "label": "Fondations force, posture et cardio — v2 (escalier et gainage allégé)"
     }
   ],
   "references": "LEGDAY 1 : (focus fessiers)\n- Échauffement\n- Hiptrust 3x8\n- Fentes avec pieds surélevés 3x8\n- Kick back 4x10\n- Leg curl 3x12\n\nUPPER BODY :\n- Échauffement\n- Pompes (genoux si besoin) 3 x ce que tu peux\n- Rowing machine ou haltères 3x10\n- Tirage vertical 3x10\n- Élévations latérales haltères 3x12\n- Curl Biceps 3x12\n- Extension triceps poulie 3x12\n\nLEGDAY 2 : (focus quads, roppel fessiers)\n- Échauffement\n- Hiptrust 3x8\n- Goblet squat OU hack squat 3x8\n- Press 3x8\n- Leg extension 3x12\nCARDIO/ABS :\n- Escaliers 20/30min OU Pente incliné 30min inclinaison 12% OU courir à son rythme durant 45min\n- Circuit abdos : gainage (plonche, côté droit, côté gauche), crunch inversé, mountain climbers, russian twist (30sec/exercice, 2min de pause entre les circuits)",
