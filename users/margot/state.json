@@ -2,65 +2,101 @@
   "version": 2,
   "events": {
     "__routine__": {
-      "_planVersion": 1,
+      "_history": {
+        "v1": {
+          "s01-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-07T21:36:07.011Z",
+            "version": 1
+          },
+          "s01-tue": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-07T21:36:10.246Z",
+            "version": 1
+          },
+          "s01-wed": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-07T21:36:10.814Z",
+            "version": 1
+          },
+          "s01-thu": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-10T16:48:24.454Z",
+            "version": 1
+          },
+          "s01-fri": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-12T08:04:12.992Z",
+            "skipReason": "autre",
+            "version": 1,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s02-wed": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-12T09:45:58.339Z",
+            "version": 1
+          },
+          "s02-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-13T20:07:51.863Z",
+            "version": 1
+          },
+          "s02-tue": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-15T08:55:23.598Z",
+            "version": 1
+          },
+          "_overrides": {
+            "_dateOverrides": {
+              "s01-fri": "2026-10-09",
+              "s02-mon": "2026-10-13",
+              "s02-tue": "2026-10-14",
+              "s02-wed": "2026-10-12"
+            }
+          }
+        }
+      },
+      "_planVersion": 2,
       "s01-mon": {
         "completed": true,
         "skipped": false,
-        "completedAt": "2026-10-07T21:36:07.011Z",
-        "version": 1
+        "completedAt": "2026-10-12T09:45:58.339Z",
+        "version": 2,
+        "carriedFrom": {
+          "v": 1,
+          "id": "s02-wed"
+        }
       },
       "s01-tue": {
         "completed": true,
         "skipped": false,
-        "completedAt": "2026-10-07T21:36:10.246Z",
-        "version": 1
+        "completedAt": "2026-10-13T20:07:51.863Z",
+        "version": 2,
+        "carriedFrom": {
+          "v": 1,
+          "id": "s02-mon"
+        }
       },
       "s01-wed": {
         "completed": true,
         "skipped": false,
-        "completedAt": "2026-10-07T21:36:10.814Z",
-        "version": 1
-      },
-      "s01-thu": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-10T16:48:24.454Z",
-        "version": 1
-      },
-      "_dateOverrides": {
-        "s01-fri": "2026-10-09",
-        "s02-mon": "2026-10-13",
-        "s02-tue": "2026-10-14",
-        "s02-wed": "2026-10-12"
-      },
-      "s01-fri": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-12T08:04:12.992Z",
-        "skipReason": "autre",
-        "version": 1,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s02-wed": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-12T09:45:58.339Z",
-        "version": 1
-      },
-      "s02-mon": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-13T20:07:51.863Z",
-        "version": 1
-      },
-      "s02-tue": {
-        "completed": true,
-        "skipped": false,
         "completedAt": "2026-10-15T08:55:23.598Z",
-        "version": 1
+        "version": 2,
+        "carriedFrom": {
+          "v": 1,
+          "id": "s02-tue"
+        }
       }
     }
   },
-  "lastUpdated": "2026-10-15T08:55:24.484Z"
+  "lastUpdated": "2026-10-15T09:12:08.101Z"
 }
