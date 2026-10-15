@@ -286,7 +286,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 
 ## Layout responsive
 
-- **Mobile** : navigation par onglets en bas, nav-bar en haut, sidebar cachée
+- **Mobile** : navigation par onglets en bas, nav-bar en haut, sidebar cachée. **Cadre fixe** (reset.css, `max-width: 767px`) : `html/body` ne défilent pas, `#app` fait la hauteur de l'écran en colonne flex, nav-bar et barres d'onglets sont des blocs fixes, seule la `.scroll-view` enfant direct de `#app` défile. Avant, la page entière défilait avec des barres `position: sticky`, qu'un défilement rapide (inertie iOS) décrochait : menu au milieu de l'écran, barre du haut disparue. Toute nouvelle vue plein écran doit garder ce gabarit (nav-bar, `.scroll-view`, barre) en enfants directs du conteneur ; un écran sans `.scroll-view` (connexion) défile dans `#app`.
 - **Desktop (≥768px)** : CSS Grid `260px sidebar + 1fr contenu`. La sidebar liste les événements + séance du jour. La nav-bar est masquée (la sidebar prend ce rôle).
 
 ## Fonctionnalités clés

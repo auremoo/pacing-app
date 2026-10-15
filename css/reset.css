@@ -63,6 +63,47 @@ table {
 
 #sidebar { display: none; }
 
+/* ── Mobile : cadre fixe, seule la zone du milieu défile ───────────
+   Avant, c'était la page entière qui défilait, avec la barre du haut et le
+   menu du bas « collés » (position: sticky). Sur iPhone, un défilement rapide
+   (inertie) décrochait ces barres : le menu se retrouvait au milieu de l'écran
+   et la barre du haut disparaissait. Désormais #app fait la hauteur de l'écran,
+   les barres sont des blocs fixes en haut et en bas, et seule la .scroll-view
+   entre les deux défile. Un écran sans .scroll-view (connexion) défile dans #app. */
+@media (max-width: 767px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  #shell {
+    height: 100vh;
+    height: 100dvh;
+  }
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+  #app > .nav-bar,
+  #app > .tab-bar,
+  #app > .global-tab-bar {
+    position: relative;
+    flex: none;
+  }
+  #app > .scroll-view {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    /* le menu du bas ne recouvre plus la liste : plus besoin de la marge
+       de sa hauteur posée en ligne par les vues */
+    padding-bottom: var(--space-8) !important;
+  }
+}
+
 /* ── Desktop layout ────────────────────────────────────────────── */
 @media (min-width: 768px) {
   #shell {
