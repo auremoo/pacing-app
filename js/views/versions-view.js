@@ -5,6 +5,7 @@ import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { openPromptModal } from '../utils/prompt-modal.js';
 import { withFileDeliverable } from '../utils/prompt-output.js';
+import { withProgression } from '../utils/progression.js';
 import { referencesSection } from '../utils/references.js';
 import { openTuningModal, withTuning, tuningSummary } from '../utils/plan-tuning.js';
 import { skipReasonLabel } from '../utils/skip-reasons.js';
@@ -131,7 +132,7 @@ function showInitialPromptModal(container, slug, tuning) {
   const meta    = getEventMeta(slug);
   const athlete = getAthleteProfile();
 
-  const prompt = withFileDeliverable(withTuning(buildInitialPrompt(meta, athlete), tuning, false), `plan-${meta.slug}-v1.md`, `# PLAN_v1 — ${meta.name}`);
+  const prompt = withFileDeliverable(withTuning(withProgression(buildInitialPrompt(meta, athlete), { run: true, gym: doesGym(), isRevision: false }), tuning, false), `plan-${meta.slug}-v1.md`, `# PLAN_v1 — ${meta.name}`);
   openPromptModal('Prompt de plan initial', prompt);
 }
 
@@ -302,7 +303,7 @@ function showExportModal(container, slug, tuning) {
   const effPlan = applyWeekMetaOverrides(applyDateOverrides(plan, dateOverrides), weekMetaOverrides);
   const next   = (meta.activeVersion || 1) + 1;
   const prompt = withFileDeliverable(
-    withTuning(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides), tuning, true),
+    withTuning(withProgression(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides, weekMetaOverrides), { run: true, gym: doesGym(), isRevision: true }), tuning, true),
     `plan-${meta.slug}-v${next}.md`, `# PLAN_v${next} — ${meta.name}`);
   openPromptModal('Prompt de révision', prompt);
 }

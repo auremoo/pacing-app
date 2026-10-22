@@ -6,6 +6,7 @@ import { today } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { typeName } from '../utils/session-types.js';
 import { withFileDeliverable } from '../utils/prompt-output.js';
+import { withProgression } from '../utils/progression.js';
 import { referencesSection } from '../utils/references.js';
 import { openTuningModal, withTuning, tuningSummary } from '../utils/plan-tuning.js';
 import { getTargets, formatTargets, targetText } from '../utils/routine-context.js';
@@ -148,7 +149,7 @@ async function handleImport(container, file) {
 function showInitialPromptModal(tuning) {
   const meta    = getRoutineMeta();
   const athlete = getAthleteProfile();
-  const prompt  = withFileDeliverable(withTuning(buildInitialPrompt(meta, athlete), tuning, false), 'plan-general-v1.md', '# PLAN_GENERAL_v1');
+  const prompt  = withFileDeliverable(withTuning(withProgression(buildInitialPrompt(meta, athlete), { run: doesRun(), gym: doesGym(), isRevision: false }), tuning, false), 'plan-general-v1.md', '# PLAN_GENERAL_v1');
   openPromptModal('Prompt de plan initial', prompt);
 }
 
@@ -212,7 +213,7 @@ const GYM_RULES = {
 - 4 à 6 exercices, de préférence sur machines guidées ou des mouvements simples, échauffement et retour au calme compris, 1h maximum ;
 - pour chaque exercice, dans la description : son nom courant (et le nom de la machine s'il y en a une), comment le faire en une phrase, l'erreur à éviter, séries × répétitions, temps de repos, et une charge de départ décrite simplement (« légère : tu dois pouvoir faire encore 2-3 répétitions à la fin de chaque série ») plutôt qu'en kilos ;
 - écris la description toujours dans cet ordre, l'app la découpe en fiches à l'écran : « Échauffement … » puis les exercices numérotés « 1) Nom de l'exercice — comment le faire ; évite … . 3 × 12, repos 90 s, charge légère. 2) … », puis « Retour au calme … », et en dernier les consignes générales. Phrases courtes, mots simples, pas de jargon (ou expliqué) ;
-- garde les mêmes exercices plusieurs semaines pour que je les apprenne, progression douce (répétitions puis charge) ;
+- garde les mêmes exercices 3 à 4 semaines pour que je les apprenne, **mais avec une progression visible chaque semaine** (une série ou quelques répétitions en plus, puis un cran plus lourd) — débuter n'empêche pas de progresser vite au début ; fais évoluer une partie des exercices à chaque nouveau cycle ;
 - tiens compte de mes pathologies / points de vigilance : écarte ou adapte les exercices à risque, et dis-le dans la description ;
 - ajoute dans la SYNTHESE un petit lexique des exercices du plan.`,
   intermediate: 'Pour une séance de musculation, la description liste les exercices avec séries × répétitions, charge (ou RPE) et temps de repos — ex : « Squat 4×8 à 40 kg, repos 2 min ; Fentes 3×10 par jambe… ». Varie les groupes musculaires sur la semaine et prévois une progression des charges.',
@@ -328,7 +329,7 @@ function showExportModal(tuning) {
     getTypeOverrides(ROUTINE_SLUG)
   );
   const next    = (meta.activeVersion || 1) + 1;
-  const prompt  = withFileDeliverable(withTuning(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides), tuning, true),
+  const prompt  = withFileDeliverable(withTuning(withProgression(buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, dateOverrides), { run: doesRun(), gym: doesGym(), isRevision: true }), tuning, true),
     `plan-general-v${next}.md`, `# PLAN_GENERAL_v${next}`);
   openPromptModal('Prompt de révision', prompt);
 }

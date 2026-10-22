@@ -14,6 +14,7 @@ import { doesRun, doesGym } from './sports.js';
 export const TUNING_GROUPS = [
   { id: 'general', label: 'En général', params: [
     { id: 'difficulty', label: 'Difficulté générale' },
+    { id: 'progression', label: 'Vitesse de progression' },
     { id: 'sessions',   label: 'Séances par semaine' },
     { id: 'recovery',   label: 'Repos et récupération' },
   ] },
