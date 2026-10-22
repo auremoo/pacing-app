@@ -164,50 +164,129 @@
               "s02-fri": "2026-10-22"
             }
           }
+        },
+        "v4": {
+          "s01-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-19T17:15:39.684Z",
+            "version": 4,
+            "carriedFrom": {
+              "v": 3,
+              "id": "s02-mon"
+            }
+          },
+          "s01-tue": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-20T09:48:28.454Z",
+            "version": 4,
+            "carriedFrom": {
+              "v": 3,
+              "id": "s02-wed"
+            }
+          },
+          "s01-wed": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-22T08:23:10.712Z",
+            "version": 4,
+            "carriedFrom": {
+              "v": 3,
+              "id": "s02-tue"
+            }
+          },
+          "s01-thu": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-22T09:44:02.011Z",
+            "version": 4,
+            "carriedFrom": {
+              "v": 3,
+              "id": "s02-fri"
+            }
+          }
         }
       },
-      "_planVersion": 4,
-      "s01-mon": {
+      "_planVersion": 3,
+      "s02-mon": {
         "completed": true,
         "skipped": false,
         "completedAt": "2026-10-19T17:15:39.684Z",
-        "version": 4,
+        "version": 3,
         "carriedFrom": {
           "v": 3,
           "id": "s02-mon"
         }
       },
-      "s01-tue": {
+      "s02-tue": {
         "completed": true,
         "skipped": false,
         "completedAt": "2026-10-20T09:48:28.454Z",
-        "version": 4,
+        "version": 3,
         "carriedFrom": {
           "v": 3,
           "id": "s02-wed"
         }
       },
-      "s01-wed": {
+      "s02-wed": {
         "completed": true,
         "skipped": false,
         "completedAt": "2026-10-22T08:23:10.712Z",
-        "version": 4,
+        "version": 3,
         "carriedFrom": {
           "v": 3,
           "id": "s02-tue"
         }
       },
-      "s01-thu": {
+      "_dateOverrides": {
+        "s02-wed": "2026-10-20",
+        "s02-tue": "2026-10-21",
+        "s02-fri": "2026-10-22"
+      },
+      "s01-mon": {
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-12T09:45:58.339Z",
+        "version": 3,
+        "carriedFrom": {
+          "v": 1,
+          "id": "s02-wed"
+        }
+      },
+      "s01-tue": {
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-13T20:07:51.863Z",
+        "version": 3,
+        "carriedFrom": {
+          "v": 1,
+          "id": "s02-mon"
+        }
+      },
+      "s01-wed": {
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-15T08:55:23.598Z",
+        "version": 3,
+        "carriedFrom": {
+          "v": 1,
+          "id": "s02-tue"
+        }
+      },
+      "s01-fri": {
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-16T10:18:16.895Z",
+        "version": 3
+      },
+      "s02-fri": {
         "completed": true,
         "skipped": false,
         "completedAt": "2026-10-22T09:44:02.011Z",
-        "version": 4,
-        "carriedFrom": {
-          "v": 3,
-          "id": "s02-fri"
-        }
+        "version": 3
       }
     }
   },
-  "lastUpdated": "2026-10-22T16:32:49.762Z"
+  "lastUpdated": "2026-10-22T16:33:37.573Z"
 }
