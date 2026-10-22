@@ -67,7 +67,7 @@ function pages(name) {
           ${STEP(1, 'Touche <strong>✦ Générer le prompt de plan initial</strong>, puis <strong>Copier le prompt</strong>')}
           ${STEP(2, 'Colle-le dans une conversation avec <strong>Claude</strong>')}
           ${STEP(3, 'Enregistre le fichier <strong>.md</strong> qu\'il te renvoie')}
-          ${STEP(4, 'Reviens ici : <strong>+ Importer une nouvelle version</strong>')}
+          ${STEP(4, 'Reviens ici : <strong>+ Importer une nouvelle version</strong> (ou colle le texte)')}
         </ol>
         <div class="onb-callout">
           <strong>Remplis d'abord, génère ensuite.</strong>

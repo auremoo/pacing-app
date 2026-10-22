@@ -1,7 +1,7 @@
 import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
          saveSessionNote, getDateOverrides, getWeekMetaOverrides,
          moveSession, swapSessionDates, swapWeeks, ROUTINE_SLUG,
-         getTypeOverrides } from '../store.js';
+         getTypeOverrides, getEventMeta } from '../store.js';
 import { navigate, showToast } from '../app.js';
 import { today, formatDateShort } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
@@ -9,6 +9,7 @@ import { sessionTitle } from '../utils/session-types.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum, weekVolumeLabel } from '../utils/plan-overrides.js';
 import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
 import { syncEventClosure } from './event-closure.js';
+import { getPastWeeks } from '../utils/plan-history.js';
 
 
 
@@ -36,6 +37,7 @@ export function mount(container, slug, { pausedWeeks } = {}) {
     getTypeOverrides(slug)
   );
   const dateIndex     = buildDateIndex(effPlan);
+  const pastWeeks     = getPastWeeks(slug, effPlan);
 
   // Semaine en cours
   const currentWeekNum = getCurrentWeekNum(effPlan, todayStr);
@@ -63,6 +65,11 @@ export function mount(container, slug, { pausedWeeks } = {}) {
             <span class="phase-pill__dot"></span>${p.name}
           </button>`).join('')}
       </div>
+
+      ${pastWeeks.length ? `
+        <p class="section-header past-weeks__label">Semaines précédentes · anciennes versions</p>
+        <div class="past-weeks">${pastWeeks.map(renderPastWeekCard).join('')}</div>
+        <p class="section-header past-weeks__label">Version actuelle (v${getActiveVersionNum(slug)})</p>` : ''}
 
       <div id="weeks-list">
         ${effPlan.weeks.map(w => renderWeekCard(w, currentWeekNum, states, effPlan, overrides, pausedWeeks?.get(w.number))).join('')}
@@ -535,4 +542,51 @@ function renderSessionItem(session, state, isMoved) {
       </div>
     </div>
   `;
+}
+
+// ── Semaines d'anciennes versions (utils/plan-history.js) ─────────
+// Lecture seule : ni coche, ni déplacement, ni lien vers le détail.
+
+function getActiveVersionNum(slug) {
+  return getEventMeta(slug)?.activeVersion ?? '';
+}
+
+function renderPastWeekCard({ v, week, states }) {
+  const training = week.sessions.filter(s => s.type !== 'rest');
+  const done     = training.filter(s => states[s.id]?.completed).length;
+  return `
+    <div class="week-card week-card--past" data-past-week="v${v}-${week.number}">
+      <div class="week-card__header" data-week-header>
+        <span class="week-card__phase-dot" style="background:var(--gray-3)"></span>
+        <div class="week-card__info">
+          <div class="week-card__title">S${String(week.number).padStart(2, '0')} <span class="week-card__badge week-card__badge--version">v${v}</span></div>
+          <div class="week-card__dates">${week.dateRange}</div>
+        </div>
+        <div class="week-card__right">
+          <span class="week-card__completion">${training.length ? `${done}/${training.length}` : ''}</span>
+          <span class="week-card__chevron">›</span>
+        </div>
+      </div>
+      <div class="week-card__sessions">
+        ${training.map(s => renderPastSessionItem(s, states[s.id] || {})).join('')}
+      </div>
+    </div>`;
+}
+
+function renderPastSessionItem(session, state) {
+  const label  = SESSION_LABELS[session.type] || session.type.slice(0, 4).toUpperCase();
+  const status = state.completed ? '<span class="past-status past-status--done">✓</span>'
+               : state.skipped   ? '<span class="past-status past-status--skipped">✕</span>'
+               : '<span class="past-status">–</span>';
+  const note   = state.note ? ` · ${String(state.note).replace(/</g, '&lt;').slice(0, 60)}` : '';
+  const planned = session.plannedType ? ` · prévu : ${session.title}` : '';
+  return `
+    <div class="session-item session-item--past ${state.completed ? 'session-item--completed' : ''} ${state.skipped ? 'session-item--skipped' : ''}">
+      <span class="session-item__type-badge type-${session.type}">${label}</span>
+      <div class="session-item__content">
+        <div class="session-item__title">${sessionTitle(session)}</div>
+        <div class="session-item__meta">${session.dayLabel} ${formatDateShort(session.date)}${planned}${note}</div>
+      </div>
+      ${status}
+    </div>`;
 }

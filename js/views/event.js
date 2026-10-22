@@ -1,4 +1,5 @@
 import { getEventMeta, ensurePlanLoaded } from '../store.js';
+import { loadPastVersions } from '../utils/plan-history.js';
 import { navigate } from '../app.js';
 import { mount as mountPlan }     from './plan-view.js';
 import { mount as mountCourse }   from './course-view.js';
@@ -31,6 +32,7 @@ export async function mount(container, slug, activeTab = 'plan') {
   // Load plan if available
   if (meta.activeVersion) {
     await ensurePlanLoaded(slug, meta.activeVersion);
+    await loadPastVersions(slug);
   }
 
   const tabs = tabsFor(slug, meta, activeTab);

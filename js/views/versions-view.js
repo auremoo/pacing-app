@@ -5,6 +5,7 @@ import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { openPromptModal } from '../utils/prompt-modal.js';
 import { withFileDeliverable } from '../utils/prompt-output.js';
+import { openPasteModal } from '../utils/paste-import.js';
 import { withProgression } from '../utils/progression.js';
 import { referencesSection } from '../utils/references.js';
 import { openTuningModal, withTuning, tuningSummary } from '../utils/plan-tuning.js';
@@ -29,6 +30,7 @@ function render(container, slug) {
         + Importer une nouvelle version
       </button>
       <input type="file" id="md-input" accept=".md,text/markdown,text/plain" style="display:none">
+      <button class="btn btn--ghost btn--full" id="paste-btn" style="margin-top:var(--space-2)">Coller le texte du plan</button>
     </div>
 
     ${hasPlan ? `
@@ -57,6 +59,11 @@ function render(container, slug) {
 
     <div id="import-status" style="padding:0 var(--space-4);font-size:14px;color:var(--text-secondary)"></div>
   `;
+
+  container.querySelector('#paste-btn').addEventListener('click', async () => {
+    const text = await openPasteModal();
+    if (text) await handleImportText(container, slug, text, 'Plan collé');
+  });
 
   container.querySelector('#import-btn').addEventListener('click', () => {
     container.querySelector('#md-input').click();
@@ -104,6 +111,12 @@ async function handleImport(container, slug, file) {
   status.textContent = 'Lecture du fichier…';
 
   const text = await file.text();
+  return handleImportText(container, slug, text, file.name.replace('.md', ''));
+}
+
+// Fichier ou texte collé (utils/paste-import.js) : même import.
+async function handleImportText(container, slug, text, fallbackLabel) {
+  const status = container.querySelector('#import-status');
 
   if (!text.includes('## META') || !text.includes('## SEMAINES')) {
     showToast('Format invalide — vérifie le template Claude.', 'error');
@@ -112,7 +125,7 @@ async function handleImport(container, slug, file) {
   }
 
   const metaMatch = text.match(/^event:\s*(.+)$/m);
-  const label = metaMatch ? metaMatch[1].trim() : file.name.replace('.md', '');
+  const label = metaMatch ? metaMatch[1].trim() : fallbackLabel;
 
   status.textContent = 'Upload vers GitHub…';
   try {

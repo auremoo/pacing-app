@@ -2709,3 +2709,15 @@ select.form-input {
 /* Mot de passe à chiffres affiché en points sans type="password" (lock.js) */
 .pin-input { -webkit-text-security: disc; text-security: disc; }
 .pin-input::placeholder { -webkit-text-security: none; }
+
+/* ─── Semaines d'anciennes versions, en tête du plan (lecture seule) ── */
+.past-weeks__label { padding-top: var(--space-3); }
+.week-card--past { opacity: .75; }
+.week-card__badge--version { background: var(--fill-secondary, rgba(120,120,128,.16)); color: var(--text-secondary); }
+.session-item--past { cursor: default; }
+.past-status { flex: none; width: 28px; text-align: center; font-weight: 700; color: var(--text-tertiary); }
+.past-status--done { color: var(--ios-green); }
+.past-status--skipped { color: var(--ios-orange); }
+
+.paste-error { color: var(--ios-red); font-size: 14px; min-height: 0; }
+.paste-error:empty { display: none; }

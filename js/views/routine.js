@@ -1,6 +1,7 @@
 import { getRoutineMeta, ensurePlanLoaded, getActivePlan, getEventsIndex, getEventMeta,
          getDateOverrides, getWeekMetaOverrides, ROUTINE_SLUG } from '../store.js';
 import { navigate } from '../app.js';
+import { loadPastVersions } from '../utils/plan-history.js';
 import { mount as mountPlan }            from './plan-view.js';
 import { mount as mountRoutineSettings } from './routine-settings.js';
 import { mount as mountRoutineVersions } from './routine-versions.js';
@@ -21,6 +22,7 @@ export async function mount(container, activeTab = 'plan') {
 
   if (meta?.activeVersion) {
     await ensurePlanLoaded(ROUTINE_SLUG, meta.activeVersion);
+    await loadPastVersions(ROUTINE_SLUG);
   }
 
   container.innerHTML = `
