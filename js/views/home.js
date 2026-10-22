@@ -1,5 +1,5 @@
 import { navigate } from '../app.js';
-import { today, formatDateShort } from '../utils/dates.js';
+import { today, formatDateShort, weekRangeOf } from '../utils/dates.js';
 import { findTodaySession, getActiveRacePreps, todaySessionTitle, getRoutineProgress } from '../utils/today-session.js';
 import { typeBadge } from '../utils/session-types.js';
 import { renderEventCard } from './courses.js';
@@ -83,7 +83,7 @@ function renderRoutineCard({ week, done, total, next, phase }) {
       <div class="event-card__header">
         <div>
           <div class="event-card__title">Entraînement général</div>
-          <div class="event-card__subtitle">S${String(week.number).padStart(2, '0')} · ${week.dateRange}</div>
+          <div class="event-card__subtitle">Semaine du ${weekRangeOf(week)}</div>
         </div>
         ${week.isDecharge ? '<span class="event-card__distance-badge">Décharge</span>' : ''}
       </div>

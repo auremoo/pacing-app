@@ -3,15 +3,20 @@ import { getActivePlan, getAllSessionStates, toggleSession, skipSession,
          moveSession, swapSessionDates, swapWeeks, ROUTINE_SLUG,
          getTypeOverrides, getEventMeta } from '../store.js';
 import { navigate, showToast } from '../app.js';
-import { today, formatDateShort } from '../utils/dates.js';
+import { today, formatDateShort, weekRangeOf } from '../utils/dates.js';
 import { SESSION_LABELS } from '../parser.js';
 import { sessionTitle } from '../utils/session-types.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getWeekMonday, getDayLabel, getCurrentWeekNum, weekVolumeLabel } from '../utils/plan-overrides.js';
 import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
 import { syncEventClosure } from './event-closure.js';
-import { getPastWeeks } from '../utils/plan-history.js';
+import { getPastWeeks, weekNumbering } from '../utils/plan-history.js';
 
 
+
+// Numéro affiché d'une semaine de la version active (numérotation continue
+// avec les semaines d'anciennes versions, voir plan-history.js). Posé à chaque
+// montage, lu par le rendu et la modale d'échange.
+let _weekNo = n => n;
 
 export function mount(container, slug, { pausedWeeks } = {}) {
   const plan = getActivePlan(slug);
@@ -38,6 +43,8 @@ export function mount(container, slug, { pausedWeeks } = {}) {
   );
   const dateIndex     = buildDateIndex(effPlan);
   const pastWeeks     = getPastWeeks(slug, effPlan);
+  const numbering     = weekNumbering(pastWeeks, effPlan);
+  _weekNo = numbering.active;
 
   // Semaine en cours
   const currentWeekNum = getCurrentWeekNum(effPlan, todayStr);
@@ -68,7 +75,7 @@ export function mount(container, slug, { pausedWeeks } = {}) {
 
       ${pastWeeks.length ? `
         <p class="section-header past-weeks__label">Semaines précédentes · anciennes versions</p>
-        <div class="past-weeks">${pastWeeks.map(renderPastWeekCard).join('')}</div>
+        <div class="past-weeks">${pastWeeks.map((pw, i) => renderPastWeekCard(pw, numbering.past(i))).join('')}</div>
         <p class="section-header past-weeks__label">Version actuelle (v${getActiveVersionNum(slug)})</p>` : ''}
 
       <div id="weeks-list">
@@ -264,7 +271,7 @@ function showSwapWeekModal(weekNum, effPlan, slug, container) {
     const ph   = effPlan.phases.find(p => p.id === w.phaseId);
     const tags = [ph?.name, w.isDecharge ? 'Décharge' : null, weekVolumeLabel(w)]
       .filter(Boolean).join(' · ');
-    return `S${String(w.number).padStart(2, '0')} — ${w.dateRange} · ${tags}`;
+    return `S${String(_weekNo(w.number)).padStart(2, '0')} — ${weekRangeOf(w)} · ${tags}`;
   };
 
   const modal = document.createElement('div');
@@ -272,8 +279,8 @@ function showSwapWeekModal(weekNum, effPlan, slug, container) {
   modal.innerHTML = `
     <div class="compact-modal__overlay"></div>
     <div class="compact-modal__panel">
-      <div class="compact-modal__title">Échanger S${String(weekNum).padStart(2, '0')}</div>
-      <div class="compact-modal__subtitle">${weekA.dateRange} · ${phaseA?.name || ''}${weekA.isDecharge ? ' · Décharge' : ''}</div>
+      <div class="compact-modal__title">Échanger S${String(_weekNo(weekNum)).padStart(2, '0')}</div>
+      <div class="compact-modal__subtitle">${weekRangeOf(weekA)} · ${phaseA?.name || ''}${weekA.isDecharge ? ' · Décharge' : ''}</div>
       <div style="margin-top:var(--space-3)">
         <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:var(--space-1)">Semaine cible</label>
         <select class="form-input" id="swap-week-select" style="font-size:15px">
@@ -474,8 +481,8 @@ function renderWeekCard(week, currentWeekNum, states, plan, overrides, pausedByR
       <div class="week-card__header" data-week-header>
         <span class="week-card__phase-dot" style="background:var(--phase-${phaseColor})"></span>
         <div class="week-card__info">
-          <div class="week-card__title">S${String(week.number).padStart(2, '0')} ${badge}</div>
-          <div class="week-card__dates">${week.dateRange}${weekVolumeLabel(week) ? ` · ${weekVolumeLabel(week).replace(/</g, '&lt;')}` : ''}</div>
+          <div class="week-card__title">S${String(_weekNo(week.number)).padStart(2, '0')} ${badge}</div>
+          <div class="week-card__dates">${weekRangeOf(week)}${weekVolumeLabel(week) ? ` · ${weekVolumeLabel(week).replace(/</g, '&lt;')}` : ''}</div>
         </div>
         <div class="week-card__right">
           <button class="week-swapbtn" data-week-swap="${week.number}" title="Échanger avec une autre semaine">
@@ -551,7 +558,7 @@ function getActiveVersionNum(slug) {
   return getEventMeta(slug)?.activeVersion ?? '';
 }
 
-function renderPastWeekCard({ v, week, states }) {
+function renderPastWeekCard({ v, week, states }, displayNum) {
   const training = week.sessions.filter(s => s.type !== 'rest');
   const done     = training.filter(s => states[s.id]?.completed).length;
   return `
@@ -559,8 +566,8 @@ function renderPastWeekCard({ v, week, states }) {
       <div class="week-card__header" data-week-header>
         <span class="week-card__phase-dot" style="background:var(--gray-3)"></span>
         <div class="week-card__info">
-          <div class="week-card__title">S${String(week.number).padStart(2, '0')} <span class="week-card__badge week-card__badge--version">v${v}</span></div>
-          <div class="week-card__dates">${week.dateRange}</div>
+          <div class="week-card__title">S${String(displayNum).padStart(2, '0')} <span class="week-card__badge week-card__badge--version">v${v}</span></div>
+          <div class="week-card__dates">${weekRangeOf(week)}</div>
         </div>
         <div class="week-card__right">
           <span class="week-card__completion">${training.length ? `${done}/${training.length}` : ''}</span>

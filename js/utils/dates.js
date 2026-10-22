@@ -1,4 +1,8 @@
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+// Abréviations usuelles : couper à 3 lettres donnait « jui. » pour juin et
+// juillet, et « mai. ».
+const MONTHS_SHORT_FR = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
 const MONTHS_FR = [
   'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
   'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
@@ -22,7 +26,7 @@ export function formatDate(isoDate) {
 export function formatDateShort(isoDate) {
   if (!isoDate) return '';
   const [y, m, d] = isoDate.split('-').map(Number);
-  return `${d} ${MONTHS_FR[m - 1].slice(0, 3)}.`;
+  return `${d} ${MONTHS_SHORT_FR[m - 1]}`;
 }
 
 export function daysUntil(isoDate) {
@@ -71,4 +75,28 @@ export function weeksBetween(startIso, endIso) {
   const [y2, m2, d2] = endIso.split('-').map(Number);
   const diffDays = Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86400000);
   return Math.max(1, Math.ceil((diffDays + 1) / 7));
+}
+
+// Plage lundi → dimanche d'une semaine de plan, à partir des dates de ses
+// séances : « 5 – 11 oct. », « 26 oct. – 1 nov. », année ajoutée seulement si
+// ce n'est pas l'année en cours. Remplace le libellé écrit par l'IA dans le
+// .md (« 2026-10-05-2026-10-11 octobre 2026 »), illisible.
+export function formatWeekRange(sessionDates) {
+  const first = (sessionDates || []).filter(Boolean).sort()[0];
+  if (!first) return '';
+  const [y, m, d] = first.split('-').map(Number);
+  const start = new Date(y, m - 1, d);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));     // lundi
+  const end = new Date(start); end.setDate(start.getDate() + 6);  // dimanche
+  const thisYear = new Date().getFullYear();
+  const mon = dt => MONTHS_SHORT_FR[dt.getMonth()];
+  const yr  = dt => (dt.getFullYear() !== thisYear ? ` ${dt.getFullYear()}` : '');
+  if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear())
+    return `${start.getDate()} – ${end.getDate()} ${mon(end)}${yr(end)}`;
+  const startYear = start.getFullYear() !== end.getFullYear() ? yr(start) : '';
+  return `${start.getDate()} ${mon(start)}${startYear} – ${end.getDate()} ${mon(end)}${yr(end)}`;
+}
+
+export function weekRangeOf(week) {
+  return formatWeekRange((week?.sessions || []).map(s => s.date));
 }

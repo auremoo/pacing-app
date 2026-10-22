@@ -68,3 +68,14 @@ export function getPastWeeks(slug, activePlan) {
   }
   return out.sort((a, b) => a.week.sessions[0].date.localeCompare(b.week.sessions[0].date));
 }
+
+// Numéros affichés sur toute la frise : les semaines passées des anciennes
+// versions d'abord (1, 2, …), puis celles de la version active à la suite.
+// Chaque version recommence à S01 dans son .md ; sans ça, Margot voyait trois
+// « S01 » d'affilée (v1, v3, puis la v4 en cours). Les numéros internes du plan
+// (ids de séance, prompts) ne changent pas.
+export function weekNumbering(pastWeeks, activePlan) {
+  const offset = pastWeeks.length;
+  const order  = new Map((activePlan?.weeks || []).map((w, i) => [w.number, offset + i + 1]));
+  return { past: i => i + 1, active: n => order.get(n) ?? n };
+}

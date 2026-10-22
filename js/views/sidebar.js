@@ -95,7 +95,7 @@ function renderRoutineItem(progress) {
       <div class="sb-event-item__name">Entraînement général</div>
       <div class="sb-event-item__meta">
         ${progress
-          ? `S${String(progress.week.number).padStart(2, '0')} · ${progress.done}/${progress.total} cette semaine`
+          ? `${progress.done}/${progress.total} cette semaine`
           : 'En pause ou aucun plan en cours'}
       </div>
       ${pct !== null ? `
