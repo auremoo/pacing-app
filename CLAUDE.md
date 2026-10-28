@@ -67,7 +67,8 @@ pacing-app/
 │       ├── body.js                 # Suivi du poids : évolution, objectif, courbe SVG, section de prompt
 │       ├── routine-context.js      # Plan général → prompts : activités récurrentes, historique récent, objectifs perso
 │       ├── routine-overlap.js      # Détecte les semaines du plan général chevauchant une course active
-│       └── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
+│       ├── today-session.js        # Séance du jour unifiée (courses + plan général) pour home.js/sidebar.js
+│       └── volume-chart.js         # Graphique « Volume par semaine » de l'onglet Plan (séances + km prévus)
 ├── events/
 │   ├── index.json                  # Liste des slugs d'événements
 │   ├── run-in-lyon-2026/
@@ -137,6 +138,10 @@ GitHub repo
 **Niveau en salle** (Réglages → Mes sports, visible si « Salle » est coché) : `athlete.json` → `gymLevel` ∈ `beginner` (défaut), `intermediate`, `advanced` (`GYM_LEVELS`, `gymLevel()` dans sports.js), enregistré tout de suite. Il règle les consignes de musculation des prompts du plan général (`GYM_RULES` dans routine-versions.js) : débutant = l'IA choisit les exercices (4-6, machines guidées), explique chacun (nom, geste, erreur à éviter), charge de départ décrite sans kilos, mêmes exercices plusieurs semaines, points de vigilance respectés, lexique dans la SYNTHESE — demande d'une débutante qui « n'y connaît rien » ; un plan qui dirait seulement « bosse les jambes » la laisserait sans savoir quoi faire. Intermédiaire = séries × reps × charges ; confirmé = programmation structurée. Objectifs perso : `renfo` (zone ou but en mots simples, « fessiers et cuisses ») pour tous ceux qui vont en salle, `force` (exercice + charge) réservé aux confirmés (`availableTargetKinds` ; un type déjà utilisé reste proposé). Ligne « Niveau en salle » dans le profil du prompt.
 
 **Volume de semaine libre** : l'en-tête `### S01 | … | phase | {volume} | note` accepte `18km` (ou un nombre seul = km, comme avant), `4 séances`, `3h30`, ou `-`. Le parser pose `targetVolumeKm` (0 hors km) et `volumeLabel` (texte affiché, via `weekVolumeLabel`). Un échange de semaines antérieur à `volumeLabel` reconstruit le libellé depuis les km.
+
+**Volume par semaine** (`js/utils/volume-chart.js`, en tête de l'onglet Plan d'une course comme du plan général, sous la barre de progression) : une barre par semaine de la version active — séances faites (vert), manquées (orange), à faire (bleu clair ; plus soutenu pour la semaine en cours), semaines en pause grisées — et, si le plan donne des km dans l'en-tête des semaines (`targetVolumeKm`), une courbe violette des km prévus. Le réalisé ne se compte qu'en séances : une séance ne porte pas de distance. Toucher une barre ouvre la semaine et y fait défiler. Repliable (`<details>`).
+
+**Mode sombre** : variables redéfinies dans `tokens.css` (`prefers-color-scheme: dark`), y compris `--gray-4` (interrupteurs désactivés, badge d'une version inactive).
 
 **Suivi du poids** (si « Suivre mon poids ») : onglet **Suivi** du plan général (`body-view.js`, route `/routine/body`) — résumé (dernière pesée, évolution sur 4 semaines, objectif), courbe avec l'objectif de poids en pointillés (premier objectif `poids` non atteint, `weightTarget`), saisie (date, poids, tour de taille facultatif), historique supprimable. Une pesée par jour au plus (une nouvelle le même jour remplace). Stocké dans `body.json` du dossier de l'utilisateur, écrit tout de suite (`saveBodyEntry`/`deleteBodyEntry`, SHA relu avant chaque PUT). Carte « Poids » sur l'accueil. Les prompts du plan général reçoivent la section « Suivi du poids » (`bodyPromptSection`) : première et dernière pesée, évolution, 12 dernières pesées, consigne de rythme raisonnable.
 
