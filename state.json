@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-28T16:45:53.353Z",
+  "lastUpdated": "2026-10-28T16:46:03.385Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -953,7 +953,7 @@
         "note": "Autre"
       },
       "s04-fri": {
-        "note": "Pas trop de l’EF mais 6,05km à 5,22min/km",
+        "note": "Pas trop de l’EF mais 6,05km à 5,22min/km (séance faite la veille avant le badminton)",
         "completed": true,
         "skipped": false,
         "completedAt": "2026-10-28T16:45:50.568Z",
