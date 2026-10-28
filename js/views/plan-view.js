@@ -10,6 +10,7 @@ import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getWeek
 import { SKIP_REASON_LABELS as REASON_LABELS } from '../utils/skip-reasons.js';
 import { syncEventClosure } from './event-closure.js';
 import { getPastWeeks, weekNumbering } from '../utils/plan-history.js';
+import { renderVolumeChart } from '../utils/volume-chart.js';
 
 
 
@@ -66,6 +67,8 @@ export function mount(container, slug, { pausedWeeks } = {}) {
         <div class="progress-label"><span>${totDone} réalisée${totDone > 1 ? 's' : ''}${skippedLabel}</span><span>${pct}%</span></div>
       </div>
 
+      ${renderVolumeChart(effPlan.weeks, states, currentWeekNum, { weekNo: _weekNo, paused: pausedWeeks })}
+
       <div class="phase-pills-scroll" id="phase-pills">
         ${effPlan.phases.map(p => `
           <button class="phase-pill phase-pill--${p.color}" data-phase="${p.id}">
@@ -109,6 +112,16 @@ export function mount(container, slug, { pausedWeeks } = {}) {
         const first = container.querySelector(`.week-card[data-phase-id="${phaseId}"]`);
         if (first) setTimeout(() => first.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
       }
+    });
+  });
+
+  // ── Graphique de volume : une barre ouvre sa semaine ──────────
+  container.querySelectorAll('[data-week-bar]').forEach(bar => {
+    bar.addEventListener('click', () => {
+      const card = container.querySelector(`.week-card[data-week="${bar.dataset.weekBar}"]`);
+      if (!card) return;
+      card.classList.add('week-card--open');
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 
