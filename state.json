@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-10-28T08:50:01.350Z",
+  "lastUpdated": "2026-10-28T16:45:50.933Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -951,6 +951,13 @@
         "version": 2,
         "completedAt": null,
         "note": "Autre"
+      },
+      "s04-fri": {
+        "note": "Pas trop de l’EF mais 6,05km à 5,22min/km",
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-10-28T16:45:50.568Z",
+        "version": 2
       }
     }
   }
