@@ -19,6 +19,16 @@ export function mount(container) {
         <div class="dashboard-add-row">
           <button class="btn btn--ghost" id="new-event-btn">+ Créer un événement</button>
         </div>
+        <p class="section-header">Outils</p>
+        <div class="card-group" style="margin:0 var(--space-4)">
+          <div class="list-row" id="gpx-tool-btn">
+            <div class="list-row__content">
+              <div class="list-row__title">Étudier un GPX</div>
+              <div class="list-row__subtitle">Profil et dénivelé d'un tracé, sans l'enregistrer</div>
+            </div>
+            <span class="list-row__chevron">›</span>
+          </div>
+        </div>
         <div style="height:var(--space-8)"></div>
       </div>
     </div>
@@ -28,6 +38,7 @@ export function mount(container) {
   attachGlobalTabBar(container);
 
   container.querySelector('#new-event-btn').addEventListener('click', () => navigate('/new-event'));
+  container.querySelector('#gpx-tool-btn').addEventListener('click', () => navigate('/gpx'));
 
   container.querySelectorAll('[data-event-slug]').forEach(el => {
     el.addEventListener('click', () => navigate(`/event/${el.dataset.eventSlug}`));

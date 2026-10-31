@@ -8,6 +8,7 @@ import { mount as mountSession }               from './views/session-view.js';
 import { mount as mountSettings }             from './views/settings.js';
 import { mount as mountNewEvent }             from './views/new-event.js';
 import { mount as mountRoutine }              from './views/routine.js';
+import { mount as mountGpxTool }              from './views/gpx-tool.js';
 import { initStore, ROUTINE_SLUG, isOnboardingPending, completeOnboarding } from './store.js';
 import { openOnboarding }                      from './views/onboarding.js';
 import { configure }                           from './github-api.js';
@@ -33,6 +34,7 @@ const ROUTES = [
   { re: /^\/courses$/, fn: () => mountCourses(app) },
   { re: /^\/settings$/, fn: () => mountSettings(app) },
   { re: /^\/new-event$/, fn: () => mountNewEvent(app) },
+  { re: /^\/gpx$/, fn: () => mountGpxTool(app) },
   { re: /^\/event\/([\w-]+)$/, fn: (m) => mountEvent(app, m[1], 'plan') },
   { re: /^\/event\/([\w-]+)\/(plan|course|versions|infos|strategy)$/, fn: (m) => mountEvent(app, m[1], m[2]) },
   { re: /^\/event\/([\w-]+)\/session\/([\w-]+)$/, fn: (m) => mountSession(app, m[1], m[2]) },

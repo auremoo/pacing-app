@@ -1617,6 +1617,42 @@
 
 .course-import-area:hover { border-color: var(--ios-blue); }
 
+/* ─── Étudier un GPX (gpx-tool.js) ────────────────────────────── */
+
+.gpx-tool__note {
+  margin: var(--space-3) var(--space-4) var(--space-4);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.gpx-km-table {
+  margin: 0 var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.gpx-km-table table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.gpx-km-table th {
+  background: var(--gray-5);
+  padding: var(--space-2);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+}
+.gpx-km-table td { padding: var(--space-2); border-top: 0.5px solid var(--separator); white-space: nowrap; }
+.gpx-km-table th:first-child, .gpx-km-table td:first-child { padding-left: var(--space-3); font-weight: 600; }
+.gpx-km-table__steep { color: var(--ios-orange); font-weight: 600; }
+
+@media (min-width: 768px) {
+  .gpx-km-table, .gpx-tool__note { max-width: 600px; margin-left: auto; margin-right: auto; }
+}
+
 /* ─── Versions View ───────────────────────────────────────────── */
 
 .version-card {

@@ -15,7 +15,11 @@ export function parseGpx(gpxText) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(gpxText, 'application/xml');
 
-  const points = [...doc.querySelectorAll('trkpt')].map(pt => ({
+  // Trace enregistrée (trkpt) ou, à défaut, itinéraire planifié (rtept) :
+  // certains outils de tracé n'exportent que le second.
+  let nodes = doc.querySelectorAll('trkpt');
+  if (!nodes.length) nodes = doc.querySelectorAll('rtept');
+  const points = [...nodes].map(pt => ({
     lat: parseFloat(pt.getAttribute('lat')),
     lon: parseFloat(pt.getAttribute('lon')),
     ele: parseFloat(pt.querySelector('ele')?.textContent || 0)
