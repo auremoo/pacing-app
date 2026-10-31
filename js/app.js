@@ -59,11 +59,28 @@ async function route() {
 
 // ── Boot ──────────────────────────────────────────────────────────
 
+// Sans connexion : l'écran de connexion, sauf l'outil « Étudier un GPX », qui
+// n'a besoin ni du dépôt ni du token. Sur ordinateur, la barre latérale (vide)
+// est masquée et la barre du haut, avec son bouton Retour, réaffichée.
+let _guestListening = false;
+
+function guestRoute() {
+  document.getElementById('shell')?.classList.add('shell--guest');
+  const path = decodeURIComponent(location.hash.slice(1)) || '/';
+  if (path === '/gpx') mountGpxTool(app);
+  else mountLock(app, () => boot());
+}
+
 async function boot() {
   if (!isAuthenticated()) {
-    mountLock(app, () => boot());
+    guestRoute();
+    if (!_guestListening) {
+      _guestListening = true;
+      window.addEventListener('hashchange', () => { if (!isAuthenticated()) guestRoute(); });
+    }
     return;
   }
+  document.getElementById('shell')?.classList.remove('shell--guest');
 
   // On page refresh: token et dossier de données de l'utilisateur sont en
   // sessionStorage, les coordonnées du dépôt dans config.json

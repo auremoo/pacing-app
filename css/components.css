@@ -497,6 +497,30 @@
 }
 .lock-screen__switch strong { color: var(--ios-blue); font-weight: 600; }
 
+.lock-screen__tool {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 320px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+.lock-screen__tool strong { font-size: 15px; font-weight: 600; color: var(--ios-blue); }
+.lock-screen__tool-icon { font-size: 24px; flex-shrink: 0; }
+
+@media (min-width: 768px) {
+  #shell.shell--guest { grid-template-columns: 1fr; }
+  .shell--guest #sidebar { display: none; }
+  .shell--guest .nav-bar { display: flex; }
+}
+
 .lock-screen__hint {
   font-size: 12px;
   color: var(--text-tertiary);
@@ -1650,7 +1674,9 @@
 .gpx-km-table__steep { color: var(--ios-orange); font-weight: 600; }
 
 @media (min-width: 768px) {
-  .gpx-km-table, .gpx-tool__note { max-width: 600px; margin-left: auto; margin-right: auto; }
+  .gpx-tool { max-width: 600px; margin: 0 auto; }
+  .gpx-tool .gpx-km-table { margin: 0; }
+  .gpx-tool .course-stat__value { font-size: 19px; white-space: nowrap; }
 }
 
 /* ─── Versions View ───────────────────────────────────────────── */

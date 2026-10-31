@@ -39,6 +39,12 @@ export function mount(container, onUnlock) {
            proposait un mot de passe fort à chaque connexion. -->
       <form class="lock-screen__form" id="signup-form" autocomplete="off" hidden></form>
 
+      <!-- Outil ouvert à tous : rien n'est lu ni écrit sur le dépôt. -->
+      <button type="button" class="lock-screen__tool" id="lock-gpx-tool">
+        <span class="lock-screen__tool-icon">🗺️</span>
+        <span><strong>Étudier un GPX</strong><br>Profil et dénivelé d'un tracé, sans compte</span>
+      </button>
+
       <div class="lock-screen__footer">
         Cette application est privée : on y entre avec son prénom et son mot de passe, ou sur invitation.
         <a href="#" class="lock-screen__readme-link" id="lock-readme-link">En savoir plus →</a>
@@ -55,6 +61,8 @@ export function mount(container, onUnlock) {
       </div>
     </div>
   `;
+
+  container.querySelector('#lock-gpx-tool').addEventListener('click', () => { location.hash = '/gpx'; });
 
   const form         = container.querySelector('#lock-form');
   const input        = container.querySelector('#lock-input');

@@ -175,6 +175,12 @@ function render(container) {
           </div>
           <button class="btn btn--ghost btn--full" id="invite-close" style="margin-top:var(--space-2);color:var(--ios-red)" hidden>Fermer les inscriptions</button>
         </div>
+        <div class="list-row" id="gpx-tool-row" style="cursor:pointer">
+          <div class="list-row__content">
+            <div class="list-row__title" style="color:var(--ios-blue)">Étudier un GPX</div>
+            <div class="list-row__subtitle">Profil et dénivelé d'un tracé, sans l'enregistrer</div>
+          </div>
+        </div>
         <div class="list-row" id="replay-onboarding-btn" style="cursor:pointer">
           <div class="list-row__content">
             <div class="list-row__title" style="color:var(--ios-blue)">Revoir le tutoriel</div>
@@ -358,6 +364,8 @@ function wireAccount(container) {
   });
 
   wireInvite(container);
+
+  container.querySelector('#gpx-tool-row').addEventListener('click', () => { location.hash = '/gpx'; });
 
   container.querySelector('#replay-onboarding-btn').addEventListener('click', () => {
     openOnboarding({ name: getSession().name });

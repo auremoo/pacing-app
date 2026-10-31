@@ -5,6 +5,7 @@
 // une course (Parcours → Importer un GPX).
 
 import { navigate, showToast } from '../app.js';
+import { isAuthenticated } from '../utils/users.js';
 import { parseGpx, splitByKm, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
 import { openGpxModal } from './gpx-modal.js';
 
@@ -21,14 +22,14 @@ export function mount(container) {
       <span class="nav-btn" aria-hidden="true"></span>
     </div>
     <div class="scroll-view">
-      ${_study ? renderStudy(_study) : renderEmpty()}
+      <div class="gpx-tool">${_study ? renderStudy(_study) : renderEmpty()}</div>
       <input type="file" id="gpx-tool-input" accept=".gpx,application/gpx+xml" style="display:none">
       <div style="height:var(--space-8)"></div>
     </div>
   `;
 
   container.querySelector('#back-btn').addEventListener('click', () => {
-    if (history.length > 1) history.back(); else navigate('/courses');
+    if (history.length > 1) history.back(); else navigate(isAuthenticated() ? '/courses' : '/');
   });
 
   const input = container.querySelector('#gpx-tool-input');
@@ -62,7 +63,7 @@ function renderEmpty() {
       <div style="font-size:13px;color:var(--text-secondary)">Strava, Garmin, Komoot, gpx.studio…</div>
       <button class="btn btn--secondary" style="margin-top:var(--space-3)">Choisir un fichier</button>
     </div>
-    <p class="gpx-tool__note">Rien n'est enregistré : le fichier reste sur cet écran jusqu'à ce que tu quittes l'app. Pour garder le parcours d'une course, importe-le dans sa page Parcours.</p>
+    <p class="gpx-tool__note">Rien n'est enregistré : le fichier reste sur cet écran jusqu'à ce que tu quittes l'app.${isAuthenticated() ? " Pour garder le parcours d'une course, importe-le dans sa page Parcours." : ''}</p>
   `;
 }
 
@@ -76,7 +77,7 @@ function renderStudy({ name, data, kms }) {
       ${stat('Distance', `${data.distanceKm} km`)}
       ${stat('D+', `${data.elevationGainM} m`)}
       ${stat('D-', `${data.elevationLossM} m`)}
-      ${stat('Alt. min / max', `${data.minElevationM} / ${data.maxElevationM} m`)}
+      ${stat('Alt. min–max', `${data.minElevationM}–${data.maxElevationM} m`)}
     </div>
     ${kms.length ? `
     <p class="section-header">Kilomètre par kilomètre</p>
