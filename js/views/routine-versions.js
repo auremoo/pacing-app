@@ -2,7 +2,7 @@ import { getRoutineMeta, importPlanVersion, setActiveVersion, getActivePlan, get
          getActivePlanRaw, getAthleteProfile, getDateOverrides, getWeekMetaOverrides, ROUTINE_SLUG,
          getTypeOverrides, saveTuningRequest } from '../store.js';
 import { showToast, navigate } from '../app.js';
-import { today } from '../utils/dates.js';
+import { today, formatDateShort } from '../utils/dates.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from '../utils/plan-overrides.js';
 import { typeName } from '../utils/session-types.js';
 import { withFileDeliverable } from '../utils/prompt-output.js';
@@ -10,7 +10,7 @@ import { openPasteModal } from '../utils/paste-import.js';
 import { withProgression } from '../utils/progression.js';
 import { referencesSection } from '../utils/references.js';
 import { openTuningModal, withTuning, tuningSummary } from '../utils/plan-tuning.js';
-import { getTargets, formatTargets, targetText } from '../utils/routine-context.js';
+import { getTargets, formatTargets, targetText, upcomingRoutineRaces, upcomingRacesSection } from '../utils/routine-context.js';
 import { doesRun, doesGym, gymLevel, GYM_LEVELS, sportsSummary } from '../utils/sports.js';
 import { bodyPromptSection } from '../utils/body.js';
 
@@ -53,7 +53,7 @@ function render(container) {
           ✦ Générer un prompt de révision
         </button>
       </div>
-      ${targetsHint(meta)}
+      ${targetsHint(meta)}${racesHint()}
     ` : ''}
 
     ${!hasPlan ? `
@@ -67,7 +67,7 @@ function render(container) {
           ✦ Générer le prompt de plan initial
         </button>
       </div>
-      ${targetsHint(meta)}
+      ${targetsHint(meta)}${racesHint()}
     ` : `
       <p class="section-header">Versions du plan général</p>
       ${versions.map(v => renderVersionCard(v, meta.activeVersion)).join('')}
@@ -179,6 +179,15 @@ function targetsHint(meta) {
     </p>`;
 }
 
+// Rappel des courses sans plan dédié que le prompt annoncera à l'IA.
+function racesHint() {
+  const races = upcomingRoutineRaces(today());
+  if (!races.length) return '';
+  return `<p class="type-picker__hint" style="padding:0 var(--space-4) var(--space-3)">
+      Courses préparées avec ce plan, reprises dans le prompt : ${races.map(m => `${escHtml(m.name)} (${formatDateShort(m.raceDate)})`).join(' · ')}.
+    </p>`;
+}
+
 // Séances faites avant le tout premier plan : seul le plan initial en a besoin,
 // ensuite les coches de l'app racontent ce qui a été fait.
 function recentDoneSection(meta) {
@@ -272,7 +281,7 @@ ${meta.context || '[à compléter — ex : Badminton le mercredi soir, 1x/semain
 
 ${meta.goals || '[à compléter — ex : 2 séances de fractionné/sprint en plus par semaine]'}
 
-${referencesSection(meta.references, '###')}${recentDoneSection(meta)}${targetsSection(meta, '###')}${bodyPromptSection('###')}### Paramètres du bloc
+${referencesSection(meta.references, '###')}${recentDoneSection(meta)}${targetsSection(meta, '###')}${upcomingRacesSection(todayStr, '###')}${bodyPromptSection('###')}### Paramètres du bloc
 
 - Date de début du plan : ${meta.startDate || '[à compléter — toujours un lundi]'}
 - Durée souhaitée du bloc : ${meta.blockWeeks ? meta.blockWeeks + ' semaines' : '[à compléter]'}
@@ -410,7 +419,7 @@ function buildRevisionPrompt(meta, plan, effPlan, planRaw, states, athlete, date
 
 - Activités récurrentes déclarées : ${meta.context || 'Non renseigné'}
 - Objectifs de ce bloc : ${meta.goals || 'Non renseigné'}
-${referencesSection(meta.references, '##')}${targetsSection(meta, '##')}${bodyPromptSection('##')}
+${referencesSection(meta.references, '##')}${targetsSection(meta, '##')}${upcomingRacesSection(today(), '##')}${bodyPromptSection('##')}
 ## Bilan au ${todayStr}
 - Plan semaine ${currentWeekNum} / ${plan.weeks[plan.weeks.length - 1]?.number || plan.weeks.length}
 - Séances réalisées : **${done} / ${total} (${pct}%)**${skipped > 0 ? `\n- Séances non effectuées : **${skipped}**` : ''}

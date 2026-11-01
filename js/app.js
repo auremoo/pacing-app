@@ -9,6 +9,7 @@ import { mount as mountSettings }             from './views/settings.js';
 import { mount as mountNewEvent }             from './views/new-event.js';
 import { mount as mountRoutine }              from './views/routine.js';
 import { mount as mountGpxTool }              from './views/gpx-tool.js';
+import { showsCourses }                      from './utils/sports.js';
 import { initStore, ROUTINE_SLUG, isOnboardingPending, completeOnboarding } from './store.js';
 import { openOnboarding }                      from './views/onboarding.js';
 import { configure }                           from './github-api.js';
@@ -48,6 +49,9 @@ async function route() {
   let activeSlug = null;
   const slugMatch = path.match(/^\/event\/([\w-]+)/);
   if (slugMatch) activeSlug = slugMatch[1];
+  // Course à pied décochée : les courses sont masquées (pas supprimées), leurs
+  // écrans aussi, même par un lien direct.
+  if (!showsCourses() && /^\/(courses|new-event|event\/)/.test(path)) { navigate('/'); return; }
   mountSidebar(document.getElementById('sidebar'), activeSlug);
 
   for (const { re, fn } of ROUTES) {

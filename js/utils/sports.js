@@ -12,7 +12,7 @@
 import { getAthleteProfile, getEventsIndex } from '../store.js';
 
 export const SPORTS = [
-  { id: 'running', label: 'Course à pied', hint: 'Plans de course, allures, parcours GPX' },
+  { id: 'running', label: 'Course à pied', hint: 'Courses, plans de course, allures. Décoché, tes courses sont masquées, pas supprimées' },
   { id: 'gym',     label: 'Salle : muscu / cardio', hint: 'Le plan te programme des séances de muscu / cardio' },
 ];
 
@@ -32,10 +32,18 @@ export function sportsSummary(profile = getAthleteProfile()) {
   return names.join(', ') || 'Non renseigné';
 }
 
-// Onglet Courses (menu du bas, barre latérale) : pour qui court, ou qui a déjà
-// des courses enregistrées — décocher « Course à pied » ne doit pas les cacher.
+// Courses : visibles seulement si « Course à pied » est coché. Décocher ne
+// supprime rien — events/ et l'état des séances restent sur GitHub — mais tout
+// ce qui touche aux courses disparaît : menu, accueil, séance du jour, pause
+// du plan général pendant une prépa, routes /courses et /event. Recocher fait
+// tout réapparaître tel quel. Passer par visibleEvents() plutôt que
+// getEventsIndex() partout où l'on montre ou utilise les courses.
 export function showsCourses() {
-  return doesRun() || getEventsIndex().length > 0;
+  return doesRun();
+}
+
+export function visibleEvents() {
+  return doesRun() ? getEventsIndex() : [];
 }
 
 // Niveau en salle (athlete.json → gymLevel), demandé seulement à qui va en salle.

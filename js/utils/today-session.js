@@ -2,16 +2,17 @@
 // et détecte si une course a une préparation active aujourd'hui.
 // Utilisé par l'accueil (mobile) et la sidebar (desktop) pour rester cohérents.
 
-import { getEventsIndex, getEventMeta, getActivePlan, getDateOverrides, getWeekMetaOverrides,
+import { getEventMeta, getActivePlan, getDateOverrides, getWeekMetaOverrides,
          getRoutineMeta, ROUTINE_SLUG, getTypeOverrides, getAllSessionStates } from '../store.js';
 import { isRaceDone } from './race-status.js';
+import { visibleEvents } from './sports.js';
 import { typeName } from './session-types.js';
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides, getCurrentWeekNum } from './plan-overrides.js';
 import { computeEventRanges, computePausedWeeks } from './routine-overlap.js';
 
 // { slug, eventName, session, kind: 'event' | 'routine' } | null
 export function findTodaySession(todayStr) {
-  for (const e of getEventsIndex()) {
+  for (const e of visibleEvents()) {
     const plan = getActivePlan(e.slug);
     if (!plan) continue;
     const effPlan = applyDateOverrides(plan, getDateOverrides(e.slug));
@@ -37,7 +38,7 @@ export function findTodaySession(todayStr) {
         ),
         getTypeOverrides(ROUTINE_SLUG)
       );
-      const pausedWeeks = computePausedWeeks(effPlan, computeEventRanges(getEventsIndex(), getEventMeta));
+      const pausedWeeks = computePausedWeeks(effPlan, computeEventRanges(visibleEvents(), getEventMeta));
       for (const week of effPlan.weeks) {
         if (pausedWeeks.has(week.number)) continue;
         for (const s of week.sessions) {
@@ -56,7 +57,7 @@ export function findTodaySession(todayStr) {
 // Une course déjà courue (séance de course cochée) n'est plus une préparation
 // en cours, même le jour J où sa période la couvre encore.
 export function getActiveRacePreps(todayStr) {
-  return getEventsIndex().filter(e => {
+  return visibleEvents().filter(e => {
     const meta = getEventMeta(e.slug);
     return meta?.activeVersion && meta.planStart && meta.raceDate && !isRaceDone(e.slug) &&
            meta.planStart <= todayStr && todayStr <= meta.raceDate;
@@ -98,7 +99,7 @@ export function getRoutineProgress(todayStr) {
   const week = effPlan.weeks.find(w => w.number === weekNum);
   if (!week) return null;
 
-  const paused = computePausedWeeks(effPlan, computeEventRanges(getEventsIndex(), getEventMeta));
+  const paused = computePausedWeeks(effPlan, computeEventRanges(visibleEvents(), getEventMeta));
   if (paused.has(weekNum)) return null;
 
   const states   = getAllSessionStates(ROUTINE_SLUG);

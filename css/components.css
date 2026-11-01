@@ -1641,6 +1641,31 @@
 
 .course-import-area:hover { border-color: var(--ios-blue); }
 
+/* ─── Préparation d'une course sans plan (event.js, new-event.js) ── */
+
+.no-plan__note {
+  margin: 0 var(--space-4) var(--space-3);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ios-orange);
+  text-align: center;
+}
+.no-plan__actions { display: flex; flex-direction: column; gap: var(--space-2); padding: 0 var(--space-4); max-width: 420px; margin: 0 auto; }
+
+.prep-choice__row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.prep-choice__row + .prep-choice__row { border-top: 0.5px solid var(--separator); }
+.prep-choice__row strong { display: block; font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.prep-choice__row input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--ios-blue); flex-shrink: 0; -webkit-appearance: auto; appearance: auto; }
+
 /* ─── Étudier un GPX (gpx-tool.js) ────────────────────────────── */
 
 .gpx-tool__note {

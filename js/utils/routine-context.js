@@ -16,6 +16,8 @@ import { getRoutineMeta, getActivePlan, getAllSessionStates, getDateOverrides,
 import { applyDateOverrides, applyWeekMetaOverrides, applyTypeOverrides } from './plan-overrides.js';
 import { addDays, formatDateShort } from './dates.js';
 import { typeName } from './session-types.js';
+import { visibleEvents } from './sports.js';
+import { getEventMeta } from '../store.js';
 
 export const TARGET_DISTANCES = ['5 km', '10 km', 'Semi-marathon', 'Marathon'];
 
@@ -145,4 +147,41 @@ export function availableTargetKinds({ run, gym, level }, current) {
     (k === 'force'  && gym && level === 'advanced') ||
     (k === 'renfo'  && (gym || !run)) ||
     k === 'poids' || k === 'autre');
+}
+
+// Courses sans plan dédié (meta.followRoutine) : c'est le plan général qui y
+// mène. Celles à venir, triées par date ; aucune si la course à pied est
+// décochée (visibleEvents).
+export function upcomingRoutineRaces(todayStr) {
+  return visibleEvents()
+    .map(e => getEventMeta(e.slug))
+    .filter(m => m?.followRoutine && !m.activeVersion && m.raceDate && m.raceDate >= todayStr)
+    .sort((a, b) => a.raceDate.localeCompare(b.raceDate));
+}
+
+// Section des prompts du plan général (initial et révision). '' sans course.
+export function upcomingRacesSection(todayStr, level) {
+  const races = upcomingRoutineRaces(todayStr);
+  if (!races.length) return '';
+  const lines = races.map(m => {
+    const bits = [
+      `${m.distanceLabel || ''}${m.distanceKm ? ` (${m.distanceKm} km${m.elevationGainM ? `, ${m.elevationGainM} m D+` : ''})` : ''}`.trim(),
+      m.location,
+      m.objective && `objectif : ${m.objective}`,
+      m.courseDescription && `parcours : ${m.courseDescription}`,
+    ].filter(Boolean);
+    return `- **${m.name}** — ${formatDateLong(m.raceDate)} (${m.raceDate})${bits.length ? ` · ${bits.join(' · ')}` : ''}`;
+  }).join('\n');
+  return `
+${level} Courses prévues, préparées avec ce plan
+
+${lines}
+
+Je n'ai pas de plan dédié pour ${races.length > 1 ? 'ces courses' : 'cette course'} : c'est ce plan général qui doit m'y amener, sans devenir une préparation spécifique.
+- Si une course tombe dans la période du plan, place-la ce jour-là comme une séance de type \`race\` (titre = nom de la course, description = objectif et conseils d'allure), sans autre séance ce jour-là.
+- Allège les 2-3 jours précédents (pas de séance dure la veille ni l'avant-veille) et prévois des jours plus légers juste après pour récupérer, proportionnés à la distance.
+- Si une course tombe après la fin du plan, oriente les dernières semaines pour que j'y arrive en forme.
+- Dis dans la SYNTHESE comment tu as intégré chaque course et ce que je peux raisonnablement y viser.
+
+`;
 }

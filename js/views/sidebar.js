@@ -4,11 +4,11 @@ import { today, isPast } from '../utils/dates.js';
 import { findTodaySession, todaySessionTitle, getRoutineProgress } from '../utils/today-session.js';
 import { isRaceDone } from '../utils/race-status.js';
 import { computeCompletion } from './courses.js';
-import { showsCourses } from '../utils/sports.js';
+import { showsCourses, visibleEvents } from '../utils/sports.js';
 
 export function mountSidebar(container, activeSlug = null) {
   if (!container) return;
-  const events = getEventsIndex();
+  const events = visibleEvents();
   const todayStr = today();
   const todaySession = findTodaySession(todayStr);
   const courses = showsCourses();

@@ -1,6 +1,7 @@
 import { navigate } from '../app.js';
-import { today, formatDateShort, weekRangeOf } from '../utils/dates.js';
+import { today, formatDateShort, weekRangeOf, formatDaysUntil } from '../utils/dates.js';
 import { findTodaySession, getActiveRacePreps, todaySessionTitle, getRoutineProgress } from '../utils/today-session.js';
+import { upcomingRoutineRaces } from '../utils/routine-context.js';
 import { typeBadge } from '../utils/session-types.js';
 import { renderEventCard } from './courses.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
@@ -78,6 +79,8 @@ function renderTodayCard(todaySession) {
 // apparence quel que soit ce que l'on prépare.
 function renderRoutineCard({ week, done, total, next, phase }) {
   const pct = total ? Math.round(done / total * 100) : 0;
+  // Course préparée avec l'entraînement général : rappelée sur sa carte.
+  const race = upcomingRoutineRaces(today())[0] || null;
   return `
     <div class="event-card" id="routine-card">
       <div class="event-card__header">
@@ -95,6 +98,10 @@ function renderRoutineCard({ week, done, total, next, phase }) {
         ${phase ? `<div class="event-card__meta-item">
           <span class="event-card__meta-label">Phase</span>
           <span class="event-card__meta-value" style="color:var(--phase-${phase.color})">${phase.name}</span>
+        </div>` : ''}
+        ${race ? `<div class="event-card__meta-item">
+          <span class="event-card__meta-label">Course</span>
+          <span class="event-card__meta-value">${race.name} · ${formatDaysUntil(race.raceDate).toLowerCase()}</span>
         </div>` : ''}
         ${next ? `<div class="event-card__meta-item">
           <span class="event-card__meta-label">Prochaine</span>

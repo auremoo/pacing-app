@@ -4,9 +4,10 @@ import { today, formatDaysUntil, isPast } from '../utils/dates.js';
 import { isRaceDone } from '../utils/race-status.js';
 import { renderGlobalTabBar, attachGlobalTabBar } from './global-nav.js';
 import { getCurrentWeekNum } from '../utils/plan-overrides.js';
+import { visibleEvents } from '../utils/sports.js';
 
 export function mount(container) {
-  const events = getEventsIndex();
+  const events = visibleEvents();
 
   container.innerHTML = `
     <div class="nav-bar">
@@ -86,6 +87,10 @@ export function renderEventCard(e) {
         </div>` : ''}` : meta?.objective ? `<div class="event-card__meta-item">
           <span class="event-card__meta-label">Objectif</span>
           <span class="event-card__meta-value">${meta.objective}</span>
+        </div>` : ''}
+        ${!past && meta?.followRoutine && !plan ? `<div class="event-card__meta-item">
+          <span class="event-card__meta-label">Préparation</span>
+          <span class="event-card__meta-value">Entraînement général</span>
         </div>` : ''}
         ${phase ? `<div class="event-card__meta-item">
           <span class="event-card__meta-label">Phase</span>

@@ -82,6 +82,21 @@ export function mount(container) {
         </div>
       </div>
 
+      <p class="section-header">Préparation</p>
+      <div class="card-group prep-choice" style="margin:0 var(--space-4) var(--space-4)">
+        <label class="prep-choice__row">
+          <input type="radio" name="prep" value="plan" checked>
+          <span><strong>Un plan dédié à cette course</strong>
+          Généré avec l'IA ; il remplace l'entraînement général pendant la préparation.</span>
+        </label>
+        <label class="prep-choice__row">
+          <input type="radio" name="prep" value="routine">
+          <span><strong>Mon entraînement général suffit</strong>
+          Pas de plan à faire : la course est ajoutée à ton entraînement général, qui en tiendra compte à sa prochaine version.</span>
+        </label>
+      </div>
+
+      <div id="plan-fields">
       <p class="section-header">Plan d'entraînement</p>
       <div class="card-group" style="margin:0 var(--space-4) var(--space-4)">
         <div class="form-field">
@@ -93,6 +108,7 @@ export function mount(container) {
           <input class="form-input" id="f-weeks" type="number" min="4" max="52" step="1"
             placeholder="Ex : 20">
         </div>
+      </div>
       </div>
 
       <div id="form-error" style="padding:0 var(--space-4);color:var(--ios-red);font-size:14px;display:none"></div>
@@ -113,6 +129,11 @@ export function mount(container) {
   startInput.addEventListener('change', () => autoFillWeeks(dateInput, startInput, weeksInput));
 
   container.querySelector('#back-btn').addEventListener('click', () => navigate('/courses'));
+
+  const followRoutine = () => container.querySelector('input[name="prep"]:checked').value === 'routine';
+  container.querySelectorAll('input[name="prep"]').forEach(r => r.addEventListener('change', () => {
+    container.querySelector('#plan-fields').hidden = followRoutine();
+  }));
 
   const handleCreate = async () => {
     const error = container.querySelector('#form-error');
@@ -148,9 +169,10 @@ export function mount(container) {
         objectiveRealistic: container.querySelector('#f-realistic').value.trim(),
         planStart: container.querySelector('#f-start').value,
         planWeeks: parseInt(container.querySelector('#f-weeks').value) || 0,
+        followRoutine: followRoutine(),
       });
       showToast('Événement créé !', 'success');
-      navigate(`/event/${slug}/versions`);
+      navigate(followRoutine() ? `/event/${slug}` : `/event/${slug}/versions`);
     } catch (err) {
       showError(error, 'Erreur : ' + err.message);
       btn.disabled = false;

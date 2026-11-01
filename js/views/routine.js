@@ -6,7 +6,7 @@ import { mount as mountPlan }            from './plan-view.js';
 import { mount as mountRoutineSettings } from './routine-settings.js';
 import { mount as mountRoutineVersions } from './routine-versions.js';
 import { mount as mountBody }            from './body-view.js';
-import { tracksWeight }                 from '../utils/sports.js';
+import { tracksWeight, visibleEvents }  from '../utils/sports.js';
 import { applyDateOverrides, applyWeekMetaOverrides } from '../utils/plan-overrides.js';
 import { computeEventRanges, computePausedWeeks }     from '../utils/routine-overlap.js';
 
@@ -94,7 +94,7 @@ function mountRoutinePlan(tabContent) {
     const overrides     = getDateOverrides(ROUTINE_SLUG);
     const metaOverrides = getWeekMetaOverrides(ROUTINE_SLUG);
     const effPlan       = applyWeekMetaOverrides(applyDateOverrides(plan, overrides), metaOverrides);
-    const eventRanges   = computeEventRanges(getEventsIndex(), getEventMeta);
+    const eventRanges   = computeEventRanges(visibleEvents(), getEventMeta);
     pausedWeeks         = computePausedWeeks(effPlan, eventRanges);
   }
 

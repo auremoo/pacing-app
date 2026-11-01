@@ -83,8 +83,9 @@ function pages(name) {
         <div class="onb-groups">
           ${GROUP('La course', 'nom, date, lieu, type et distance exacte, dénivelé, description du parcours')}
           ${GROUP('Tes objectifs', 'objectif temps et fourchette réaliste')}
-          ${GROUP('Le plan', 'date de début (un lundi) et durée en semaines')}
+          ${GROUP('La préparation', 'un plan dédié (date de début, un lundi, et durée en semaines), ou «&nbsp;Mon entraînement général suffit&nbsp;»')}
         </div>
+        <p>Pas besoin d'un plan pour chaque course : avec <strong>Mon entraînement général suffit</strong>, la course est ajoutée à ton entraînement général, qui la place le jour J à sa prochaine version.</p>
         <p class="onb-muted">La description du parcours («&nbsp;montée au km 14&nbsp;») et la fourchette réaliste aident Claude à doser l'effort : ne les saute pas.</p>`,
     },
     {
@@ -95,7 +96,7 @@ function pages(name) {
         <p>Même principe que pour l'entraînement : <strong>✦ Générer le prompt de plan initial</strong> → Claude → <strong>+ Importer une nouvelle version</strong>. Là aussi, fiche complète d'abord.</p>
         ${PATH(['La course', 'Parcours'])}
         <p>Importe le <strong>GPX</strong> pour voir le profil du parcours, et corrige les infos de la course avec «&nbsp;Modifier ces infos&nbsp;».</p>
-        <p class="onb-muted">Pendant une préparation, ton entraînement général se met en pause : on ne suit jamais deux plans à la fois.</p>`,
+        <p class="onb-muted">Pendant la préparation d'une course qui a son propre plan, ton entraînement général se met en pause : on ne suit jamais deux plans à la fois.</p>`,
     },
     {
       icon: '✓',

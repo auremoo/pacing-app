@@ -1,6 +1,7 @@
-import { getEventMeta, ensurePlanLoaded } from '../store.js';
+import { getEventMeta, ensurePlanLoaded, updateEventMeta, getRoutineMeta } from '../store.js';
 import { loadPastVersions } from '../utils/plan-history.js';
-import { navigate } from '../app.js';
+import { navigate, showToast } from '../app.js';
+import { formatDate } from '../utils/dates.js';
 import { mount as mountPlan }     from './plan-view.js';
 import { mount as mountCourse }   from './course-view.js';
 import { mount as mountVersions } from './versions-view.js';
@@ -18,6 +19,8 @@ const TABS = [
 // L'onglet Stratégie n'apparaît qu'en fin de préparation (ou si une stratégie
 // a déjà été importée) : inutile de l'avoir sous les yeux pendant 20 semaines.
 function tabsFor(slug, meta, activeTab) {
+  // Préparée avec l'entraînement général : ni versions ni infos de plan.
+  if (isFollowingRoutine(meta)) return [{ ...TABS[0], label: 'Préparation' }, TABS[1]];
   const show = activeTab === 'strategy' || !!meta.strategy || isPrepComplete(slug);
   return show
     ? [...TABS, { id: 'strategy', label: 'Stratégie', icon: tabIcon('strategy') }]
@@ -35,6 +38,7 @@ export async function mount(container, slug, activeTab = 'plan') {
     await loadPastVersions(slug);
   }
 
+  if (isFollowingRoutine(meta) && !['plan', 'course'].includes(activeTab)) activeTab = 'plan';
   const tabs = tabsFor(slug, meta, activeTab);
 
   container.innerHTML = `
@@ -70,10 +74,13 @@ export async function mount(container, slug, activeTab = 'plan') {
     });
   });
 
-  await mountTab(container.querySelector('#tab-content'), slug, activeTab);
+  await mountTab(container.querySelector('#tab-content'), slug, activeTab, () => mount(container, slug, 'plan'));
 }
 
-async function mountTab(tabContent, slug, tab) {
+const isFollowingRoutine = (meta) => !!meta.followRoutine && !meta.activeVersion;
+
+async function mountTab(tabContent, slug, tab, remount) {
+  if ((tab === 'plan' || !tab) && !getEventMeta(slug).activeVersion) return mountNoPlan(tabContent, slug, remount);
   switch (tab) {
     case 'plan':     mountPlan(tabContent, slug);       break;
     case 'course':   await mountCourse(tabContent, slug); break;
@@ -82,6 +89,60 @@ async function mountTab(tabContent, slug, tab) {
     case 'strategy': await mountStrategy(tabContent, slug); break;
     default:         mountPlan(tabContent, slug);
   }
+}
+
+// Course sans plan : soit préparée avec l'entraînement général (choix fait à la
+// création ou ici), soit en attente d'un plan dédié. On passe de l'un à
+// l'autre tant qu'aucun plan n'a été importé.
+function mountNoPlan(container, slug, remount) {
+  const meta = getEventMeta(slug);
+  const follow = isFollowingRoutine(meta);
+  const routine = getRoutineMeta();
+  const active = routine?.versions?.find(v => v.v === routine.activeVersion);
+  // Plan général fait avant que la course y soit rattachée : il ne la connaît pas.
+  const stale = follow && active && (!meta.followRoutineSince || (active.importedAt || '') < meta.followRoutineSince);
+
+  container.innerHTML = follow ? `
+    <div class="empty-state">
+      <div class="empty-state__icon">🔁</div>
+      <div class="empty-state__title">Préparée avec ton entraînement général</div>
+      <div class="empty-state__body">Pas de plan dédié : tu continues ton entraînement général jusqu'au ${formatDate(meta.raceDate).toLowerCase()}. Ses prompts annoncent la course à l'IA, qui la place le jour J, allège les jours d'avant et prévoit la récupération.</div>
+    </div>
+    ${!routine?.activeVersion ? `
+      <p class="no-plan__note">Tu n'as pas encore de plan général : crée-le depuis Entraînement, la course y sera reprise.</p>`
+    : stale ? `
+      <p class="no-plan__note">Ton plan général actuel a été fait avant d'y rattacher cette course : génère une nouvelle version pour qu'il en tienne compte.</p>` : ''}
+    <div class="no-plan__actions">
+      <button class="btn btn--primary btn--full" data-go="${stale || !routine?.activeVersion ? '/routine/versions' : '/routine'}">
+        ${stale ? 'Générer une nouvelle version' : !routine?.activeVersion ? 'Créer mon plan général' : "Voir l'entraînement"}
+      </button>
+      <button class="btn btn--ghost btn--full" data-follow="0">Faire plutôt un plan dédié</button>
+    </div>
+  ` : `
+    <div class="empty-state">
+      <div class="empty-state__icon">📋</div>
+      <div class="empty-state__title">Pas encore de plan</div>
+      <div class="empty-state__body">Génère un plan dédié à cette course depuis l'onglet Versions, ou garde simplement ton entraînement général pour la préparer.</div>
+    </div>
+    <div class="no-plan__actions">
+      <button class="btn btn--primary btn--full" data-go="/event/${slug}/versions">Créer un plan dédié</button>
+      <button class="btn btn--ghost btn--full" data-follow="1">Mon entraînement général suffit</button>
+    </div>
+  `;
+
+  container.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => navigate(b.dataset.go)));
+  container.querySelector('[data-follow]').addEventListener('click', async (e) => {
+    const on = e.currentTarget.dataset.follow === '1';
+    e.currentTarget.disabled = true;
+    try {
+      await updateEventMeta(slug, on ? { followRoutine: true, followRoutineSince: new Date().toISOString() } : { followRoutine: false });
+      if (on) { showToast('Course rattachée à ton entraînement général', 'success'); remount(); }
+      else navigate(`/event/${slug}/versions`);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+      e.currentTarget.disabled = false;
+    }
+  });
 }
 
 function tabIcon(id) {
