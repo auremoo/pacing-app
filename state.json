@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-11-03T13:15:42.556Z",
+  "lastUpdated": "2026-11-03T13:15:45.606Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -967,7 +967,11 @@
         "version": 2
       },
       "s04-thu": {
-        "note": "12,37km de randonnée et 820m de D+"
+        "note": "12,37km de randonnée et 820m de D+",
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-11-03T13:15:42.887Z",
+        "version": 2
       }
     }
   }
