@@ -57,6 +57,7 @@ pacing-app/
 │       ├── dates.js
 │       ├── markdown.js             # Renderer markdown minimal
 │       ├── crypto.js               # AES-GCM + PBKDF2 (chiffrement du PAT)
+│       ├── image-viewer.js         # Photo en plein écran, zoomable (pincer, double-toucher, glisser)
 │       ├── gpx-parser.js           # Parse GPX + profil altimétrique + curseur (tap/survol) + splitByKm
 │       ├── plan-overrides.js       # applyDateOverrides/applyWeekMetaOverrides (échanges/déplacements)
 │       ├── prep-report.js          # Bilan de fin de prépa consolidé toutes versions + prompt de stratégie
@@ -294,7 +295,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 `activeVersion: null` + `versions: []` = événement sans plan (état normal après création via l'app).  
 `location`, `objectiveRealistic`, `courseDescription` sont optionnels mais utilisés dans les prompts générés.
 
-`course.gpx` est `null` si pas encore importé. **Documents** : `course.docs`, 3 PDF au plus (`MAX_COURSE_DOCS`, `getCourseDocs`/`addCourseDoc`/`removeCourseDoc` dans store.js), liste dans Parcours → Documents, chacun ouvrable et retirable (la référence seulement, comme les photos) ; un document du même nom remplace l'ancien. L'ancien format `course.pdf` (un seul PDF) est relu comme premier document et converti (`pdf: null`) à la première modification. `photos` est un tableau de noms de fichiers (max 2, 5 Mo/photo, stockés dans `events/{slug}/course/`).  
+`course.gpx` est `null` si pas encore importé. **Documents** : `course.docs`, 3 au plus, PDF ou photos (JPEG, PNG, WebP, HEIC ; photo ≤ 5 Mo) (`MAX_COURSE_DOCS`, `getCourseDocs`/`addCourseDoc`/`removeCourseDoc` dans store.js), liste dans Parcours → Documents, chacun ouvrable (PDF dans un nouvel onglet, photo dans la visionneuse avec vignette) et retirable (la référence seulement, comme les photos) ; un document du même nom remplace l'ancien. L'ancien format `course.pdf` (un seul PDF) est relu comme premier document et converti (`pdf: null`) à la première modification. `photos` est un tableau de noms de fichiers (max 2, 5 Mo/photo, stockés dans `events/{slug}/course/`) ; toucher une photo l'ouvre dans la visionneuse. **Visionneuse** (`js/utils/image-viewer.js`, `openImageViewer`) : plein écran noir, zoom géré à la main (pointer events + `transform`, `touch-action: none`) car le zoom natif agrandirait toute l'interface — pincer, double-toucher (×2,5 / retour), glisser quand c'est zoomé, molette sur ordinateur, image gardée dans le cadre, ×6 au plus ; Échap ou croix.  
 **GPX** : quand un GPX est présent, distance et D+ sont calculés automatiquement (window=3 + `ELEVATION_THRESHOLD_M`, 5 m). Ces champs sont en **lecture seule avant la date de course**, puis **éditables après** (pour saisir les valeurs officielles).  
 **Fichiers > 1MB** : `getFile` détecte un `content` vide et passe par `download_url` pour récupérer le fichier brut.
 

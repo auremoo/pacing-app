@@ -3,6 +3,7 @@ import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta, addPhot
 import { showToast } from '../app.js';
 import { parseGpx, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
 import { openGpxModal } from './gpx-modal.js';
+import { openImageViewer } from '../utils/image-viewer.js';
 import { isPast } from '../utils/dates.js';
 import { getWeekMonday } from '../utils/plan-overrides.js';
 
@@ -74,9 +75,9 @@ function renderAll(container, slug, meta, gpxFile, docFiles = [], photoFiles = [
   photos.forEach((filename, i) => {
     const slot = container.querySelector(`[data-photo-slot="${i}"]`);
     if (slot && photoFiles[i]?.content) {
-      const ext  = filename.split('.').pop().toLowerCase();
-      const mime = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' }[ext] || 'image/jpeg';
-      slot.innerHTML = `<img src="data:${mime};base64,${photoFiles[i].content}" alt="${filename}" loading="lazy">`;
+      const src = `data:${imageMime(filename) || 'image/jpeg'};base64,${photoFiles[i].content}`;
+      slot.innerHTML = `<img src="${src}" alt="${filename}" loading="lazy">`;
+      slot.addEventListener('click', () => openImageViewer(src, meta?.name || filename));
     }
   });
 }
@@ -470,7 +471,11 @@ function wireGpxUpload(container, slug) {
   });
 }
 
-// ── Documents (PDF, 3 max) ────────────────────────────────────────
+// ── Documents (PDF ou photos, 3 max) ──────────────────────────────
+
+const IMAGE_MIMES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' };
+const imageMime = (filename) => IMAGE_MIMES[filename.split('.').pop().toLowerCase()] || null;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;   // comme les photos
 
 function renderDocsSection(docs) {
   const canAdd = docs.length < MAX_COURSE_DOCS;
@@ -481,14 +486,14 @@ function renderDocsSection(docs) {
         ${docs.map((d, i) => `<div class="doc-row" data-doc-slot="${i}"><div class="list-row"><div class="list-row__content"><div class="list-row__title">${escHtml(d.filename)}</div><div class="list-row__subtitle">Chargement…</div></div></div></div>`).join('')}
       </div>` : ''}
       ${canAdd ? (docs.length ? `
-        <button class="btn btn--ghost btn--full" id="add-doc-btn" style="margin-top:var(--space-2)">+ Ajouter un document PDF</button>` : `
+        <button class="btn btn--ghost btn--full" id="add-doc-btn" style="margin-top:var(--space-2)">+ Ajouter un PDF ou une photo</button>` : `
         <div class="course-import-area" id="add-doc-btn">
           <div style="font-size:32px;margin-bottom:var(--space-2)">📄</div>
-          <div style="font-size:15px;font-weight:600;margin-bottom:4px">Importer un PDF</div>
-          <div style="font-size:13px;color:var(--text-secondary)">Roadbook, carte du parcours, règlement… jusqu'à ${MAX_COURSE_DOCS} documents</div>
-          <button class="btn btn--secondary" style="margin-top:var(--space-3)">Choisir un fichier PDF</button>
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px">Importer un document</div>
+          <div style="font-size:13px;color:var(--text-secondary)">PDF ou photo : roadbook, carte du parcours, règlement… jusqu'à ${MAX_COURSE_DOCS} documents</div>
+          <button class="btn btn--secondary" style="margin-top:var(--space-3)">Choisir un fichier</button>
         </div>`) : `<p style="font-size:12px;color:var(--text-secondary);margin-top:var(--space-2)">Maximum ${MAX_COURSE_DOCS} documents atteint : supprime-en un pour en ajouter un autre.</p>`}
-      <input type="file" id="doc-input" accept=".pdf,application/pdf" style="display:none">
+      <input type="file" id="doc-input" accept=".pdf,application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" style="display:none">
     </div>
   `;
 }
@@ -498,6 +503,23 @@ function mountPdfViewer(slot, b64content, filename) {
   const del = `<button class="doc-row__delete" data-doc-delete="${escHtml(filename)}" aria-label="Retirer ${escHtml(filename)}">✕</button>`;
   if (!b64content) {
     slot.innerHTML = `<div class="list-row"><div class="list-row__content"><div class="list-row__title">${escHtml(filename)}</div><div class="list-row__subtitle">Erreur de lecture du fichier</div></div>${del}</div>`;
+    return;
+  }
+  const mime = imageMime(filename);
+  if (mime) {
+    const src = `data:${mime};base64,${b64content}`;
+    slot.innerHTML = `
+      <div class="list-row">
+        <button class="doc-row__open" data-doc-image type="button">
+          <img class="doc-row__thumb" src="${src}" alt="">
+          <span class="list-row__content">
+            <span class="list-row__title" style="color:var(--ios-blue);display:block">${escHtml(filename)}</span>
+            <span class="list-row__subtitle" style="display:block">Voir la photo</span>
+          </span>
+        </button>
+        ${del}
+      </div>`;
+    slot.querySelector('[data-doc-image]').addEventListener('click', () => openImageViewer(src, filename));
     return;
   }
   try {
@@ -526,6 +548,16 @@ function wireDocs(container, slug) {
   input?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (imageMime(file.name) && file.size > MAX_IMAGE_BYTES) {
+      showToast('Photo trop lourde — max 5 Mo', 'error');
+      e.target.value = '';
+      return;
+    }
+    if (!imageMime(file.name) && !/\.pdf$/i.test(file.name)) {
+      showToast('Format non pris en charge : PDF ou photo (JPEG, PNG, WebP, HEIC)', 'error');
+      e.target.value = '';
+      return;
+    }
     showToast('Envoi du document…');
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
