@@ -16,7 +16,10 @@
   "activeVersion": null,
   "versions": [],
   "course": {
-    "gpx": null,
+    "gpx": {
+      "filename": "13_km_du_rhone_2026_ag2r_la_mondiale-11459718-1793701142-817.gpx",
+      "importedAt": "2026-11-03T10:30:23.913Z"
+    },
     "pdf": null
   },
   "photos": []
