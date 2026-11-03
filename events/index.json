@@ -26,6 +26,13 @@
       "distanceLabel": "10 km",
       "distanceKm": 10,
       "activeVersion": null
+    },
+    {
+      "slug": "13km-du-rhone-marathon-du-beaujolais",
+      "name": "13km du Rhône (Marathon du Beaujolais)",
+      "raceDate": "2026-11-21",
+      "distanceLabel": "Autre",
+      "subtitle": "Villefranche-sur-Saône"
     }
   ]
 }
