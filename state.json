@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-11-03T13:15:51.247Z",
+  "lastUpdated": "2026-11-03T13:17:26.947Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -972,6 +972,13 @@
         "completed": true,
         "skipped": false,
         "completedAt": "2026-11-03T13:15:42.887Z",
+        "version": 2
+      },
+      "s04-sun": {
+        "note": "La veille : randonnée de 7,03km et 387 de D+\nLe jour J : randonnée de 22,70km et 1182 de D+",
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-11-03T13:17:26.638Z",
         "version": 2
       }
     }
