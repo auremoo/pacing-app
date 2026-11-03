@@ -1,0 +1,23 @@
+{
+  "slug": "13km-du-rhone-marathon-du-beaujolais",
+  "name": "13km du Rhône (Marathon du Beaujolais)",
+  "distanceKm": 13.72,
+  "distanceLabel": "Autre",
+  "raceDate": "2026-11-21",
+  "elevationGainM": 118,
+  "objective": "Aucun objectif car on va boire du vin et on va manger",
+  "objectiveRealistic": "",
+  "courseDescription": "",
+  "location": "Villefranche-sur-Saône",
+  "planStart": "",
+  "planWeeks": 0,
+  "followRoutine": true,
+  "followRoutineSince": "2026-11-03T10:30:01.482Z",
+  "activeVersion": null,
+  "versions": [],
+  "course": {
+    "gpx": null,
+    "pdf": null
+  },
+  "photos": []
+}
