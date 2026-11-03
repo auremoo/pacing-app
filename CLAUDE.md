@@ -323,6 +323,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 - Les vues exportent `mount(container, ...params)` qui écrit dans `container.innerHTML`
 - Délégation d'événements sur le container plutôt qu'éléments individuels quand c'est dynamique
 - GitHub sync : refetch du SHA avant chaque PUT pour éviter les 409 (conflit)
+- Erreurs 5xx de GitHub (panne passagère, vu un 500 sur `events/index.json` au chargement) : `getFile` retente deux fois (`fetchWithRetry`, 0,8 s puis 2 s) ; les PUT ne sont pas retentés (un PUT parti mais mal acquitté serait rejoué). L'écran « Erreur de connexion » du démarrage explique un 5xx et propose « Réessayer » (relance `boot()`)
 - Fichiers binaires (PDF, photos) : `getFile(path, { rawBase64: true })` retourne le base64 brut sans décoder en UTF-8. Si > 1MB, fallback automatique via `download_url`
 - Pas de TypeScript, pas de linter — garder simple
 

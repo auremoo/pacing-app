@@ -34,11 +34,27 @@ function apiUrl(path) {
   return `${BASE}/repos/${owner}/${repo}/contents/${path}`;
 }
 
+// Erreurs 5xx de GitHub (panne passagère côté GitHub, vu un 500 sur
+// events/index.json au chargement) : une lecture est retentée deux fois avant
+// d'abandonner. Les écritures ne le sont pas : un PUT parti mais mal acquitté
+// pourrait sinon être rejoué.
+async function fetchWithRetry(doFetch, delays = [800, 2000]) {
+  let res;
+  for (let i = 0; ; i++) {
+    try {
+      res = await doFetch();
+      if (res.status < 500 || i >= delays.length) return res;
+    } catch (err) {
+      if (i >= delays.length) throw err;
+    }
+    await new Promise(r => setTimeout(r, delays[i]));
+  }
+}
+
 export async function getFile(path, { rawBase64 = false, root = false } = {}) {
   const { branch } = getConfig();
   path = fullPath(path, root);
-  const url = `${apiUrl(path)}?ref=${branch}&_t=${Date.now()}`;
-  const res = await fetch(url, { headers: headers() });
+  const res = await fetchWithRetry(() => fetch(`${apiUrl(path)}?ref=${branch}&_t=${Date.now()}`, { headers: headers() }));
   if (!res.ok) {
     if (res.status === 404) return null;
     throw new Error(`GitHub GET ${path}: ${res.status}`);

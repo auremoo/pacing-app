@@ -107,7 +107,10 @@ async function boot() {
         <div style="font-size:40px">⚠️</div>
         <div style="font-size:17px;font-weight:600">Erreur de connexion</div>
         <div style="font-size:14px;color:var(--text-secondary);max-width:280px;text-align:center">${err.message}</div>
+        ${/: 5\d\d$/.test(err.message) ? `<div style="font-size:13px;color:var(--text-secondary);max-width:280px;text-align:center">GitHub, où sont rangées tes données, a eu un souci de son côté. En général ça repart au bout de quelques minutes.</div>` : ''}
+        <button class="btn btn--primary" id="boot-retry" style="min-width:160px">Réessayer</button>
       </div>`;
+    app.querySelector('#boot-retry').addEventListener('click', () => boot());
     return;
   }
 
