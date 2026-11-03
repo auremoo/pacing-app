@@ -564,6 +564,44 @@ export async function importCourseFile(slug, filename, content, type, { alreadyB
   _eventMetas[slug] = newMeta;
 }
 
+// Documents d'une course (PDF : roadbook, règlement, plan d'accès…), 3 au plus,
+// dans course.docs. L'ancien format n'en avait qu'un, course.pdf : il est relu
+// comme premier document et remplacé par docs à la première modification.
+export const MAX_COURSE_DOCS = 3;
+
+export function getCourseDocs(meta) {
+  const c = meta?.course || {};
+  return Array.isArray(c.docs) ? c.docs : (c.pdf?.filename ? [c.pdf] : []);
+}
+
+export function getCourseDoc(slug, filename) {
+  return getFile(`events/${slug}/course/${filename}`, { rawBase64: true });
+}
+
+// Un document du même nom remplace l'ancien sans compter dans la limite.
+export async function addCourseDoc(slug, filename, base64Content) {
+  const docs = getCourseDocs(getEventMeta(slug)).filter(d => d.filename !== filename);
+  if (docs.length >= MAX_COURSE_DOCS) throw new Error(`${MAX_COURSE_DOCS} documents au maximum`);
+  const path = `events/${slug}/course/${filename}`;
+  const existing = await getFile(path).catch(() => null);
+  await putFile(path, base64Content, existing?.sha || null, { alreadyBase64: true });
+  await writeCourseDocs(slug, [...docs, { filename, importedAt: new Date().toISOString() }]);
+}
+
+// Comme pour les photos, seule la référence est retirée.
+export async function removeCourseDoc(slug, filename) {
+  await writeCourseDocs(slug, getCourseDocs(getEventMeta(slug)).filter(d => d.filename !== filename));
+}
+
+async function writeCourseDocs(slug, docs) {
+  const meta = getEventMeta(slug);
+  const metaFile = await getFile(`events/${slug}/meta.json`);
+  const course = { ...((meta.course && !meta.course.filename) ? meta.course : { gpx: null }), docs, pdf: null };
+  const newMeta = { ...meta, course };
+  await putFile(`events/${slug}/meta.json`, JSON.stringify(newMeta, null, 2), metaFile?.sha);
+  _eventMetas[slug] = newMeta;
+}
+
 export async function addPhoto(slug, filename, base64Content) {
   const path = `events/${slug}/course/${filename}`;
   const existing = await getFile(path).catch(() => null);

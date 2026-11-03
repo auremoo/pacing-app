@@ -281,7 +281,7 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
   "versions": [{ "v": 1, "file": "v1.md", "importedAt": "…", "label": "…" }],
   "course": {
     "gpx": { "filename": "…gpx", "importedAt": "…" },
-    "pdf": { "filename": "…pdf", "importedAt": "…" }
+    "docs": [{ "filename": "…pdf", "importedAt": "…" }]
   },
   "photos": ["photo-1234567890.jpg"],
   "closedAt": "2026-10-04T16:20:00.000Z",
@@ -294,13 +294,13 @@ Injecté automatiquement dans les prompts de plan initial et de révision.
 `activeVersion: null` + `versions: []` = événement sans plan (état normal après création via l'app).  
 `location`, `objectiveRealistic`, `courseDescription` sont optionnels mais utilisés dans les prompts générés.
 
-`course.gpx` et `course.pdf` sont `null` si pas encore importés. `photos` est un tableau de noms de fichiers (max 2, 5 Mo/photo, stockés dans `events/{slug}/course/`).  
+`course.gpx` est `null` si pas encore importé. **Documents** : `course.docs`, 3 PDF au plus (`MAX_COURSE_DOCS`, `getCourseDocs`/`addCourseDoc`/`removeCourseDoc` dans store.js), liste dans Parcours → Documents, chacun ouvrable et retirable (la référence seulement, comme les photos) ; un document du même nom remplace l'ancien. L'ancien format `course.pdf` (un seul PDF) est relu comme premier document et converti (`pdf: null`) à la première modification. `photos` est un tableau de noms de fichiers (max 2, 5 Mo/photo, stockés dans `events/{slug}/course/`).  
 **GPX** : quand un GPX est présent, distance et D+ sont calculés automatiquement (window=3 + `ELEVATION_THRESHOLD_M`, 5 m). Ces champs sont en **lecture seule avant la date de course**, puis **éditables après** (pour saisir les valeurs officielles).  
 **Fichiers > 1MB** : `getFile` détecte un `content` vide et passe par `download_url` pour récupérer le fichier brut.
 
 ## Layout responsive
 
-- **Mobile** : navigation par onglets en bas, nav-bar en haut, sidebar cachée. **Cadre fixe** (reset.css, `max-width: 767px`) : `html/body` ne défilent pas, `#app` fait la hauteur de l'écran en colonne flex, nav-bar et barres d'onglets sont des blocs fixes, seule la `.scroll-view` enfant direct de `#app` défile. Avant, la page entière défilait avec des barres `position: sticky`, qu'un défilement rapide (inertie iOS) décrochait : menu au milieu de l'écran, barre du haut disparue. Toute nouvelle vue plein écran doit garder ce gabarit (nav-bar, `.scroll-view`, barre) en enfants directs du conteneur ; un écran sans `.scroll-view` (connexion) défile dans `#app`.
+- **Mobile** : navigation par onglets en bas, nav-bar en haut, sidebar cachée. **Cadre fixe** (reset.css, `max-width: 767px`) : `html/body` ne défilent pas, `#app` fait la hauteur de l'écran en colonne flex, nav-bar et barres d'onglets sont des blocs fixes, seule la `.scroll-view` enfant direct de `#app` défile. Avant, la page entière défilait avec des barres `position: sticky`, qu'un défilement rapide (inertie iOS) décrochait : menu au milieu de l'écran, barre du haut disparue. `.scroll-view` a `overflow-x: hidden`, et les `input[type=date]` ont une hauteur minimale et `min-width: 0` : sur iOS, un champ date vide en `appearance: none` n'avait plus de hauteur (date de course impossible à saisir dans « Nouvelle course ») et sa largeur native dépassait, décalant l'écran. Toute nouvelle vue plein écran doit garder ce gabarit (nav-bar, `.scroll-view`, barre) en enfants directs du conteneur ; un écran sans `.scroll-view` (connexion) défile dans `#app`.
 - **Desktop (≥768px)** : CSS Grid `260px sidebar + 1fr contenu`. La sidebar liste les événements + séance du jour. La nav-bar est masquée (la sidebar prend ce rôle).
 
 ## Fonctionnalités clés

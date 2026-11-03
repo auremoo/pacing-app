@@ -1,4 +1,5 @@
-import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta, addPhoto, removePhoto, getPhoto } from '../store.js';
+import { getEventMeta, importCourseFile, getCourseFile, updateEventMeta, addPhoto, removePhoto, getPhoto,
+         getCourseDocs, getCourseDoc, addCourseDoc, removeCourseDoc, MAX_COURSE_DOCS } from '../store.js';
 import { showToast } from '../app.js';
 import { parseGpx, renderElevationChart, attachElevationCursor } from '../utils/gpx-parser.js';
 import { openGpxModal } from './gpx-modal.js';
@@ -11,17 +12,18 @@ export async function mount(container, slug) {
   const meta   = getEventMeta(slug);
   const course = meta?.course || { gpx: null, pdf: null };
   const photos = meta?.photos || [];
+  const docs   = getCourseDocs(meta);
 
-  const [gpxFile, pdfFile, ...photoFiles] = await Promise.all([
+  const [gpxFile, docFiles, ...photoFiles] = await Promise.all([
     course.gpx?.filename ? getCourseFile(slug, 'gpx').catch(() => null) : Promise.resolve(null),
-    course.pdf?.filename ? getCourseFile(slug, 'pdf').catch(() => null) : Promise.resolve(null),
+    Promise.all(docs.map(d => getCourseDoc(slug, d.filename).catch(() => null))),
     ...photos.map(f => getPhoto(slug, f).catch(() => null)),
   ]);
 
-  renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles);
+  renderAll(container, slug, meta, gpxFile, docFiles, photoFiles);
 }
 
-function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
+function renderAll(container, slug, meta, gpxFile, docFiles = [], photoFiles = []) {
   const course = meta?.course || { gpx: null, pdf: null };
   const photos = meta?.photos || [];
 
@@ -38,7 +40,7 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
     ${renderCourseInfo(meta, hasGpx, racePast)}
     ${renderResult(meta)}
     ${renderGpxSection(gpxData, hasGpx)}
-    ${renderPdfSection(!!course.pdf, course.pdf?.filename)}
+    ${renderDocsSection(getCourseDocs(meta))}
     ${renderPhotosSection(photos, photoFiles)}
     <div style="height:var(--space-8)"></div>
   `;
@@ -47,12 +49,12 @@ function renderAll(container, slug, meta, gpxFile, pdfFile, photoFiles = []) {
   wireCourseInfoEdit(container, slug);
   wireResultEdit(container, slug);
   wireGpxUpload(container, slug);
-  wirePdfUpload(container, slug);
+  wireDocs(container, slug);
   wirePhotoUpload(container, slug, photos);
 
-  if (pdfFile && course.pdf?.filename) {
-    mountPdfViewer(container.querySelector('#pdf-viewer-slot'), pdfFile.content, course.pdf.filename);
-  }
+  getCourseDocs(meta).forEach((d, i) => {
+    mountPdfViewer(container.querySelector(`[data-doc-slot="${i}"]`), docFiles[i]?.content, d.filename);
+  });
 
   if (gpxData) {
     const chartEl = container.querySelector('.elevation-chart-container');
@@ -468,35 +470,36 @@ function wireGpxUpload(container, slug) {
   });
 }
 
-// ── PDF section ───────────────────────────────────────────────────
+// ── Documents (PDF, 3 max) ────────────────────────────────────────
 
-function renderPdfSection(hasPdf, pdfFilename) {
-  if (hasPdf) {
-    return `
-      <p class="section-header" style="margin-top:var(--space-4)">Document PDF</p>
-      <div id="pdf-viewer-slot" style="margin:0 var(--space-4)"></div>
-      <div style="padding:var(--space-2) var(--space-4) 0">
-        <button class="btn btn--ghost btn--full" id="replace-pdf-btn">Remplacer le PDF</button>
-        <input type="file" id="pdf-input" accept=".pdf,application/pdf" style="display:none">
-      </div>
-    `;
-  }
+function renderDocsSection(docs) {
+  const canAdd = docs.length < MAX_COURSE_DOCS;
   return `
-    <div style="padding:var(--space-4) var(--space-4) 0">
-      <p class="section-header" style="margin:0 0 var(--space-2)">Document parcours (PDF)</p>
-      <div class="course-import-area">
-        <div style="font-size:32px;margin-bottom:var(--space-2)">📄</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:4px">Importer un PDF</div>
-        <div style="font-size:13px;color:var(--text-secondary)">Roadbook, carte du parcours…</div>
-        <button class="btn btn--secondary" style="margin-top:var(--space-3)" id="replace-pdf-btn">Choisir un fichier PDF</button>
-        <input type="file" id="pdf-input" accept=".pdf,application/pdf" style="display:none">
-      </div>
+    <div id="docs-section" style="padding:var(--space-4) var(--space-4) 0">
+      <p class="section-header" style="margin:0 0 var(--space-2)">Documents (${docs.length}/${MAX_COURSE_DOCS})</p>
+      ${docs.length ? `<div class="card-group">
+        ${docs.map((d, i) => `<div class="doc-row" data-doc-slot="${i}"><div class="list-row"><div class="list-row__content"><div class="list-row__title">${escHtml(d.filename)}</div><div class="list-row__subtitle">Chargement…</div></div></div></div>`).join('')}
+      </div>` : ''}
+      ${canAdd ? (docs.length ? `
+        <button class="btn btn--ghost btn--full" id="add-doc-btn" style="margin-top:var(--space-2)">+ Ajouter un document PDF</button>` : `
+        <div class="course-import-area" id="add-doc-btn">
+          <div style="font-size:32px;margin-bottom:var(--space-2)">📄</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px">Importer un PDF</div>
+          <div style="font-size:13px;color:var(--text-secondary)">Roadbook, carte du parcours, règlement… jusqu'à ${MAX_COURSE_DOCS} documents</div>
+          <button class="btn btn--secondary" style="margin-top:var(--space-3)">Choisir un fichier PDF</button>
+        </div>`) : `<p style="font-size:12px;color:var(--text-secondary);margin-top:var(--space-2)">Maximum ${MAX_COURSE_DOCS} documents atteint : supprime-en un pour en ajouter un autre.</p>`}
+      <input type="file" id="doc-input" accept=".pdf,application/pdf" style="display:none">
     </div>
   `;
 }
 
 function mountPdfViewer(slot, b64content, filename) {
   if (!slot) return;
+  const del = `<button class="doc-row__delete" data-doc-delete="${escHtml(filename)}" aria-label="Retirer ${escHtml(filename)}">✕</button>`;
+  if (!b64content) {
+    slot.innerHTML = `<div class="list-row"><div class="list-row__content"><div class="list-row__title">${escHtml(filename)}</div><div class="list-row__subtitle">Erreur de lecture du fichier</div></div>${del}</div>`;
+    return;
+  }
   try {
     const binary = atob(b64content);
     const bytes = new Uint8Array(binary.length);
@@ -504,41 +507,54 @@ function mountPdfViewer(slot, b64content, filename) {
     const blob = new Blob([bytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     slot.innerHTML = `
-      <div class="card-group">
-        <a class="list-row" href="${url}" target="_blank" rel="noopener" style="text-decoration:none">
-          <div class="list-row__content">
-            <div class="list-row__title" style="color:var(--ios-blue)">Ouvrir le PDF</div>
-            <div class="list-row__subtitle">${filename}</div>
-          </div>
-          <svg style="width:16px;height:16px;color:var(--text-tertiary);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+      <div class="list-row">
+        <a class="list-row__content" href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
+          <div class="list-row__title" style="color:var(--ios-blue)">${escHtml(filename)}</div>
+          <div class="list-row__subtitle">Ouvrir le PDF ↗</div>
         </a>
+        ${del}
       </div>
     `;
   } catch {
-    slot.innerHTML = `<div style="padding:var(--space-4);color:var(--text-secondary);text-align:center;font-size:14px">Erreur de lecture du PDF.</div>`;
+    slot.innerHTML = `<div class="list-row"><div class="list-row__content"><div class="list-row__title">${escHtml(filename)}</div><div class="list-row__subtitle">Erreur de lecture du PDF</div></div>${del}</div>`;
   }
 }
 
-function wirePdfUpload(container, slug) {
-  const btn   = container.querySelector('#replace-pdf-btn');
-  const input = container.querySelector('#pdf-input');
-  btn?.addEventListener('click', () => input?.click());
+function wireDocs(container, slug) {
+  const input = container.querySelector('#doc-input');
+  container.querySelector('#add-doc-btn')?.addEventListener('click', () => input?.click());
   input?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    showToast('Upload PDF…');
+    showToast('Envoi du document…');
     try {
-      const buffer = await file.arrayBuffer();
-      const bytes  = new Uint8Array(buffer);
-      let binary   = '';
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let binary  = '';
       bytes.forEach(b => { binary += String.fromCharCode(b); });
-      await importCourseFile(slug, file.name, btoa(binary), 'pdf', { alreadyBase64: true });
-      showToast('PDF importé !', 'success');
+      await addCourseDoc(slug, file.name, btoa(binary));
+      showToast('Document ajouté !', 'success');
       await mount(container, slug);
     } catch (err) {
       showToast('Erreur : ' + err.message, 'error');
     }
     e.target.value = '';
+  });
+
+  // Les lignes sont remplies après chargement : délégation sur la section,
+  // recréée à chaque rendu (le conteneur, lui, survit aux rendus).
+  container.querySelector('#docs-section')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-doc-delete]');
+    if (!btn) return;
+    if (!confirm(`Retirer « ${btn.dataset.docDelete} » de cette course ?`)) return;
+    btn.disabled = true;
+    try {
+      await removeCourseDoc(slug, btn.dataset.docDelete);
+      showToast('Document retiré', 'success');
+      await mount(container, slug);
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+      btn.disabled = false;
+    }
   });
 }
 

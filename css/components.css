@@ -135,6 +135,9 @@
 
 .scroll-view {
   overflow-y: auto;
+  /* Rien ne doit défiler à l'horizontale : un élément trop large (champ date
+     natif d'iOS) décalait sinon tout l'écran. */
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   flex: 1;
   padding-bottom: var(--space-8);
@@ -1666,6 +1669,32 @@
 .prep-choice__row strong { display: block; font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .prep-choice__row input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--ios-blue); flex-shrink: 0; -webkit-appearance: auto; appearance: auto; }
 
+/* ─── Documents d'une course (course-view.js) ─────────────────── */
+
+.doc-row + .doc-row { border-top: 0.5px solid var(--separator); }
+.doc-row .list-row { border-bottom: none; }
+.doc-row__delete {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.doc-row__delete:active { background: var(--gray-5); }
+
+/* Champs date sur iOS : sans valeur, un champ date « appearance: none » n'a
+   plus de hauteur (impossible à toucher pour saisir la date de course), et sa
+   largeur minimale native dépasse du formulaire, ce qui décalait la page et
+   sortait la barre du haut de l'écran. */
+input[type="date"] {
+  min-height: 1.6em;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; min-height: 1.4em; }
 /* ─── Étudier un GPX (gpx-tool.js) ────────────────────────────── */
 
 .gpx-tool__note {

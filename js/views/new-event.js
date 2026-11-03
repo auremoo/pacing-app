@@ -10,7 +10,7 @@ export function mount(container) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
         Retour
       </button>
-      <span class="nav-bar__title">Nouvel événement</span>
+      <span class="nav-bar__title">Nouvelle course</span>
       <button class="nav-btn" id="create-btn">Créer</button>
     </div>
     <div class="scroll-view">
