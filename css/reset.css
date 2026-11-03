@@ -87,11 +87,25 @@ table {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
-  #app > .nav-bar,
   #app > .tab-bar,
   #app > .global-tab-bar {
     position: relative;
     flex: none;
+  }
+  /* Barre du haut « collée » (sticky) et non relative : iOS 26 floute le haut
+     de l'écran sous l'heure et la Dynamic Island, sauf quand une barre fixe ou
+     collée y touche le bord — il reprend alors sa couleur. En relative, la
+     moitié de la barre (titre, Retour) passait sous ce flou. Ici, rien ne
+     défile au-dessus d'elle, elle ne peut donc pas se décrocher. */
+  #app > .nav-bar {
+    position: sticky;
+    top: 0;
+    flex: none;
+  }
+  /* Avec une zone qui défile, #app lui-même ne défile plus : seule la
+     .scroll-view défile, sous la barre du haut. */
+  #app:has(> .scroll-view) {
+    overflow: hidden;
   }
   #app > .scroll-view {
     flex: 1 1 auto;
