@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-11-09T15:02:54.457Z",
+  "lastUpdated": "2026-11-10T07:30:24.664Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -920,12 +920,12 @@
       },
       "s03-wed": {
         "skipped": false,
-        "completed": false,
+        "completed": true,
         "skippedAt": null,
         "skipReason": null,
         "version": 2,
-        "completedAt": null,
-        "note": ""
+        "completedAt": "2026-11-10T07:30:24.279Z",
+        "note": "Pas eu le temps de faire plus, mais j’ai fais le fractionné à 5,41min/km - 5,28km"
       },
       "s03-fri": {
         "skipped": true,
