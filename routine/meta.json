@@ -3,7 +3,7 @@
   "goals": "Courir en plus du bad 2 à 3x par semaine (dont une facultative si pas le temps), travailler la polyvalence, endurance, long run, petites courses, fractionnés etc en proposant des séances possiblement remplaçable par du vélo. Penser à mes temps de repos quand même",
   "blockWeeks": 40,
   "startDate": "2026-09-14",
-  "activeVersion": 2,
+  "activeVersion": 3,
   "versions": [
     {
       "v": 1,
@@ -16,6 +16,17 @@
       "file": "v2.md",
       "importedAt": "2026-10-06T15:05:19.790Z",
       "label": "Bloc polyvalent 10 km, cap 54 min"
+    },
+    {
+      "v": 3,
+      "file": "v3.md",
+      "importedAt": "2026-11-12T11:20:27.877Z",
+      "label": "Bloc polyvalent 10 km, cap 54 min (v3 recalée)",
+      "tuning": {
+        "values": {},
+        "note": "J’aimerais faire l’équivalent du LUT by night 2026 qui s’est passé le week-end dernier sur 10km, le 13 décembre prochain",
+        "at": "2026-11-12T09:16:46.979Z"
+      }
     }
   ],
   "targets": [
@@ -35,10 +46,5 @@
       "by": "",
       "achieved": false
     }
-  ],
-  "pendingTuning": {
-    "values": {},
-    "note": "J’aimerais faire l’équivalent du LUT by night 2026 qui s’est passé le week-end dernier sur 10km, le 13 décembre prochain",
-    "at": "2026-11-12T09:16:46.979Z"
-  }
+  ]
 }
