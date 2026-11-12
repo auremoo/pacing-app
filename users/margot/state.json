@@ -322,8 +322,17 @@
         "skipped": false,
         "completedAt": "2026-11-10T16:00:03.048Z",
         "version": 4
+      },
+      "s04-mon": {
+        "skipped": true,
+        "completed": false,
+        "skippedAt": "2026-11-12T09:11:02.321Z",
+        "skipReason": "professionnel",
+        "version": 4,
+        "completedAt": null,
+        "note": "Empêchement pro."
       }
     }
   },
-  "lastUpdated": "2026-11-10T16:00:03.973Z"
+  "lastUpdated": "2026-11-12T09:11:03.587Z"
 }
