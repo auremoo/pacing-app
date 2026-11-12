@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-11-10T07:30:40.295Z",
+  "lastUpdated": "2026-11-12T11:20:30.584Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -783,248 +783,265 @@
               "s04-mon": "badminton"
             }
           }
+        },
+        "v2": {
+          "s01-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-05T17:37:28.672Z",
+            "version": 2,
+            "carriedFrom": {
+              "v": 1,
+              "id": "s04-mon"
+            }
+          },
+          "s01-tue": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-06T15:31:43.864Z",
+            "version": 2
+          },
+          "s01-wed": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-08T09:23:02.139Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s01-thu": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-08T09:23:02.987Z",
+            "version": 2,
+            "note": "Oups 5,5km en 30min pile"
+          },
+          "s01-fri": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-09T09:44:12.479Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s01-sun": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-12T08:24:28.234Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s02-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-13T13:42:08.541Z",
+            "version": 2
+          },
+          "s02-wed": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-13T13:42:10.185Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s02-fri": {
+            "note": "5,23km à 5,44min/km en fractionné 1’ course, 45sec marche. 5min d’échauffement et 5min à la fin de course à 5,50min/km environ. ",
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-14T08:27:51.502Z",
+            "version": 2
+          },
+          "s02-thu": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-15T20:39:25.760Z",
+            "version": 2
+          },
+          "s02-sun": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-19T15:21:08.415Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s03-thu": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-21T21:55:46.706Z",
+            "version": 2,
+            "note": "1h - 21,19km"
+          },
+          "s03-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-21T21:55:23.589Z",
+            "version": 2
+          },
+          "s03-wed": {
+            "skipped": false,
+            "completed": true,
+            "skippedAt": null,
+            "skipReason": null,
+            "version": 2,
+            "completedAt": "2026-11-10T07:30:24.279Z",
+            "note": "Pas eu le temps de faire plus, mais j’ai fais le fractionné à 5,41min/km - 5,28km"
+          },
+          "s03-fri": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-26T09:31:28.910Z",
+            "skipReason": "vacances",
+            "version": 2,
+            "completedAt": null,
+            "note": "Vacances"
+          },
+          "s03-sun": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-26T09:31:30.068Z",
+            "skipReason": "vacances",
+            "version": 2,
+            "completedAt": null,
+            "note": "Vacances"
+          },
+          "s05-mon": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-11-03T13:18:20.776Z",
+            "skipReason": "vacances",
+            "version": 2,
+            "completedAt": null,
+            "note": "Vacances"
+          },
+          "s05-thu": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-10-28T08:50:00.296Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s04-fri": {
+            "note": "Pas trop de l’EF mais 6,05km à 5,22min/km (séance faite la veille avant le badminton)",
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-10-28T16:45:50.568Z",
+            "version": 2
+          },
+          "s04-mon": {
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-11-03T13:14:44.933Z",
+            "version": 2
+          },
+          "s04-thu": {
+            "note": "12,37km de randonnée et 820m de D+",
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-11-03T13:15:42.887Z",
+            "version": 2
+          },
+          "s04-sun": {
+            "note": "La veille : randonnée de 7,03km et 387 de D+\nLe jour J : randonnée de 22,70km et 1182 de D+",
+            "completed": true,
+            "skipped": false,
+            "completedAt": "2026-11-03T13:17:26.638Z",
+            "version": 2
+          },
+          "s05-wed": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-11-03T13:18:25.117Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s05-sun": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-11-06T10:30:01.992Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s05-fri": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-11-07T18:16:45.348Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "s06-thu": {
+            "skipped": true,
+            "completed": false,
+            "skippedAt": "2026-11-07T18:17:00.629Z",
+            "skipReason": "autre",
+            "version": 2,
+            "completedAt": null,
+            "note": "Autre"
+          },
+          "_overrides": {
+            "_dateOverrides": {
+              "s02-fri": "2026-10-14",
+              "s02-tue": "2026-10-16",
+              "s02-sun": "2026-10-17",
+              "s02-thu": "2026-10-15",
+              "s02-wed": "2026-10-13",
+              "s03-wed": "2026-11-10",
+              "s03-tue": "2026-10-22",
+              "s03-thu": "2026-10-21",
+              "s04-mon": "2026-10-28",
+              "s04-wed": "2026-11-12",
+              "s04-tue": "2026-10-26",
+              "s04-fri": "2026-10-29",
+              "s04-thu": "2026-10-30",
+              "s05-tue": "2026-10-20",
+              "s05-thu": "2026-10-27",
+              "s05-mon": "2026-11-02",
+              "s05-wed": "2026-11-03",
+              "s05-fri": "2026-11-08",
+              "s05-sun": "2026-11-04",
+              "s06-mon": "2026-11-11",
+              "s06-wed": "2026-11-13",
+              "s06-fri": "2026-11-09",
+              "s06-thu": "2026-11-07",
+              "s06-tue": "2026-11-14"
+            },
+            "_typeOverrides": {
+              "s02-thu": "badminton",
+              "s03-thu": "bike",
+              "s04-thu": "hike",
+              "s04-sun": "hike"
+            }
+          }
         }
       },
-      "_planVersion": 2,
-      "s01-mon": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-05T17:37:28.672Z",
-        "version": 2,
-        "carriedFrom": {
-          "v": 1,
-          "id": "s04-mon"
-        }
-      },
+      "_planVersion": 3,
       "s01-tue": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-06T15:31:43.864Z",
-        "version": 2
-      },
-      "s01-wed": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-08T09:23:02.139Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s01-thu": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-08T09:23:02.987Z",
-        "version": 2,
-        "note": "Oups 5,5km en 30min pile"
-      },
-      "s01-fri": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-09T09:44:12.479Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s01-sun": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-12T08:24:28.234Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "_dateOverrides": {
-        "s02-fri": "2026-10-14",
-        "s02-tue": "2026-10-16",
-        "s02-sun": "2026-10-17",
-        "s02-thu": "2026-10-15",
-        "s02-wed": "2026-10-13",
-        "s03-wed": "2026-11-10",
-        "s03-tue": "2026-10-22",
-        "s03-thu": "2026-10-21",
-        "s04-mon": "2026-10-28",
-        "s04-wed": "2026-11-12",
-        "s04-tue": "2026-10-26",
-        "s04-fri": "2026-10-29",
-        "s04-thu": "2026-10-30",
-        "s05-tue": "2026-10-20",
-        "s05-thu": "2026-10-27",
-        "s05-mon": "2026-11-02",
-        "s05-wed": "2026-11-03",
-        "s05-fri": "2026-11-08",
-        "s05-sun": "2026-11-04",
-        "s06-mon": "2026-11-11",
-        "s06-wed": "2026-11-13",
-        "s06-fri": "2026-11-09",
-        "s06-thu": "2026-11-07",
-        "s06-tue": "2026-11-14"
-      },
-      "_typeOverrides": {
-        "s02-thu": "badminton",
-        "s03-thu": "bike",
-        "s04-thu": "hike",
-        "s04-sun": "hike"
-      },
-      "s02-mon": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-13T13:42:08.541Z",
-        "version": 2
-      },
-      "s02-wed": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-13T13:42:10.185Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s02-fri": {
-        "note": "5,23km à 5,44min/km en fractionné 1’ course, 45sec marche. 5min d’échauffement et 5min à la fin de course à 5,50min/km environ. ",
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-14T08:27:51.502Z",
-        "version": 2
-      },
-      "s02-thu": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-15T20:39:25.760Z",
-        "version": 2
-      },
-      "s02-sun": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-19T15:21:08.415Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s03-thu": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-21T21:55:46.706Z",
-        "version": 2,
-        "note": "1h - 21,19km"
-      },
-      "s03-mon": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-21T21:55:23.589Z",
-        "version": 2
-      },
-      "s03-wed": {
         "skipped": false,
         "completed": true,
         "skippedAt": null,
         "skipReason": null,
-        "version": 2,
+        "version": 3,
         "completedAt": "2026-11-10T07:30:24.279Z",
-        "note": "Pas eu le temps de faire plus, mais j’ai fais le fractionné à 5,41min/km - 5,28km"
-      },
-      "s03-fri": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-26T09:31:28.910Z",
-        "skipReason": "vacances",
-        "version": 2,
-        "completedAt": null,
-        "note": "Vacances"
-      },
-      "s03-sun": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-26T09:31:30.068Z",
-        "skipReason": "vacances",
-        "version": 2,
-        "completedAt": null,
-        "note": "Vacances"
-      },
-      "s05-mon": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-11-03T13:18:20.776Z",
-        "skipReason": "vacances",
-        "version": 2,
-        "completedAt": null,
-        "note": "Vacances"
-      },
-      "s05-thu": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-10-28T08:50:00.296Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s04-fri": {
-        "note": "Pas trop de l’EF mais 6,05km à 5,22min/km (séance faite la veille avant le badminton)",
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-10-28T16:45:50.568Z",
-        "version": 2
-      },
-      "s04-mon": {
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-11-03T13:14:44.933Z",
-        "version": 2
-      },
-      "s04-thu": {
-        "note": "12,37km de randonnée et 820m de D+",
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-11-03T13:15:42.887Z",
-        "version": 2
-      },
-      "s04-sun": {
-        "note": "La veille : randonnée de 7,03km et 387 de D+\nLe jour J : randonnée de 22,70km et 1182 de D+",
-        "completed": true,
-        "skipped": false,
-        "completedAt": "2026-11-03T13:17:26.638Z",
-        "version": 2
-      },
-      "s05-wed": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-11-03T13:18:25.117Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s05-sun": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-11-06T10:30:01.992Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s05-fri": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-11-07T18:16:45.348Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
-      },
-      "s06-thu": {
-        "skipped": true,
-        "completed": false,
-        "skippedAt": "2026-11-07T18:17:00.629Z",
-        "skipReason": "autre",
-        "version": 2,
-        "completedAt": null,
-        "note": "Autre"
+        "note": "Pas eu le temps de faire plus, mais j’ai fais le fractionné à 5,41min/km - 5,28km",
+        "carriedFrom": {
+          "v": 2,
+          "id": "s03-wed"
+        }
       }
     }
   }
