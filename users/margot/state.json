@@ -331,8 +331,14 @@
         "version": 4,
         "completedAt": null,
         "note": "Empêchement pro."
+      },
+      "s04-tue": {
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-11-12T10:33:52.204Z",
+        "version": 4
       }
     }
   },
-  "lastUpdated": "2026-11-12T09:11:03.587Z"
+  "lastUpdated": "2026-11-12T10:33:54.192Z"
 }
