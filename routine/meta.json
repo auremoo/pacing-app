@@ -35,5 +35,10 @@
       "by": "",
       "achieved": false
     }
-  ]
+  ],
+  "pendingTuning": {
+    "values": {},
+    "note": "J’aimerais faire l’équivalent du LUT by night 2026 qui s’est passé le week-end dernier sur 10km, le 13 décembre prochain",
+    "at": "2026-11-12T09:16:46.979Z"
+  }
 }
