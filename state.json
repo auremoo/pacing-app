@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-11-12T11:20:48.782Z",
+  "lastUpdated": "2026-11-12T11:21:49.946Z",
   "events": {
     "run-in-lyon-2026": {
       "s01-mon": {
@@ -1045,6 +1045,13 @@
       },
       "_typeOverrides": {
         "s01-wed": "easy"
+      },
+      "s01-wed": {
+        "note": "Mardi soir - 5,01km - 6,08min/km",
+        "completed": true,
+        "skipped": false,
+        "completedAt": "2026-11-12T11:21:49.591Z",
+        "version": 3
       }
     }
   }
