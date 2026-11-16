@@ -337,8 +337,17 @@
         "skipped": false,
         "completedAt": "2026-11-12T10:33:52.204Z",
         "version": 4
+      },
+      "s04-fri": {
+        "skipped": true,
+        "completed": false,
+        "skippedAt": "2026-11-16T08:39:25.047Z",
+        "skipReason": "maladie",
+        "version": 4,
+        "completedAt": null,
+        "note": "Maladie"
       }
     }
   },
-  "lastUpdated": "2026-11-12T10:33:54.192Z"
+  "lastUpdated": "2026-11-16T08:39:25.985Z"
 }
