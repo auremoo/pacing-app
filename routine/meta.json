@@ -46,5 +46,12 @@
       "by": "",
       "achieved": false
     }
-  ]
+  ],
+  "pendingTuning": {
+    "values": {
+      "difficulty": 2
+    },
+    "note": "",
+    "at": "2026-11-20T11:36:38.021Z"
+  }
 }
