@@ -380,8 +380,17 @@
         "skipped": false,
         "completedAt": "2026-11-23T09:21:44.693Z",
         "version": 4
+      },
+      "s06-mon": {
+        "skipped": true,
+        "completed": false,
+        "skippedAt": "2026-11-23T09:22:03.183Z",
+        "skipReason": "blessure",
+        "version": 4,
+        "completedAt": null,
+        "note": "Blessure"
       }
     }
   },
-  "lastUpdated": "2026-11-23T09:21:45.684Z"
+  "lastUpdated": "2026-11-23T09:22:04.218Z"
 }
