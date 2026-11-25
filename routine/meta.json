@@ -3,7 +3,7 @@
   "goals": "Courir en plus du bad 2 à 3x par semaine (dont une facultative si pas le temps), travailler la polyvalence, endurance, long run, petites courses, fractionnés etc en proposant des séances possiblement remplaçable par du vélo. Penser à mes temps de repos quand même",
   "blockWeeks": 40,
   "startDate": "2026-09-14",
-  "activeVersion": 3,
+  "activeVersion": 4,
   "versions": [
     {
       "v": 1,
@@ -27,6 +27,17 @@
         "note": "J’aimerais faire l’équivalent du LUT by night 2026 qui s’est passé le week-end dernier sur 10km, le 13 décembre prochain",
         "at": "2026-11-12T09:16:46.979Z"
       }
+    },
+    {
+      "v": 4,
+      "file": "v4.md",
+      "importedAt": "2026-11-25T15:04:24.886Z",
+      "label": "Bloc 10 km cap 54 min, édition Calendrier de l'Avent",
+      "tuning": {
+        "values": {},
+        "note": "Je te joins une photo j’aimerais que tu fasses ça pour le mois de décembre mais que tu fasses les choses de manière cohérente pour pas casser mon entraînement, donc les jours où on a déjà une course de prévue on la compte comme jour du calendrier de l’aven X et tu ajoutes ce qui te sembles correct pour les autres jours. Chaque séance s’appelle case du jour de l’aven X ou un truc comme ça",
+        "at": "2026-11-25T14:57:15.333Z"
+      }
     }
   ],
   "targets": [
@@ -46,10 +57,5 @@
       "by": "",
       "achieved": false
     }
-  ],
-  "pendingTuning": {
-    "values": {},
-    "note": "Je te joins une photo j’aimerais que tu fasses ça pour le mois de décembre mais que tu fasses les choses de manière cohérente pour pas casser mon entraînement, donc les jours où on a déjà une course de prévue on la compte comme jour du calendrier de l’aven X et tu ajoutes ce qui te sembles correct pour les autres jours. Chaque séance s’appelle case du jour de l’aven X ou un truc comme ça",
-    "at": "2026-11-25T14:57:15.333Z"
-  }
+  ]
 }
